@@ -12,9 +12,12 @@
     "@clerk/clerk-react": "^5.24.1",
     "@clerk/nextjs": "^6.12.4",
     "convex": "^1.20.0",
+    "convex-helpers": "^0.1.71",
     "next": "15.2.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "svix": "^1.61.3",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "typescript": "^5",
