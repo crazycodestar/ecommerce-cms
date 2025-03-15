@@ -1,9 +1,17 @@
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
-import { internalAction, internalMutation, query } from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import {
+  action,
+  internalAction,
+  internalMutation,
+  mutation,
+  query,
+} from "./_generated/server";
 import { clerkClient } from "./context";
-import { ConflictError, NotFoundError } from "./error";
-import { Users } from "./schema";
+import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
+import { Stores, Users } from "./schema";
+import { omit } from "convex-helpers";
+import { getTokenIdentifier } from "./utils";
 
 export const getCurrentUser = query((ctx) => ctx.auth.getUserIdentity());
 
@@ -111,5 +119,34 @@ export const deleteUser = internalMutation({
     if (!user) throw new NotFoundError();
 
     return await ctx.db.delete(user._id);
+  },
+});
+
+export const processOnboarding = internalMutation({
+  args: omit(Stores.withoutSystemFields, ["owner"]),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(api.stores.createStore, args);
+    return "success";
+  },
+});
+
+export const submitOnboarding = action({
+  args: omit(Stores.withoutSystemFields, ["owner"]),
+  handler: async (ctx, args) => {
+    const tokenIdentifier = await getTokenIdentifier(ctx);
+    if (!tokenIdentifier) throw new UnauthorizedError();
+
+    try {
+      await ctx.runMutation(internal.users.processOnboarding, args);
+      const res = await clerkClient().users.updateUser(tokenIdentifier, {
+        publicMetadata: {
+          onboardingComplete: true,
+        },
+      });
+      return { message: res.publicMetadata };
+    } catch (error) {
+      console.error("Error processing onboarding: ", error);
+      throw error;
+    }
   },
 });

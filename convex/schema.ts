@@ -135,6 +135,18 @@ export const userCreateSchema = userSchema
   });
 export type UserCreate = z.infer<typeof userCreateSchema>;
 
+// Store schema
+export const Stores = Table("stores", {
+  name: v.string(),
+  description: v.string(),
+  owner: v.string(),
+  slug: v.string(),
+});
+
 export default defineSchema({
   users: Users.table.index("by_tokenIdentifier", ["id"]),
+  stores: Stores.table
+    .index("by_slug", ["slug"])
+    .index("by_owner", ["owner"])
+    .index("by_slug_owner", ["slug", "owner"]),
 });

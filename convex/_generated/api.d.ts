@@ -16,7 +16,9 @@ import type {
 import type * as context from "../context.js";
 import type * as error from "../error.js";
 import type * as http from "../http.js";
+import type * as stores from "../stores.js";
 import type * as users from "../users.js";
+import type * as utils from "../utils.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -30,7 +32,9 @@ declare const fullApi: ApiFromModules<{
   context: typeof context;
   error: typeof error;
   http: typeof http;
+  stores: typeof stores;
   users: typeof users;
+  utils: typeof utils;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
