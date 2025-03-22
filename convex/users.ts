@@ -13,7 +13,15 @@ import { Stores, Users } from "./schema";
 import { omit } from "convex-helpers";
 import { getTokenIdentifier } from "./utils";
 
-export const getCurrentUser = query((ctx) => ctx.auth.getUserIdentity());
+export const getCurrentUser = query(async (ctx) => {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+
+  return ctx.db
+    .query("users")
+    .withIndex("by_tokenIdentifier", (q) => q.eq("id", identity.subject))
+    .unique();
+});
 
 export const testQuery = query({
   handler: (ctx) => ctx.auth.getUserIdentity(),

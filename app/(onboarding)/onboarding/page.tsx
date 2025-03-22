@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CreateStore } from "./_components/create-store";
 import { Intro } from "./_components/intro";
 
-export default function onboardingPage() {
+export default function OnboardingPage() {
   const search = useSearchParams();
   const step = search.get("step");
 
