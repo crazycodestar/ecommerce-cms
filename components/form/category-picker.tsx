@@ -11,20 +11,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { ChevronRight, PlusCircle, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
@@ -37,20 +37,17 @@ import {
   useForm,
   useWatch,
 } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FormInput } from "./form-input";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "../ui/input";
-import { toast } from "sonner";
+import { FormInput } from "./form-input";
 
 type category = { _id: Id<"categories">; name: string };
 
@@ -257,7 +254,7 @@ const useCategoryForm = ({ onComplete }: { onComplete?: () => void }) => {
         });
         toast.success("Category created successfully");
         form.reset();
-        onComplete && onComplete();
+        return onComplete && onComplete();
       } catch (error) {
         console.error(error);
         toast.error("Something went wrong. Try again later");
@@ -326,7 +323,7 @@ const CategoryForm = ({ children }: { children: React.ReactNode }) => {
               <FormField
                 control={form.control}
                 name="subcategories"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel className="mb-2">Subcategory</FormLabel>
                     <FormControl>
@@ -410,7 +407,7 @@ const useSubcategoryForm = ({
         });
         toast.success("Subcategory created successfully");
         form.reset();
-        onComplete && onComplete();
+        return onComplete && onComplete();
       } catch (error) {
         console.error(error);
         toast.error("Something went wrong. Try again later");

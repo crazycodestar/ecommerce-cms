@@ -11,7 +11,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { DropzoneOptions } from "react-dropzone";
 import { UseFieldArrayReturn } from "react-hook-form";
 import * as z from "zod";
@@ -32,10 +32,10 @@ interface ProductImagePickerProps {
 export function ProductImagePicker({
   fieldArray: { fields, append, remove },
 }: ProductImagePickerProps) {
-  const [initialImageIdCount, setInitialImageIdCount] = useState(0);
-  useEffect(() => {
-    setInitialImageIdCount(fields.length);
-  }, []);
+  const [initialImageIdCount, setInitialImageIdCount] = useState(fields.length);
+  // useEffect(() => {
+  //   setInitialImageIdCount(fields.length);
+  // }, []);
   const [files, setFiles] = useState<File[] | null>([]);
   const generateUploadUrl = useMutation(api.products.generateUploadUrl);
   // const { fields, append, remove } = useFieldArray({ control, name });
