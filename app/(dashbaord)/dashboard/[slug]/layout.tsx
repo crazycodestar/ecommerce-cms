@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
   children: React.ReactNode;
 }) {
   return (
