@@ -124,7 +124,7 @@ export function CreateStoreForm({
   className,
   ...props
 }: CreateStoreFormProps) {
-  const { name, description } = useWatch({ control: form.control });
+  const { description } = useWatch({ control: form.control });
 
   return (
     <Form {...form}>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { siteConfig } from "@/app/config/site";
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function Intro() {
   const searchParams = useSearchParams();

@@ -143,10 +143,81 @@ export const Stores = Table("stores", {
   slug: v.string(),
 });
 
+// Product Schema
+export const Products = Table("products", {
+  storeId: v.id("stores"),
+  images: v.array(v.id("_storage")),
+  name: v.string(),
+  price: v.number(),
+  tariff: v.optional(v.number()),
+  stock: v.number(),
+  isUnspecified: v.boolean(),
+  categoryId: v.id("categories"),
+  variants: v.optional(
+    v.array(
+      v.object({
+        name: v.string(),
+        options: v.array(
+          v.object({
+            name: v.string(),
+            price: v.number(),
+            tariff: v.optional(v.number()),
+            imageId: v.optional(v.id("_storage")),
+            stock: v.number(),
+            isUnspecified: v.boolean(),
+          })
+        ),
+      })
+    )
+  ),
+  properties: v.array(
+    v.object({
+      propertyId: v.id("properties"),
+      value: v.union(v.string(), v.number(), v.array(v.string())),
+    })
+  ),
+  metadataIds: v.optional(v.array(v.id("metadatas"))),
+});
+
+// Metadata schema
+export const Metadatas = Table("metadatas", {
+  name: v.string(),
+  type: v.union(
+    v.literal("string"),
+    v.literal("number"),
+    v.literal("array"),
+    v.literal("image")
+  ),
+});
+
+// MetadataPresets schema
+export const MetadataPresets = Table("metadataPresets", {
+  name: v.string(),
+  metadataIds: v.array(v.id("metadatas")),
+});
+
+// Categories schema
+export const Categories = Table("categories", {
+  name: v.string(),
+  parentId: v.optional(v.id("categories")),
+});
+
+export const Properties = Table("properties", {
+  name: v.string(),
+  categoryId: v.id("categories"),
+  options: v.optional(v.array(v.string())),
+  type: v.union(v.literal("string"), v.literal("number"), v.literal("array")),
+});
+
 export default defineSchema({
   users: Users.table.index("by_tokenIdentifier", ["id"]),
   stores: Stores.table
     .index("by_slug", ["slug"])
     .index("by_owner", ["owner"])
     .index("by_slug_owner", ["slug", "owner"]),
+  products: Products.table,
+  categories: Categories.table,
+  properties: Properties.table,
+  metadatas: Metadatas.table,
+  metadataPresets: MetadataPresets.table,
 });

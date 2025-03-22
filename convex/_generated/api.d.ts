@@ -16,6 +16,7 @@ import type {
 import type * as context from "../context.js";
 import type * as error from "../error.js";
 import type * as http from "../http.js";
+import type * as products from "../products.js";
 import type * as stores from "../stores.js";
 import type * as users from "../users.js";
 import type * as utils from "../utils.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   context: typeof context;
   error: typeof error;
   http: typeof http;
+  products: typeof products;
   stores: typeof stores;
   users: typeof users;
   utils: typeof utils;
