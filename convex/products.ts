@@ -220,9 +220,15 @@ export const createProperty = mutation({
     type: v.union(v.literal("string"), v.literal("number"), v.literal("array")),
     options: v.optional(v.array(v.string())),
   },
-  handler: (ctx, { categoryId, name, type, options }) => {
+  handler: async (ctx, { categoryId, name, type, options }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
     return ctx.db.insert("properties", {
       categoryId,
+      storeId: store._id,
       name,
       type,
       options,
@@ -265,7 +271,13 @@ export const createCategory = mutation({
     }),
   },
   handler: async (ctx, args) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
     const categoryId = await ctx.db.insert("categories", {
+      storeId: store._id,
       name: args.category.name,
     });
 
@@ -273,6 +285,7 @@ export const createCategory = mutation({
       args.category.subCategories.map(
         async (subCategory) =>
           await ctx.db.insert("categories", {
+            storeId: store._id,
             name: subCategory.name,
             parentId: categoryId,
           })
@@ -283,16 +296,23 @@ export const createCategory = mutation({
 
 export const createSubcategory = mutation({
   args: {
-    ...omit(Categories.withoutSystemFields, ["parentId"]),
+    ...omit(Categories.withoutSystemFields, ["parentId", "storeId"]),
     parentId: v.id("categories"),
   },
   handler: async (ctx, { parentId, ...args }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
     const category = await ctx.db.get(parentId);
     if (!category) throw new NotFoundError("No Category Found");
 
     await ctx.db.insert("categories", {
-      parentId: category._id,
       ...args,
+      parentId: category._id,
+      storeId: store._id,
     });
   },
 });
@@ -302,9 +322,17 @@ export const getCategories = query({
     parentId: v.optional(v.id("categories")),
   },
   handler: async (ctx, { parentId }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
     return ctx.db
       .query("categories")
-      .filter((q) => q.eq(q.field("parentId"), parentId))
+      .withIndex("by_parentId_storeId", (q) =>
+        q.eq("parentId", parentId).eq("storeId", store._id)
+      )
       .collect();
   },
 });
@@ -314,16 +342,47 @@ export const getMetadataById = query({
     metadataId: Metadatas._id,
   },
   handler: async (ctx, { metadataId }) => {
-    return ctx.db.get(metadataId);
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    const metadata = await ctx.db.get(metadataId);
+    if (!metadata) throw new NotFoundError("No Metadata Found");
+    if (metadata.storeId !== store._id)
+      throw new NotFoundError("No Metadata Found");
+
+    return metadata;
   },
 });
 
-export const getMetadatas = query((ctx) => ctx.db.query("metadatas").collect());
+export const getMetadatas = query(async (ctx) => {
+  const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+  const store = await getStoreByTokenIdentifierWithAuthError(
+    ctx,
+    tokenIdentifier
+  );
+
+  return ctx.db
+    .query("metadatas")
+    .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
+    .collect();
+});
 
 export const createMetadata = mutation({
-  args: Metadatas.withoutSystemFields,
+  args: omit(Metadatas.withoutSystemFields, ["storeId"]),
   handler: async (ctx, args) => {
-    return ctx.db.insert("metadatas", args);
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    return ctx.db.insert("metadatas", {
+      ...args,
+      storeId: store._id,
+    });
   },
 });
 
@@ -332,11 +391,18 @@ export const getCategoryTreeById = query({
     id: v.id("categories"),
   },
   handler: async (ctx, { id }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
     async function getCategoryById(
       parentId: Id<"categories">
     ): Promise<DataModel["categories"]["document"][] | null> {
       const c = await ctx.db.get(parentId);
       if (!c) return null;
+      if (c.storeId !== store._id) return null;
       if (!c.parentId) return [c];
 
       const cat = await getCategoryById(c.parentId);
