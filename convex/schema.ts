@@ -182,6 +182,7 @@ export const Products = Table("products", {
 // Metadata schema
 export const Metadatas = Table("metadatas", {
   name: v.string(),
+  storeId: v.id("stores"),
   type: v.union(
     v.literal("string"),
     v.literal("number"),
@@ -193,17 +194,20 @@ export const Metadatas = Table("metadatas", {
 // MetadataPresets schema
 export const MetadataPresets = Table("metadataPresets", {
   name: v.string(),
+  storeId: v.id("stores"),
   metadataIds: v.array(v.id("metadatas")),
 });
 
 // Categories schema
 export const Categories = Table("categories", {
   name: v.string(),
+  storeId: v.id("stores"),
   parentId: v.optional(v.id("categories")),
 });
 
 export const Properties = Table("properties", {
   name: v.string(),
+  storeId: v.id("stores"),
   categoryId: v.id("categories"),
   options: v.optional(v.array(v.string())),
   type: v.union(v.literal("string"), v.literal("number"), v.literal("array")),
@@ -216,8 +220,10 @@ export default defineSchema({
     .index("by_owner", ["owner"])
     .index("by_slug_owner", ["slug", "owner"]),
   products: Products.table,
-  categories: Categories.table,
-  properties: Properties.table,
-  metadatas: Metadatas.table,
-  metadataPresets: MetadataPresets.table,
+  categories: Categories.table
+    .index("by_storeId", ["storeId"])
+    .index("by_parentId_storeId", ["parentId", "storeId"]),
+  properties: Properties.table.index("by_storeId", ["storeId"]),
+  metadatas: Metadatas.table.index("by_storeId", ["storeId"]),
+  metadataPresets: MetadataPresets.table.index("by_storeId", ["storeId"]),
 });
