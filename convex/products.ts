@@ -322,9 +322,17 @@ export const getCategories = query({
     parentId: v.optional(v.id("categories")),
   },
   handler: async (ctx, { parentId }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
     return ctx.db
       .query("categories")
-      .filter((q) => q.eq(q.field("parentId"), parentId))
+      .withIndex("by_parentId_storeId", (q) =>
+        q.eq("parentId", parentId).eq("storeId", store._id)
+      )
       .collect();
   },
 });
@@ -334,11 +342,33 @@ export const getMetadataById = query({
     metadataId: Metadatas._id,
   },
   handler: async (ctx, { metadataId }) => {
-    return ctx.db.get(metadataId);
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    const metadata = await ctx.db.get(metadataId);
+    if (!metadata) throw new NotFoundError("No Metadata Found");
+    if (metadata.storeId !== store._id)
+      throw new NotFoundError("No Metadata Found");
+
+    return metadata;
   },
 });
 
-export const getMetadatas = query((ctx) => ctx.db.query("metadatas").collect());
+export const getMetadatas = query(async (ctx) => {
+  const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+  const store = await getStoreByTokenIdentifierWithAuthError(
+    ctx,
+    tokenIdentifier
+  );
+
+  return ctx.db
+    .query("metadatas")
+    .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
+    .collect();
+});
 
 export const createMetadata = mutation({
   args: omit(Metadatas.withoutSystemFields, ["storeId"]),
@@ -361,11 +391,18 @@ export const getCategoryTreeById = query({
     id: v.id("categories"),
   },
   handler: async (ctx, { id }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
     async function getCategoryById(
       parentId: Id<"categories">
     ): Promise<DataModel["categories"]["document"][] | null> {
       const c = await ctx.db.get(parentId);
       if (!c) return null;
+      if (c.storeId !== store._id) return null;
       if (!c.parentId) return [c];
 
       const cat = await getCategoryById(c.parentId);
