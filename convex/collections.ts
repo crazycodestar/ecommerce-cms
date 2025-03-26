@@ -12,7 +12,6 @@ import { slugify } from "./lib/slugify";
 export const Collections = Table("collections", {
   name: v.string(),
   slug: v.string(),
-  description: v.optional(v.string()),
   storeId: v.id("stores"),
 });
 
