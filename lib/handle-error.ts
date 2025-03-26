@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import { toast } from "sonner";
 import * as z from "zod";
 
@@ -9,6 +10,8 @@ export function getErrorMessage(err: unknown) {
     // FIXME:
     // } else if (isClerkAPIResponseError(err)) {
     //   return err.errors[0]?.longMessage ?? unknownError;
+  } else if (err instanceof ConvexError) {
+    return err.data.message;
   } else if (err instanceof Error) {
     return err.message;
   } else {

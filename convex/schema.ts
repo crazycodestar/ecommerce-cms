@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { Table } from "convex-helpers/server";
 import { z } from "zod";
+import { Collections, CollectionsOnProducts } from "./collections";
 
 export const Users = Table("users", {
   id: v.string(),
@@ -226,4 +227,11 @@ export default defineSchema({
   properties: Properties.table.index("by_storeId", ["storeId"]),
   metadatas: Metadatas.table.index("by_storeId", ["storeId"]),
   metadataPresets: MetadataPresets.table.index("by_storeId", ["storeId"]),
+  collections: Collections.table
+    .index("by_storeId", ["storeId"])
+    .index("by_slug", ["slug"])
+    .index("by_storeId_slug", ["storeId", "slug"]),
+  collectionsOnProducts: CollectionsOnProducts.table
+    .index("by_collectionId_productId", ["collectionId", "productId"])
+    .index("by_productId", ["productId"]),
 });

@@ -105,7 +105,9 @@ function EditProduct({
             options: v.options.map((o) => ({
               name: o.name,
               price: o.price,
-              imageId: o.imageId as unknown as Id<"_storage">,
+              ...(o.imageId && {
+                imageId: o.imageId as unknown as Id<"_storage">,
+              }),
               stock: o.stock,
               isUnspecified: o.isUnspecified,
             })),

@@ -105,11 +105,23 @@ export const getProductsByStoreSlug = query({
       products.map(async (product) => {
         const store = await ctx.db.get(product.storeId);
         if (!store) return;
+
         const owner = await ctx.db
           .query("users")
           .withIndex("by_tokenIdentifier", (q) => q.eq("id", store.owner))
           .unique();
         if (!owner) return;
+
+        const collectionsOnProduct = await ctx.db
+          .query("collectionsOnProducts")
+          .withIndex("by_productId", (q) => q.eq("productId", product._id))
+          .collect();
+        const collections = await Promise.all(
+          collectionsOnProduct.map(async (c) => {
+            const collection = await ctx.db.get(c.collectionId);
+            return collection;
+          })
+        );
 
         return {
           ...product,
@@ -117,6 +129,7 @@ export const getProductsByStoreSlug = query({
           imageUrls: await Promise.all(
             product.images.map((image) => ctx.storage.getUrl(image))
           ),
+          collections,
         };
       })
     );
