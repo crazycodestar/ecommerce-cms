@@ -20,6 +20,7 @@ import { ProductImagePicker } from "./image-picker";
 import { PropertyFieldArray } from "./property-form";
 import { VariantForm } from "./variant-form";
 import { MetadataForm } from "./metadata-form";
+import { Tiptap } from "../tiptap";
 
 interface ProductFormProps {
   onSubmit: (values: ProductSchema) => void;
@@ -105,6 +106,7 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
                 </FormItem>
               )}
             />
+            <Tiptap />
             {/* <FormField
               control={form.control}
               name="description"
