@@ -148,7 +148,7 @@ const Temp2 = <T extends TypedFieldValues>({
               onClick={() =>
                 append({
                   // @ts-expect-error fix later
-                  imageId: "",
+                  // imageId: undefined,
                   isUnspecified: false,
                   name: "",
                   price: 0,
