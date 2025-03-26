@@ -32,6 +32,7 @@ export default function ProductPage() {
         // FIXME: use a specified mainImage
         mainImage: p.imageUrls[0]!,
         name: p.name,
+        collections: p.collections,
       })
     );
 
@@ -43,7 +44,7 @@ export default function ProductPage() {
           <Link href={`./products/add-product`}>Add Product</Link>
         </Button>
       </div>
-      {data ? <DataTable columns={columns} data={data!} /> : <TableLoader />}
+      {data ? <DataTable columns={columns} data={data} /> : <TableLoader />}
     </div>
   );
 }

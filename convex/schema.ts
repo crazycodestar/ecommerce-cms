@@ -231,8 +231,7 @@ export default defineSchema({
     .index("by_storeId", ["storeId"])
     .index("by_slug", ["slug"])
     .index("by_storeId_slug", ["storeId", "slug"]),
-  collectionsOnProducts: CollectionsOnProducts.table.index(
-    "by_collectionId_productId",
-    ["collectionId", "productId"]
-  ),
+  collectionsOnProducts: CollectionsOnProducts.table
+    .index("by_collectionId_productId", ["collectionId", "productId"])
+    .index("by_productId", ["productId"]),
 });

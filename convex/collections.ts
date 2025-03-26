@@ -21,7 +21,7 @@ export const CollectionsOnProducts = Table("collectionsOnProducts", {
 });
 
 // Collections
-export const createCollections = mutation({
+export const createCollection = mutation({
   args: omit(Collections.withoutSystemFields, ["storeId", "slug"]),
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
@@ -55,8 +55,7 @@ export const getCollectionsByStoreId = query({
       ctx,
       tokenIdentifier
     );
-    if (store._id !== storeId)
-      throw new UnauthorizedError("Unauthorized access");
+    if (store._id !== storeId) return [];
 
     // query
     return ctx.db
@@ -184,11 +183,12 @@ export const addProductToCollection = mutation({
   },
 });
 
-export const getProductsByCollectionSlug = mutation({
+export const getProductsByCollectionId = query({
   args: {
-    collectionSlug: v.string(),
+    collectionId: v.id("collections"),
+    // collectionSlug: v.string(),
   },
-  handler: async (ctx, { collectionSlug }) => {
+  handler: async (ctx, { collectionId }) => {
     // authorization
     const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
     const store = await getStoreByTokenIdentifierWithAuthError(
@@ -197,14 +197,8 @@ export const getProductsByCollectionSlug = mutation({
     );
 
     // assert collection is store's
-    const collection = await ctx.db
-      .query("collections")
-      .withIndex("by_storeId_slug", (q) =>
-        q.eq("storeId", store._id).eq("slug", collectionSlug)
-      )
-      .unique();
-    if (!collection || collection.storeId !== store._id)
-      throw new NotFoundError("collection not found");
+    const collection = await ctx.db.get(collectionId);
+    if (!collection || collection.storeId !== store._id) return [];
 
     // query products in collection
     const collectionOnproducts = await ctx.db
@@ -217,7 +211,10 @@ export const getProductsByCollectionSlug = mutation({
     return Promise.all(
       collectionOnproducts.map(async (cop) => {
         const product = await ctx.db.get(cop.productId);
-        if (!product) return null;
+        if (!product) {
+          console.error("product not found (critical): ", product);
+          return null;
+        }
 
         const mainImage = await ctx.storage.getUrl(product.images[0]);
         return { ...product, mainImage };
