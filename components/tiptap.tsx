@@ -1,18 +1,13 @@
 "use client";
 
-import Placeholder from "@tiptap/extension-placeholder";
 import {
   TooltipContent as TooltipContentPrimitive,
   Tooltip as TooltipPrimitive,
   TooltipProvider,
   TooltipTrigger as TooltipTriggerPrimitive,
 } from "@/components/ui/tooltip";
-import {
-  EditorContent,
-  EditorProvider,
-  useCurrentEditor,
-  useEditor,
-} from "@tiptap/react";
+import Placeholder from "@tiptap/extension-placeholder";
+import { EditorProvider, useCurrentEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
@@ -30,8 +25,8 @@ import {
 import React from "react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Button } from "./ui/button";
 import { Control, FieldValues, Path, useController } from "react-hook-form";
+import { Button } from "./ui/button";
 
 interface TooltipInterface
   extends React.ComponentProps<typeof TooltipPrimitive> {
@@ -253,38 +248,6 @@ const extensions = [
     },
   }),
 ];
-
-const content = `
-<h2>
-  Hi there,
-</h2>
-<p>
-  this is a <em>basic</em> example of <strong>Tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists:
-</p>
-<ul>
-  <li>
-    That’s a bullet list with one …
-  </li>
-  <li>
-    … or two list items.
-  </li>
-</ul>
-<p>
-  Isn’t that great? And all of that is editable. But wait, there’s more. Let’s try a code block:
-</p>
-<pre><code class="language-css">body {
-  display: none;
-}</code></pre>
-<p>
-  I know, I know, this is impressive. It’s only the tip of the iceberg though. Give it a try and click a little bit around. Don’t forget to check the other examples too.
-</p>
-<blockquote>
-  Wow, that’s amazing. Good work, boy! 👏
-  <br />
-  — Mom
-</blockquote>
-`;
-
 interface RichTextFormInputProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
@@ -300,11 +263,11 @@ export const RichTextFormInput = <T extends FieldValues>({
     name,
   });
 
+  const value = React.useRef(field.value);
   React.useEffect(() => {
-    if (editor) {
-      editor.commands.setContent(field.value);
-    }
-  }, []);
+    if (!editor) return;
+    editor.commands.setContent(value.current);
+  }, [editor]);
 
   editor?.on("update", () => {
     const isEmpty = !editor.state.doc.textContent.length;
@@ -320,7 +283,6 @@ export const Tiptap = ({ children }: React.PropsWithChildren) => {
       <EditorProvider
         slotBefore={<MenuBar />}
         extensions={extensions}
-        // content={"content"}
         editorContainerProps={{ className: "p-4 editor-container" }}
       >
         {children}

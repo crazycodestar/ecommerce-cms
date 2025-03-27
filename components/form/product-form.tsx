@@ -109,7 +109,7 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
             <FormField
               control={form.control}
               name="additionalInformation"
-              render={({ field: { onChange, ...field } }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Additional Information</FormLabel>
                   <FormControl>
