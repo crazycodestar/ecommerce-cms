@@ -85,6 +85,7 @@ export const productSchema = z
         message: "Product name must be at least 2 characters.",
       })
       .max(160, { message: "Product name must be at most 160 characters" }),
+    additionalInformation: z.string().optional(),
     price: z.coerce
       .number()
       .positive({ message: "Price must be a positive number" }),

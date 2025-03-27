@@ -88,10 +88,10 @@ export const columns: ColumnDef<Product>[] = [
       const price = row.getValue("price") as Product["price"];
       return (
         <p>
-          ₦
-          {price
-            .toLocaleString("en-US", { style: "currency", currency: "NGN" })
-            .replace("NGN", "")}
+          {price.toLocaleString("en-NG", {
+            style: "currency",
+            currency: "NGN",
+          })}
         </p>
       );
     },
