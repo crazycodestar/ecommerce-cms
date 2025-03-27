@@ -151,8 +151,8 @@ export const Products = Table("products", {
   name: v.string(),
   additionalInformation: v.optional(v.string()),
   price: v.number(),
-  tariff: v.optional(v.number()),
   stock: v.number(),
+  unitType: v.id("unitTypes"),
   isUnspecified: v.boolean(),
   categoryId: v.id("categories"),
   variants: v.optional(
@@ -163,7 +163,6 @@ export const Products = Table("products", {
           v.object({
             name: v.string(),
             price: v.number(),
-            tariff: v.optional(v.number()),
             imageId: v.optional(v.id("_storage")),
             stock: v.number(),
             isUnspecified: v.boolean(),
@@ -179,6 +178,12 @@ export const Products = Table("products", {
     })
   ),
   metadataIds: v.optional(v.array(v.id("metadatas"))),
+});
+
+// UnitType schema
+export const UnitTypes = Table("unitTypes", {
+  name: v.string(),
+  storeId: v.id("stores"),
 });
 
 // Metadata schema
@@ -235,4 +240,5 @@ export default defineSchema({
   collectionsOnProducts: CollectionsOnProducts.table
     .index("by_collectionId_productId", ["collectionId", "productId"])
     .index("by_productId", ["productId"]),
+  unitTypes: UnitTypes.table.index("by_storeId", ["storeId"]),
 });

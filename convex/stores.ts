@@ -61,9 +61,15 @@ export const createStore = mutation({
       .unique();
     if (existingSlug) throw new ConflictError("Slug already taken");
 
-    await ctx.db.insert("stores", {
+    const storeId = await ctx.db.insert("stores", {
       ...args,
       owner: tokenIdentifier,
+    });
+
+    // Add "unit" unit type for store
+    await ctx.db.insert("unitTypes", {
+      name: "Unit",
+      storeId,
     });
 
     return args.slug;
