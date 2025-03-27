@@ -1,6 +1,9 @@
 "use client";
 
-import { ProductForm } from "@/components/form/product-form";
+import {
+  formatProductFromForm,
+  ProductForm,
+} from "@/components/form/product-form";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -87,33 +90,8 @@ function EditProduct({
       try {
         await updateProduct({
           productId: id,
-          isUnspecified: values.isUnspecified,
-          name: values.name,
-          additionalInformation: values.additionalInformation,
-          price: values.price,
-          stock: values.stock,
-          images: values.images.map(
-            (i) => i.imageId as unknown as Id<"_storage">
-          ),
           storeId,
-          categoryId: values.categoryId as unknown as Id<"categories">,
-          properties: values.properties.map((rp) => ({
-            propertyId: rp.property.key as unknown as Id<"properties">,
-            value: rp.value,
-          })),
-          variants: values.variants.map((v) => ({
-            name: v.name,
-            options: v.options.map((o) => ({
-              name: o.name,
-              price: o.price,
-              ...(o.imageId && {
-                imageId: o.imageId as unknown as Id<"_storage">,
-              }),
-              stock: o.stock,
-              isUnspecified: o.isUnspecified,
-            })),
-          })),
-          metadataIds: values.metadatas.map((m) => m._id as Id<"metadatas">),
+          ...formatProductFromForm(values),
         });
 
         toast.success("Product Updated Successfully");

@@ -90,6 +90,7 @@ export const productSchema = z
       .number()
       .positive({ message: "Price must be a positive number" }),
     stock: z.coerce.number(),
+    unitType: z.string().min(1, { message: "Unit Type is Required" }),
     isUnspecified: z.boolean(),
     categoryId: z.string().min(1, { message: "Category is Required" }),
     // FIXME: Change to just properties -> we are allowing them put and remove properties so "requiredProperties" doesn't really work for this field

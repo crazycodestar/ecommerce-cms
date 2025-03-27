@@ -1,6 +1,9 @@
 "use client";
 
-import { ProductForm } from "@/components/form/product-form";
+import {
+  formatProductFromForm,
+  ProductForm,
+} from "@/components/form/product-form";
 import { type ProductSchema, productSchema } from "@/lib/validations/product";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
@@ -38,33 +41,8 @@ export default function ProductsPage() {
       try {
         if (!store) throw new Error("No store");
         await createProduct({
-          isUnspecified: values.isUnspecified,
-          name: values.name,
-          additionalInformation: values.additionalInformation,
-          price: values.price,
-          stock: values.stock,
-          images: values.images.map(
-            (i) => i.imageId as unknown as Id<"_storage">
-          ),
           storeId: store._id,
-          categoryId: values.categoryId as unknown as Id<"categories">,
-          properties: values.properties.map((p) => ({
-            propertyId: p.property.key as unknown as Id<"properties">,
-            value: p.value,
-          })),
-          variants: values.variants.map((v) => ({
-            name: v.name,
-            options: v.options.map((o) => ({
-              name: o.name,
-              price: o.price,
-              ...(o.imageId && {
-                imageId: o.imageId as unknown as Id<"_storage">,
-              }),
-              stock: o.stock,
-              isUnspecified: o.isUnspecified,
-            })),
-          })),
-          metadataIds: values.metadatas.map((m) => m._id as Id<"metadatas">),
+          ...formatProductFromForm(values),
         });
 
         toast.success("Product Created Successfully");

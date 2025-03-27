@@ -3,7 +3,7 @@ import { api } from "./_generated/api";
 import { DataModel, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { NotFoundError, UnauthorizedError } from "./error";
-import { Categories, Metadatas, Products } from "./schema";
+import { Categories, Metadatas, Products, UnitTypes } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifier,
@@ -125,7 +125,6 @@ export const getProductsByStoreSlug = query({
 
         return {
           ...product,
-          price: product.price + (product.tariff ?? 0),
           imageUrls: await Promise.all(
             product.images.map((image) => ctx.storage.getUrl(image))
           ),
@@ -445,4 +444,34 @@ export const getPropertyById = query({
   handler: (ctx, { id }) => {
     return ctx.db.get(id);
   },
+});
+
+// Unit Types
+export const createUnitType = mutation({
+  args: omit(UnitTypes.withoutSystemFields, ["storeId"]),
+  handler: async (ctx, { name }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    return ctx.db.insert("unitTypes", {
+      name,
+      storeId: store._id,
+    });
+  },
+});
+
+export const getUnitTypes = query(async (ctx) => {
+  const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+  const store = await getStoreByTokenIdentifierWithAuthError(
+    ctx,
+    tokenIdentifier
+  );
+
+  return ctx.db
+    .query("unitTypes")
+    .filter((q) => q.eq(q.field("storeId"), store._id))
+    .collect();
 });

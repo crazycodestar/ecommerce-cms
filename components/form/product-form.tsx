@@ -21,6 +21,7 @@ import { PropertyFieldArray } from "./property-form";
 import { VariantForm } from "./variant-form";
 import { MetadataForm } from "./metadata-form";
 import { RichTextFormInput, Tiptap } from "../tiptap";
+import { UnitTypeform } from "./unit-type-form";
 
 interface ProductFormProps {
   onSubmit: (values: ProductSchema) => void;
@@ -154,12 +155,15 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
                   <FormItem>
                     <FormLabel>Stock</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        disabled={values.isUnspecified}
-                        placeholder="Enter stock quantity"
-                        {...field}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          disabled={values.isUnspecified}
+                          placeholder="Enter stock quantity"
+                          {...field}
+                        />
+                        <UnitTypeform control={form.control} name="unitType" />
+                      </div>
                     </FormControl>
                     <FormDescription>
                       Enter the number of items available.
@@ -287,3 +291,31 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
     </Form>
   );
 }
+
+export const formatProductFromForm = (values: ProductSchema) => ({
+  isUnspecified: values.isUnspecified,
+  name: values.name,
+  additionalInformation: values.additionalInformation,
+  price: values.price,
+  stock: values.stock,
+  unitType: values.unitType as Id<"unitTypes">,
+  images: values.images.map((i) => i.imageId as Id<"_storage">),
+  categoryId: values.categoryId as Id<"categories">,
+  properties: values.properties.map((rp) => ({
+    propertyId: rp.property.key as Id<"properties">,
+    value: rp.value,
+  })),
+  variants: values.variants.map((v) => ({
+    name: v.name,
+    options: v.options.map((o) => ({
+      name: o.name,
+      price: o.price,
+      ...(o.imageId && {
+        imageId: o.imageId as Id<"_storage">,
+      }),
+      stock: o.stock,
+      isUnspecified: o.isUnspecified,
+    })),
+  })),
+  metadataIds: values.metadatas.map((m) => m._id as Id<"metadatas">),
+});
