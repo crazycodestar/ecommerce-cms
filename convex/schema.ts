@@ -149,6 +149,7 @@ export const Products = Table("products", {
   storeId: v.id("stores"),
   images: v.array(v.id("_storage")),
   name: v.string(),
+  additionalInformation: v.optional(v.string()),
   price: v.number(),
   tariff: v.optional(v.number()),
   stock: v.number(),

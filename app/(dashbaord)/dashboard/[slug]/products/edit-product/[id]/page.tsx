@@ -89,6 +89,7 @@ function EditProduct({
           productId: id,
           isUnspecified: values.isUnspecified,
           name: values.name,
+          additionalInformation: values.additionalInformation,
           price: values.price,
           stock: values.stock,
           images: values.images.map(

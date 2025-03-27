@@ -20,7 +20,7 @@ import { ProductImagePicker } from "./image-picker";
 import { PropertyFieldArray } from "./property-form";
 import { VariantForm } from "./variant-form";
 import { MetadataForm } from "./metadata-form";
-import { Tiptap } from "../tiptap";
+import { RichTextFormInput, Tiptap } from "../tiptap";
 
 interface ProductFormProps {
   onSubmit: (values: ProductSchema) => void;
@@ -106,31 +106,24 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
                 </FormItem>
               )}
             />
-            <Tiptap />
-            {/* <FormField
+            <FormField
               control={form.control}
-              name="description"
+              name="additionalInformation"
               render={({ field: { onChange, ...field } }) => (
                 <FormItem>
-                  <FormLabel className="flex justify-between">
-                    <span>Product Description</span>
-                    <span>
-                      {400 - (values.name?.length || 0)} characters remaining
-                    </span>
-                  </FormLabel>
+                  <FormLabel>Additional Information</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter product description"
-                      onChange={(e) =>
-                        onChange(e.currentTarget.value.slice(0, 400))
-                      }
-                      {...field}
-                    />
+                    <Tiptap>
+                      <RichTextFormInput
+                        control={form.control}
+                        name="additionalInformation"
+                      />
+                    </Tiptap>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
-            /> */}
+            />
             <FormField
               control={form.control}
               name="price"

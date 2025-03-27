@@ -1,12 +1,18 @@
 "use client";
 
+import Placeholder from "@tiptap/extension-placeholder";
 import {
   TooltipContent as TooltipContentPrimitive,
   Tooltip as TooltipPrimitive,
   TooltipProvider,
   TooltipTrigger as TooltipTriggerPrimitive,
 } from "@/components/ui/tooltip";
-import { EditorProvider, useCurrentEditor } from "@tiptap/react";
+import {
+  EditorContent,
+  EditorProvider,
+  useCurrentEditor,
+  useEditor,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
@@ -25,6 +31,7 @@ import React from "react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "./ui/button";
+import { Control, FieldValues, Path, useController } from "react-hook-form";
 
 interface TooltipInterface
   extends React.ComponentProps<typeof TooltipPrimitive> {
@@ -232,6 +239,9 @@ const MenuBar = () => {
 
 const extensions = [
   //   Color.configure({ types: [TextStyle.name, ListItem.name] }),
+  Placeholder.configure({
+    placeholder: "Write Something ...",
+  }),
   StarterKit.configure({
     bulletList: {
       keepMarks: true,
@@ -275,15 +285,46 @@ const content = `
 </blockquote>
 `;
 
-export const Tiptap = () => {
+interface RichTextFormInputProps<T extends FieldValues> {
+  control: Control<T>;
+  name: Path<T>;
+}
+
+export const RichTextFormInput = <T extends FieldValues>({
+  control,
+  name,
+}: RichTextFormInputProps<T>) => {
+  const { editor } = useCurrentEditor();
+  const { field } = useController({
+    control,
+    name,
+  });
+
+  React.useEffect(() => {
+    if (editor) {
+      editor.commands.setContent(field.value);
+    }
+  }, []);
+
+  editor?.on("update", () => {
+    const isEmpty = !editor.state.doc.textContent.length;
+    field.onChange(isEmpty ? "" : editor.getHTML());
+  });
+
+  return null;
+};
+
+export const Tiptap = ({ children }: React.PropsWithChildren) => {
   return (
     <div className="border rounded-md">
       <EditorProvider
         slotBefore={<MenuBar />}
         extensions={extensions}
-        content={content}
+        // content={"content"}
         editorContainerProps={{ className: "p-4 editor-container" }}
-      />
+      >
+        {children}
+      </EditorProvider>
     </div>
   );
 };
