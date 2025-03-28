@@ -50,7 +50,7 @@ export const InstagramCarousel = ({
   }, [carouselApi]);
 
   return (
-    <section className="pt-10 mx-4 border-t-2 border-black">
+    <section className="pt-10 border-t-2 border-black">
       <div className="flex flex-col items-center mb-12">
         <h3 className="text-2xl font-bold text-center uppercase">{title}</h3>
         <p className="text-md text-center text-foreground/80">{description}</p>

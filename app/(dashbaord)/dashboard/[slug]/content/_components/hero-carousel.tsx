@@ -33,7 +33,7 @@ export const HeroCarousel = () => {
   }, [carouselApi]);
 
   return (
-    <div className="mx-4 relative">
+    <div className="relative">
       <Carousel setApi={setCarouselApi}>
         <CarouselContent>
           {Array(3)

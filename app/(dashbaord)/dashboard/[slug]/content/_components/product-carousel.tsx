@@ -31,7 +31,6 @@ const ProductCarousel = ({
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     if (!carouselApi) {
@@ -40,7 +39,6 @@ const ProductCarousel = ({
     const updateSelection = () => {
       setCanScrollPrev(carouselApi.canScrollPrev());
       setCanScrollNext(carouselApi.canScrollNext());
-      setCurrentSlide(carouselApi.selectedScrollSnap());
     };
     updateSelection();
     carouselApi.on("select", updateSelection);
@@ -50,7 +48,7 @@ const ProductCarousel = ({
   }, [carouselApi]);
 
   return (
-    <section className="mx-4">
+    <section>
       <div className="flex flex-col gap-2 mb-6">
         <div className="h-6 w-[200px] bg-muted rounded-xs" />
         <div className="h-6 w-[400px] bg-muted rounded-xs" />

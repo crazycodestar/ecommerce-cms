@@ -85,7 +85,7 @@ export function CollectionsCarousel() {
   ];
 
   return (
-    <div className="mx-4">
+    <div>
       <SplitCarousel
         slides={slides}
         className="bg-muted"
