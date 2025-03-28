@@ -17,17 +17,20 @@ export default function ContentPage() {
   return (
     <div className="container mx-auto pt-8">
       <Browser>
-        {/* <TemplateNavBar /> */}
         <HeroCarousel />
+        <div className="h-8 w-full" />
         <ProductCarousel
           title="Trending Products"
           description="The most-viewed items by shoppers in your area"
         />
+        <div className="h-8 w-full" />
         <InstagramCarousel
           title="Currently Loving"
           description="Explore favorite looks from Instagram. Tag @Nordstrom to show us your finds."
         />
+        <div className="h-8 w-full" />
         <ShopByCategory title="shop by category" />
+        <div className="h-8 w-full" />
         <CollectionsCarousel />
       </Browser>
     </div>

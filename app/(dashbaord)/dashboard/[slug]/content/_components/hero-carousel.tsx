@@ -55,7 +55,7 @@ export const HeroCarousel = () => {
           carouselApi?.scrollPrev();
         }}
         disabled={!canScrollPrev}
-        className="disabled:pointer-events-auto md:flex absolute h-[calc(100%_-_32px)] top-0 rounded-none my-4 hover:bg-black/50"
+        className="disabled:pointer-events-auto md:flex absolute h-full top-0 rounded-none hover:bg-black/50"
       >
         <ChevronLeft className="size-5" />
       </Button>
@@ -66,7 +66,7 @@ export const HeroCarousel = () => {
           carouselApi?.scrollNext();
         }}
         disabled={!canScrollNext}
-        className="disabled:pointer-events-auto md:flex absolute h-[calc(100%_-_32px)] top-0 rounded-none my-4 right-4 hover:bg-black/50"
+        className="disabled:pointer-events-auto md:flex absolute h-full top-0 rounded-none right-0 hover:bg-black/50"
       >
         <ChevronRight className="size-5" />
       </Button>

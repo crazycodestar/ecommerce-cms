@@ -32,7 +32,7 @@ export function CollectionsCarousel() {
             whole wardrobe, our experts are here to help you look great—and feel
             amazing.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
             <Button variant="default">Explore Styling Services</Button>
             <Button variant="outline">Book an Appointment</Button>
           </div>
@@ -54,7 +54,7 @@ export function CollectionsCarousel() {
             lightweight fabrics perfect for the warmer days ahead. Refresh your
             wardrobe with our curated selection.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
             <Button variant="default">Shop Collection</Button>
             <Button variant="outline">View Lookbook</Button>
           </div>
