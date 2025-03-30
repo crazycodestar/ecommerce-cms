@@ -77,7 +77,7 @@ async function getRichProduct(ctx: QueryCtx, id: Id<"products">) {
   return richProduct;
 }
 
-export const getProductsById = query({
+export const getProductsByIds = query({
   args: {
     ids: v.array(v.id("products")),
   },
