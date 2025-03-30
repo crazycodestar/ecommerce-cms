@@ -54,7 +54,7 @@ export const Users = Table("users", {
 
   // Metadata fields
   private_metadata: v.object({}),
-  public_metadata: v.object({}),
+  // public_metadata: v.object({}),
   unsafe_metadata: v.object({}),
 });
 
@@ -102,7 +102,7 @@ export const userSchema = z.object({
 
   // Metadata fields
   private_metadata: z.record(z.any()),
-  public_metadata: z.record(z.any()),
+  // public_metadata: z.record(z.any()),
   unsafe_metadata: z.record(z.any()),
 });
 
