@@ -106,7 +106,7 @@ export function ContentLayout({
     });
 
     return () => subscription.unsubscribe();
-  }, [form, form.watch]);
+  }, [defaultValues, form, form.watch]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -117,7 +117,7 @@ export function ContentLayout({
   const updateContent = useMutation(api.contents.updateContents);
   const handleSubmit = (data: ContentFormSchema) => {
     startTransition(async () => {
-      const { data: res, error } = await tryCatch(
+      const { error } = await tryCatch(
         updateContent({
           // @ts-expect-error undefined error would never be hit
           contents: data.contents.map(

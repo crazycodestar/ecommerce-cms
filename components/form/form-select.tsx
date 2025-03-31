@@ -1,4 +1,3 @@
-import { Input } from "../ui/input";
 import {
   FormControl,
   FormDescription,
@@ -7,8 +6,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
-import type { Control, FieldValues, Path } from "react-hook-form";
 import {
   Select,
   SelectContent,
@@ -16,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import type { Control, FieldValues, Path } from "react-hook-form";
 
 interface FormInputProps<T extends FieldValues> {
   control: Control<T>;

@@ -1,14 +1,10 @@
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
+import { MinusCircle, PlusCircle } from "lucide-react";
 import { useFieldArray, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
+import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { FormInput } from "./form-input";
 import {
@@ -18,11 +14,9 @@ import {
   FormSelectTrigger,
   FormSelectValue,
 } from "./form-select";
-import { ImagePicker } from "./image-array-form";
-import { Button } from "../ui/button";
-import { MinusCircle, PlusCircle } from "lucide-react";
-import { ImageUploader } from "./image-uploader";
 import { FormTextArea } from "./form-text-area";
+import { ImagePicker } from "./image-array-form";
+import { ImageUploader } from "./image-uploader";
 
 const carouselSchema = z.object({
   name: z.literal("carousel"),

@@ -1,25 +1,24 @@
 "use client";
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
+  CarouselApi,
   CarouselContent,
   CarouselItem,
-  CarouselApi,
 } from "@/components/ui/carousel";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { useQuery } from "convex/react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "convex/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import React from "react";
 
 export const HeroCarousel = ({ imageIds }: { imageIds: Id<"_storage">[] }) => {
   const [carouselApi, setCarouselApi] = React.useState<CarouselApi>();
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
-  const [currentSlide, setCurrentSlide] = React.useState(0);
 
   React.useEffect(() => {
     if (!carouselApi) {
@@ -28,7 +27,6 @@ export const HeroCarousel = ({ imageIds }: { imageIds: Id<"_storage">[] }) => {
     const updateSelection = () => {
       setCanScrollPrev(carouselApi.canScrollPrev());
       setCanScrollNext(carouselApi.canScrollNext());
-      setCurrentSlide(carouselApi.selectedScrollSnap());
     };
     updateSelection();
     carouselApi.on("select", updateSelection);

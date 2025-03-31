@@ -8,20 +8,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  useFormField,
 } from "@/components/ui/form";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { tryCatch } from "@/lib/try-catch";
 import { useMutation, useQuery } from "convex/react";
 import { Loader2, Upload, X } from "lucide-react";
-import React, { useState } from "react";
+import Image from "next/image";
+import React from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Control,
+  ControllerRenderProps,
   FieldValues,
   Path,
-  useController,
   useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
@@ -45,7 +45,11 @@ export function ImageUploader<T extends FieldValues>({
   const generateUploadUrl = useMutation(api.contents.generateUploadUrl);
   const [isUploading, startUploading] = React.useTransition();
   // Custom image upload field
-  const ImageUploadField = ({ field }: { field: any }) => {
+  const ImageUploadField = ({
+    field,
+  }: {
+    field: ControllerRenderProps<T, Path<T>>;
+  }) => {
     async function uploadImage(file: File) {
       startUploading(async () => {
         const { data: imageUrl, error } = await tryCatch(generateUploadUrl());
@@ -123,10 +127,12 @@ export function ImageUploader<T extends FieldValues>({
           </div>
         ) : (
           <div className="relative rounded-lg overflow-hidden border border-border">
-            <img
+            <Image
               src={preview || "/placeholder.svg"}
+              height={40}
+              width={80}
               alt="Preview"
-              className="w-full h-48 object-cover"
+              className="w-full h-40 object-contain"
             />
             <Button
               type="button"

@@ -11,29 +11,21 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import Image from "next/image";
-import React, { useState } from "react";
+import { useState } from "react";
 import type { DropzoneOptions } from "react-dropzone";
 import { UseFieldArrayReturn } from "react-hook-form";
-import * as z from "zod";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Loader, Trash2 } from "lucide-react";
 
-const imageSchema = z.object({
-  imageIds: z.array(
-    z.object({
-      imageId: z.string(),
-    })
-  ),
-});
-
+type ImageSchema = {
+  imageIds: {
+    imageId: string;
+  }[];
+};
 interface ImagePickerProps {
-  fieldArray: UseFieldArrayReturn<
-    z.infer<typeof imageSchema>,
-    "imageIds",
-    "id"
-  >;
+  fieldArray: UseFieldArrayReturn<ImageSchema, "imageIds", "id">;
   containerClassName?: string;
   imageClassName?: string;
 }

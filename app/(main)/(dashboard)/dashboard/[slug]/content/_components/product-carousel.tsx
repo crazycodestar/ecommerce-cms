@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,9 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { usePaginatedQuery } from "convex/react";
 import Image from "next/image";
 
 export interface Gallery4Item {
@@ -35,7 +35,7 @@ const ProductCarousel = ({
   collectionId,
 }: Gallery4Props) => {
   // TODO: move pagination into a reusable hook and add support for loadmore on intersection observer
-  const { results, status, loadMore } = usePaginatedQuery(
+  const { results, status } = usePaginatedQuery(
     api.collections.getProductsByCollectionId,
     { collectionId },
     { initialNumItems: 10 }

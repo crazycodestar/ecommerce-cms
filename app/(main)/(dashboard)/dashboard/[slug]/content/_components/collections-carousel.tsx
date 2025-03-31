@@ -3,19 +3,12 @@
 import { Button } from "@/components/ui/button";
 import type React from "react";
 
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  type ReactNode,
-} from "react";
-import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Id } from "@/convex/_generated/dataModel";
-import { ContentImage } from "./content-image";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ContentImage } from "./content-image";
 
 export function CollectionsCarousel({ slides }: { slides: CarouselSlide[] }) {
   // Sample slides for the carousel
@@ -58,16 +51,12 @@ function SplitCarousel({
   slides,
   autoSlideInterval = 5000,
   showArrows = true,
-  showDots = true,
   transitionDuration = 500,
   transitionTimingFunction = "ease-in-out",
   className = "",
   imageContainerClassName = "",
   imageClassName = "",
   contentContainerClassName = "",
-  arrowClassName = "",
-  dotClassName = "",
-  activeDotClassName = "",
 }: SplitCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -83,10 +72,6 @@ function SplitCarousel({
       (prevIndex) => (prevIndex - 1 + slides.length) % slides.length
     );
   }, [slides.length]);
-
-  const goToSlide = useCallback((index: number) => {
-    setCurrentIndex(index);
-  }, []);
 
   const resetAutoPlayTimer = useCallback(() => {
     if (autoPlayTimeoutRef.current) {
