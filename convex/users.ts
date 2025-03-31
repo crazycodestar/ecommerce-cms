@@ -139,13 +139,16 @@ export const processOnboarding = internalMutation({
 });
 
 export const submitOnboarding = action({
-  args: omit(Stores.withoutSystemFields, ["owner"]),
+  args: omit(Stores.withoutSystemFields, ["owner", "contents"]),
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifier(ctx);
     if (!tokenIdentifier) throw new UnauthorizedError();
 
     try {
-      await ctx.runMutation(internal.users.processOnboarding, args);
+      await ctx.runMutation(internal.users.processOnboarding, {
+        ...args,
+        contents: [],
+      });
       const res = await clerkClient().users.updateUser(tokenIdentifier, {
         publicMetadata: {
           onboardingComplete: true,

@@ -14,9 +14,11 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as collections from "../collections.js";
+import type * as contents from "../contents.js";
 import type * as context from "../context.js";
 import type * as error from "../error.js";
 import type * as http from "../http.js";
+import type * as lib_image from "../lib/image.js";
 import type * as lib_slugify from "../lib/slugify.js";
 import type * as products from "../products.js";
 import type * as stores from "../stores.js";
@@ -33,9 +35,11 @@ import type * as utils from "../utils.js";
  */
 declare const fullApi: ApiFromModules<{
   collections: typeof collections;
+  contents: typeof contents;
   context: typeof context;
   error: typeof error;
   http: typeof http;
+  "lib/image": typeof lib_image;
   "lib/slugify": typeof lib_slugify;
   products: typeof products;
   stores: typeof stores;

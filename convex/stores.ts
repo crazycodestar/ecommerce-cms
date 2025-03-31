@@ -2,7 +2,11 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
 import { Stores } from "./schema";
-import { getTokenIdentifier } from "./utils";
+import {
+  getStoreByTokenIdentifierWithAuthError,
+  getTokenIdentifier,
+  getTokenIdentifierWithAuthError,
+} from "./utils";
 import { omit } from "es-toolkit";
 
 export const getMyStore = query({
@@ -40,8 +44,26 @@ export const getStore = query({
   },
 });
 
+export const getStoreCategories = query({
+  handler: async (ctx) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    const categories = await ctx.db
+      .query("categories")
+      .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
+      .filter((q) => q.eq(q.field("parentId"), undefined))
+      .collect();
+
+    return categories;
+  },
+});
+
 export const createStore = mutation({
-  args: omit(Stores.withoutSystemFields, ["owner"]),
+  args: omit(Stores.withoutSystemFields, ["owner", "contents"]),
 
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifier(ctx);
@@ -64,6 +86,7 @@ export const createStore = mutation({
     const storeId = await ctx.db.insert("stores", {
       ...args,
       owner: tokenIdentifier,
+      contents: [],
     });
 
     // Add "unit" unit type for store

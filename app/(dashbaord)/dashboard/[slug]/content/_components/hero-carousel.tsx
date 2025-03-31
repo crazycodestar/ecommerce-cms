@@ -9,8 +9,13 @@ import {
   CarouselApi,
 } from "@/components/ui/carousel";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 
-export const HeroCarousel = () => {
+export const HeroCarousel = ({ imageIds }: { imageIds: Id<"_storage">[] }) => {
   const [carouselApi, setCarouselApi] = React.useState<CarouselApi>();
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
@@ -36,16 +41,14 @@ export const HeroCarousel = () => {
     <div className="relative">
       <Carousel setApi={setCarouselApi}>
         <CarouselContent>
-          {Array(3)
-            .fill("")
-            .map((_, index) => (
-              <CarouselItem
-                key={index}
-                className="w-full aspect-[5/2] bg-muted flex justify-center items-center"
-              >
-                Image {index + 1}
-              </CarouselItem>
-            ))}
+          {imageIds.map((imageId, index) => (
+            <CarouselItem
+              key={index}
+              className="w-full aspect-[5/2] bg-muted flex justify-center items-center"
+            >
+              <HeroImageItem imageId={imageId as Id<"_storage">} />
+            </CarouselItem>
+          ))}
         </CarouselContent>
       </Carousel>
       <Button
@@ -71,5 +74,21 @@ export const HeroCarousel = () => {
         <ChevronRight className="size-5" />
       </Button>
     </div>
+  );
+};
+
+const HeroImageItem = ({ imageId }: { imageId: Id<"_storage"> }) => {
+  const imageUrl = useQuery(api.contents.getImageUrl, { imageId });
+  const isPending = imageUrl === undefined;
+
+  if (isPending) return <Skeleton className="w-full aspect-[5/2]" />;
+  return (
+    <Image
+      src={imageUrl ?? "/placeholder.svg?width=500&height=200"}
+      alt="Hero Image"
+      width={500}
+      height={200}
+      className="w-full aspect-[5/2] object-contain"
+    />
   );
 };

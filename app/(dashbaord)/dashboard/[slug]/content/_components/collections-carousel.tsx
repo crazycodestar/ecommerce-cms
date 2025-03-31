@@ -13,76 +13,12 @@ import {
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Id } from "@/convex/_generated/dataModel";
+import { ContentImage } from "./content-image";
+import Link from "next/link";
 
-export function CollectionsCarousel() {
+export function CollectionsCarousel({ slides }: { slides: CarouselSlide[] }) {
   // Sample slides for the carousel
-  const slides: CarouselSlide[] = [
-    {
-      image: {
-        src: "/placeholder.svg?height=600&width=800",
-        alt: "Fashion styling service",
-        width: 800,
-        height: 600,
-      },
-      content: (
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold">Free Style Help</h2>
-          <p className="text-lg">
-            Whether you're looking for fashion advice, one perfect item or a
-            whole wardrobe, our experts are here to help you look great—and feel
-            amazing.
-          </p>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
-            <Button variant="default">Explore Styling Services</Button>
-            <Button variant="outline">Book an Appointment</Button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      image: {
-        src: "/placeholder.svg?height=600&width=800",
-        alt: "Seasonal collection",
-        width: 800,
-        height: 600,
-      },
-      content: (
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold">Spring Collection 2025</h2>
-          <p className="text-lg">
-            Discover our latest arrivals featuring vibrant colors and
-            lightweight fabrics perfect for the warmer days ahead. Refresh your
-            wardrobe with our curated selection.
-          </p>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
-            <Button variant="default">Shop Collection</Button>
-            <Button variant="outline">View Lookbook</Button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      image: {
-        src: "/placeholder.svg?height=600&width=800",
-        alt: "Personal shopping experience",
-        width: 800,
-        height: 600,
-      },
-      content: (
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold">Personal Shopping</h2>
-          <p className="text-lg">
-            Enjoy a tailored shopping experience with our personal stylists.
-            They'll help you find pieces that match your style, fit perfectly,
-            and complement your existing wardrobe.
-          </p>
-          <div className="pt-2">
-            <Button variant="default">Schedule a Session</Button>
-          </div>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div>
@@ -97,13 +33,9 @@ export function CollectionsCarousel() {
 }
 
 export interface CarouselSlide {
-  image: {
-    src: string;
-    alt: string;
-    width: number;
-    height: number;
-  };
-  content: ReactNode;
+  imageId: Id<"_storage">;
+  title: string;
+  description: string;
 }
 
 interface SplitCarouselProps {
@@ -246,12 +178,15 @@ function SplitCarousel({
           >
             {/* Image container (left side) */}
             <div className={cn("w-full md:w-1/2", imageContainerClassName)}>
-              <Image
-                src={slide.image.src || "/placeholder.svg"}
-                alt={slide.image.alt}
-                width={slide.image.width}
-                height={slide.image.height}
-                className={cn("w-full h-auto object-cover", imageClassName)}
+              <ContentImage
+                imageId={slide.imageId}
+                alt="image"
+                className={cn(
+                  "w-full aspect-square object-cover",
+                  imageClassName
+                )}
+                height={800}
+                width={800}
                 priority={index === 0}
               />
             </div>
@@ -259,11 +194,17 @@ function SplitCarousel({
             {/* Content container (right side) */}
             <div
               className={cn(
-                "w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center",
+                "w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center space-y-4",
                 contentContainerClassName
               )}
             >
-              {slide.content}
+              <h2 className="text-3xl font-bold">{slide.title}</h2>
+              <p className="text-lg">{slide.description}</p>
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
+                <Button asChild variant="link" className="px-0">
+                  <Link href="#">Explore</Link>
+                </Button>
+              </div>
             </div>
           </div>
         ))}

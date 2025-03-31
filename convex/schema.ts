@@ -1,6 +1,6 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
 import { Table } from "convex-helpers/server";
+import { defineSchema } from "convex/server";
+import { v } from "convex/values";
 import { z } from "zod";
 import { Collections, CollectionsOnProducts } from "./collections";
 
@@ -136,12 +136,73 @@ export const userCreateSchema = userSchema
   });
 export type UserCreate = z.infer<typeof userCreateSchema>;
 
+export const carousel = v.object({
+  name: v.literal("carousel"),
+  object: v.object({
+    imageIds: v.array(v.id("_storage")),
+  }),
+});
+
+export const productCarousel = v.object({
+  name: v.literal("productCarousel"),
+  object: v.object({
+    title: v.string(),
+    description: v.string(),
+    collectionId: v.id("collections"),
+  }),
+});
+
+export const banner = v.object({
+  name: v.literal("banner"),
+  object: v.object({
+    imageId: v.id("_storage"),
+    link: v.string(),
+  }),
+});
+
+export const collectionCarousel = v.object({
+  name: v.literal("collectionCarousel"),
+  object: v.object({
+    items: v.array(
+      v.object({
+        imageId: v.id("_storage"),
+        title: v.string(),
+        description: v.string(),
+        collectionId: v.id("collections"),
+      })
+    ),
+  }),
+});
+
+export const categories = v.object({
+  name: v.literal("categories"),
+  object: v.object({
+    items: v.array(
+      v.object({
+        imageId: v.id("_storage"),
+        title: v.string(),
+        categoryId: v.id("categories"),
+      })
+    ),
+  }),
+});
+
+// untion of all content types
+export const contentTypes = v.union(
+  carousel,
+  productCarousel,
+  banner,
+  collectionCarousel,
+  categories
+);
+
 // Store schema
 export const Stores = Table("stores", {
   name: v.string(),
   description: v.string(),
   owner: v.string(),
   slug: v.string(),
+  contents: v.array(contentTypes),
 });
 
 // Product Schema

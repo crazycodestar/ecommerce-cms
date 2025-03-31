@@ -8,6 +8,7 @@ import {
 } from "./utils";
 import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
 import { slugify } from "./lib/slugify";
+import { paginationOptsValidator } from "convex/server";
 
 export const Collections = Table("collections", {
   name: v.string(),
@@ -56,6 +57,23 @@ export const getCollectionsByStoreId = query({
       tokenIdentifier
     );
     if (store._id !== storeId) return [];
+
+    // query
+    return ctx.db
+      .query("collections")
+      .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
+      .collect();
+  },
+});
+
+export const getStoreCollections = query({
+  handler: async (ctx) => {
+    // authorization
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
 
     // query
     return ctx.db
@@ -186,9 +204,9 @@ export const addProductToCollection = mutation({
 export const getProductsByCollectionId = query({
   args: {
     collectionId: v.id("collections"),
-    // collectionSlug: v.string(),
+    paginationOpts: paginationOptsValidator,
   },
-  handler: async (ctx, { collectionId }) => {
+  handler: async (ctx, { collectionId, paginationOpts }) => {
     // authorization
     const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
     const store = await getStoreByTokenIdentifierWithAuthError(
@@ -198,7 +216,8 @@ export const getProductsByCollectionId = query({
 
     // assert collection is store's
     const collection = await ctx.db.get(collectionId);
-    if (!collection || collection.storeId !== store._id) return [];
+    if (!collection || collection.storeId !== store._id)
+      throw new NotFoundError("collection not found");
 
     // query products in collection
     const collectionOnproducts = await ctx.db
@@ -206,20 +225,23 @@ export const getProductsByCollectionId = query({
       .withIndex("by_collectionId_productId", (q) =>
         q.eq("collectionId", collection._id)
       )
-      .collect();
+      .paginate(paginationOpts);
 
-    return Promise.all(
-      collectionOnproducts.map(async (cop) => {
-        const product = await ctx.db.get(cop.productId);
-        if (!product) {
-          console.error("product not found (critical): ", product);
-          return null;
-        }
+    return {
+      ...collectionOnproducts,
+      page: await Promise.all(
+        collectionOnproducts.page.map(async (cop) => {
+          const product = await ctx.db.get(cop.productId);
+          if (!product) {
+            console.error("product not found (critical): ", product);
+            return null;
+          }
 
-        const mainImage = await ctx.storage.getUrl(product.images[0]);
-        return { ...product, mainImage };
-      })
-    );
+          const mainImage = await ctx.storage.getUrl(product.images[0]);
+          return { ...product, mainImage };
+        })
+      ),
+    };
   },
 });
 
