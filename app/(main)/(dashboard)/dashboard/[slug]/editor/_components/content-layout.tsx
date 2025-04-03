@@ -21,8 +21,8 @@ import { motion } from "motion/react";
 import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Banner } from "./banner";
-import { CollectionsCarousel } from "./collections-carousel";
+import { Banner } from "../../../../../../../components/editor/banner";
+import { CollectionsCarousel } from "../../../../../../../components/editor/collections-carousel";
 import {
   Edit,
   EditClose,
@@ -30,9 +30,10 @@ import {
   EditFooter,
   EditWrapper,
 } from "./edit-trigger";
-import { HeroCarousel } from "./hero-carousel";
-import { ProductCarousel } from "./product-carousel";
-import { ShopByCategory } from "./shop-by-category";
+import { HeroCarousel } from "@/components/editor/hero-carousel";
+import { ProductCarousel } from "@/components/editor/product-carousel";
+import { ShopByCategory } from "@/components/editor/shop-by-category";
+import { useParams } from "next/navigation";
 
 const useAddContentForm = (callbackfn: (data: ContentSchema) => void) => {
   const form = useForm<ContentSchema>({
@@ -78,6 +79,7 @@ export function ContentLayout({
 }: {
   defaultValues: ContentFormSchema;
 }) {
+  const { slug } = useParams<{ slug: string }>();
   const form = useForm<ContentFormSchema>({
     resolver: zodResolver(contentFormSchema),
     defaultValues,
@@ -204,6 +206,7 @@ export function ContentLayout({
   const [Open, onOpenChange] = React.useState(false);
   const handleAddContent = (data: ContentSchema) => {
     onOpenChange(false);
+    console.log("index: ", data.index);
     if (data.index === undefined || data.index === "")
       return append({ content: data });
 
@@ -220,7 +223,8 @@ export function ContentLayout({
 
   const handleOpenAddSheet = (index?: number) => {
     addContentForm.reset();
-    addContentForm.setValue("index", index?.toString() ?? "");
+    // FIXME: support insert
+    // addContentForm.setValue("index", index?.toString() ?? "");
     onOpenChange(true);
   };
 
@@ -284,6 +288,7 @@ export function ContentLayout({
                     onRemove={() => remove(index)}
                   >
                     <ProductCarousel
+                      storeSlug={slug}
                       title={form.watch(
                         `contents.${index}.content.content.object.title`
                       )}

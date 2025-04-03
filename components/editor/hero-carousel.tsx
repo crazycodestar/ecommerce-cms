@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentImage } from "@/app/(main)/(dashboard)/dashboard/[slug]/editor/_components/content-image";
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
@@ -44,7 +45,14 @@ export const HeroCarousel = ({ imageIds }: { imageIds: Id<"_storage">[] }) => {
               key={index}
               className="w-full aspect-[5/2] bg-muted flex justify-center items-center"
             >
-              <HeroImageItem imageId={imageId as Id<"_storage">} />
+              <ContentImage
+                skeletonClassName="w-full aspect-[5/2]"
+                className="w-full aspect-[5/2] object-cover"
+                imageId={imageId as Id<"_storage">}
+                width={500}
+                height={200}
+                alt="Hero Image"
+              />
             </CarouselItem>
           ))}
         </CarouselContent>
@@ -72,21 +80,5 @@ export const HeroCarousel = ({ imageIds }: { imageIds: Id<"_storage">[] }) => {
         <ChevronRight className="size-5" />
       </Button>
     </div>
-  );
-};
-
-const HeroImageItem = ({ imageId }: { imageId: Id<"_storage"> }) => {
-  const imageUrl = useQuery(api.contents.getImageUrl, { imageId });
-  const isPending = imageUrl === undefined;
-
-  if (isPending) return <Skeleton className="w-full aspect-[5/2]" />;
-  return (
-    <Image
-      src={imageUrl ?? "/placeholder.svg?width=500&height=200"}
-      alt="Hero Image"
-      width={500}
-      height={200}
-      className="w-full aspect-[5/2] object-contain"
-    />
   );
 };

@@ -147,7 +147,7 @@ export function AddContentForm({
             </FormSelectItem>
           </FormSelectContent>
         </FormSelect>
-        {/* <pre>{JSON.stringify(form.watch("index"), null, 2)}</pre> */}
+        <pre>{JSON.stringify(form.watch("index"), null, 2)}</pre>
         <input {...form.register("index")} type="hidden" value={index} />
         <>
           <Separator className="my-4" />

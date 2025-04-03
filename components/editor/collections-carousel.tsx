@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ContentImage } from "./content-image";
+import { ContentImage } from "../../app/(main)/(dashboard)/dashboard/[slug]/editor/_components/content-image";
 
 export function CollectionsCarousel({ slides }: { slides: CarouselSlide[] }) {
   // Sample slides for the carousel

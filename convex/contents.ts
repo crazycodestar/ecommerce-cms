@@ -48,3 +48,22 @@ export const getImageUrl = query({
     return ctx.storage.getUrl(imageId);
   },
 });
+
+// Public
+export const getContentsByStoreSlug = query({
+  args: {
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+
+    if (!store) {
+      return null;
+    }
+
+    return store.contents;
+  },
+});

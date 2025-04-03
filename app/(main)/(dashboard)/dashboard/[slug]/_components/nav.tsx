@@ -13,8 +13,8 @@ export function Nav() {
       route: `/dashboard/${slug}`,
     },
     {
-      label: "Content",
-      route: `/dashboard/${slug}/content`,
+      label: "Editor",
+      route: `/dashboard/${slug}/editor`,
     },
     {
       label: "Products",

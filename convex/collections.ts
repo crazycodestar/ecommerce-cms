@@ -282,3 +282,51 @@ export const removeProductFromCollection = mutation({
     return ctx.db.delete(existingCollectionOnProduct._id);
   },
 });
+
+// Public routes
+
+export const getProductsByCollectionIdAndStoreSlug = query({
+  args: {
+    collectionId: v.id("collections"),
+    storeSlug: v.string(),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, { collectionId, paginationOpts, storeSlug }) => {
+    // authorization
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+    if (!store)
+      throw new NotFoundError(`No Store with slug: ${storeSlug} found`);
+
+    // assert collection is store's
+    const collection = await ctx.db.get(collectionId);
+    if (!collection || collection.storeId !== store._id)
+      throw new NotFoundError("collection not found");
+
+    // query products in collection
+    const collectionOnproducts = await ctx.db
+      .query("collectionsOnProducts")
+      .withIndex("by_collectionId_productId", (q) =>
+        q.eq("collectionId", collection._id)
+      )
+      .paginate(paginationOpts);
+
+    return {
+      ...collectionOnproducts,
+      page: await Promise.all(
+        collectionOnproducts.page.map(async (cop) => {
+          const product = await ctx.db.get(cop.productId);
+          if (!product) {
+            console.error("product not found (critical): ", product);
+            return null;
+          }
+
+          const mainImage = await ctx.storage.getUrl(product.images[0]);
+          return { ...product, mainImage };
+        })
+      ),
+    };
+  },
+});

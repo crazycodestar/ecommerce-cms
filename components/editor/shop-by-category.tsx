@@ -1,7 +1,7 @@
 "use client";
 
 import { Id } from "@/convex/_generated/dataModel";
-import { ContentImage } from "./content-image";
+import { ContentImage } from "../../app/(main)/(dashboard)/dashboard/[slug]/editor/_components/content-image";
 import Link from "next/link";
 
 export interface GalleryProps {

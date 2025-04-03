@@ -27,17 +27,19 @@ export interface Gallery4Props {
   title: string;
   description: string;
   collectionId: Id<"collections">;
+  storeSlug: string;
 }
 
 const ProductCarousel = ({
   title,
   description,
   collectionId,
+  storeSlug,
 }: Gallery4Props) => {
   // TODO: move pagination into a reusable hook and add support for loadmore on intersection observer
   const { results, status } = usePaginatedQuery(
-    api.collections.getProductsByCollectionId,
-    { collectionId },
+    api.collections.getProductsByCollectionIdAndStoreSlug,
+    { collectionId, storeSlug },
     { initialNumItems: 10 }
   );
   const isLoading = status === "LoadingFirstPage";
@@ -118,7 +120,7 @@ const ProductCarousel = ({
                     </a>
                   )}
                   {product && (
-                    <a href="#" className="rounded-xl">
+                    <a href={`/prd/${product._id}`} className="rounded-xl">
                       <div className="h-full max-w-full flex flex-col gap-2">
                         <Image
                           src={
