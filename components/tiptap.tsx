@@ -7,7 +7,12 @@ import {
   TooltipTrigger as TooltipTriggerPrimitive,
 } from "@/components/ui/tooltip";
 import Placeholder from "@tiptap/extension-placeholder";
-import { EditorProvider, useCurrentEditor } from "@tiptap/react";
+import {
+  EditorContent,
+  EditorProvider,
+  useCurrentEditor,
+  useEditor,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
@@ -275,6 +280,23 @@ export const RichTextFormInput = <T extends FieldValues>({
   });
 
   return null;
+};
+
+export const TipTapContent = ({ content }: { content: string }) => {
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [StarterKit],
+    content,
+    editable: false,
+  });
+
+  return (
+    <EditorContent
+      contentEditable={false}
+      editor={editor}
+      className="editor-container"
+    />
+  );
 };
 
 export const Tiptap = ({ children }: React.PropsWithChildren) => {

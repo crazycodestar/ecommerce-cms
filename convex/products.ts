@@ -59,6 +59,7 @@ export const getProductById = query({
           property: await ctx.db.get(p.propertyId),
         }))
       ),
+      unit: (await ctx.db.get(product.unitType))?.name,
       variants:
         product.variants &&
         (await Promise.all(
@@ -72,6 +73,15 @@ export const getProductById = query({
                   : undefined,
               }))
             ),
+          }))
+        )),
+      // update
+      metadatas:
+        product.metadataIds &&
+        (await Promise.all(
+          product.metadataIds.map(async (m) => ({
+            _id: m,
+            metadata: await ctx.db.get(m),
           }))
         )),
       comment: null,
