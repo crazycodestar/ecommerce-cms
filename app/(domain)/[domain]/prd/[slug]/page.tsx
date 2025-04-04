@@ -1,13 +1,12 @@
 "use client";
 
 // import { OrderForm, QuantityField } from "@/components/cart/order-form";
-import { FormInput } from "@/components/form/form-input";
-import { TipTapContent } from "@/components/tiptap";
+// import { FormInput } from "@/components/form/form-input";
+// import { TipTapContent } from "@/components/tiptap";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Products } from "@/convex/schema";
 import { useQuery } from "convex/react";
-import { Star } from "lucide-react";
+// import { Star } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 // import OrderLayout from "../_components/order-layout";
@@ -66,11 +65,11 @@ export default function ProductPage() {
                     })) ?? [],
                 }}
               /> */}
-              <div className="mb-6">
+              {/* <div className="mb-6">
                 {product.additionalInformation && (
                   <TipTapContent content={product.additionalInformation} />
                 )}
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
