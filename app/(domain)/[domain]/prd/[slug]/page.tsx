@@ -1,6 +1,6 @@
 "use client";
 
-import { OrderForm, QuantityField } from "@/components/cart/order-form";
+// import { OrderForm, QuantityField } from "@/components/cart/order-form";
 import { FormInput } from "@/components/form/form-input";
 import { TipTapContent } from "@/components/tiptap";
 import { api } from "@/convex/_generated/api";
@@ -10,7 +10,7 @@ import { useQuery } from "convex/react";
 import { Star } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import OrderLayout from "../_components/order-layout";
+// import OrderLayout from "../_components/order-layout";
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
