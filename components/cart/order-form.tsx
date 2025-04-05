@@ -52,7 +52,7 @@ export type OrderContext = {
   form: UseFormReturn<OrderSchema>;
   //   formProps: UseFormProps<OrderSchema>;
   onSubmit: (values: OrderSchema) => void;
-  isPending: boolean;
+  isPending?: boolean;
   //   setValue: (name: string, value: any) => void;
   //   getValues: (name: string) => any;
   //   watch: (name: string) => any;

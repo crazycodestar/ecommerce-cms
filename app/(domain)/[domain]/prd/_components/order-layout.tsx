@@ -1,10 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
-import { useForm, UseFormProps, UseFormReturn } from "react-hook-form";
-import { z } from "zod";
-import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import {
   MetadataField,
   MetadataFieldProps,
@@ -13,8 +8,13 @@ import {
   OrderSchema,
   QuantityField,
   VariantField,
-  VariantFieldProps,
 } from "@/components/cart/order-form";
+import { Id } from "@/convex/_generated/dataModel";
+import useCartStore from "@/hooks/use-cart-store";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Check } from "lucide-react";
+import React from "react";
+import { useForm } from "react-hook-form";
 
 export default function OrderLayout({
   product: { unit, variants, metadatas, price },
@@ -64,9 +64,14 @@ export default function OrderLayout({
     },
   });
 
-  const [isPending, startTransition] = React.useTransition();
+  const addProduct = useCartStore((state) => state.addItem);
+  const [isSubmitting, setSubmitting] = React.useState(false);
   const onSubmit = (values: OrderSchema) => {
-    console.log(values);
+    setSubmitting(true);
+    addProduct(
+      values as Omit<OrderSchema, "productId"> & { productId: Id<"products"> }
+    );
+    setTimeout(() => setSubmitting(false), 2000);
   };
 
   const total =
@@ -82,7 +87,7 @@ export default function OrderLayout({
     }, 0);
 
   return (
-    <OrderProvider value={{ form, onSubmit, isPending }}>
+    <OrderProvider value={{ form, onSubmit }}>
       <div className="mb-4">
         <div className="flex items-center gap-2">
           <span className="font-medium text-primary-50">
@@ -97,8 +102,17 @@ export default function OrderLayout({
       <MetadataField metadatas={metadatas} />
       <QuantityField unit={unit} />
       <div className="mb-6 mt-4">
-        <button className="w-full cursor-pointer bg-black text-white py-3 font-medium mb-2">
-          Add to Bag
+        <button
+          disabled={isSubmitting}
+          className="w-full cursor-pointer bg-black text-white py-3 font-medium mb-2"
+        >
+          {isSubmitting ? (
+            <span className="w-full flex justify-center">
+              <Check className="size-6" />
+            </span>
+          ) : (
+            <span>Add to Bag</span>
+          )}
         </button>
         {/* Possible add to wishlist */}
       </div>
