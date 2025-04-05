@@ -4,6 +4,7 @@ import { Table } from "convex-helpers/server";
 import { z } from "zod";
 import { Collections, CollectionsOnProducts } from "./collections";
 
+// TODO: simplify users table
 export const Users = Table("users", {
   id: v.string(),
   object: v.string(),
@@ -54,7 +55,7 @@ export const Users = Table("users", {
 
   // Metadata fields
   private_metadata: v.object({}),
-  public_metadata: v.object({}),
+  public_metadata: v.optional(v.object({})),
   unsafe_metadata: v.object({}),
 });
 
@@ -102,7 +103,7 @@ export const userSchema = z.object({
 
   // Metadata fields
   private_metadata: z.record(z.any()),
-  public_metadata: z.record(z.any()),
+  // public_metadata: z.record(z.any()),
   unsafe_metadata: z.record(z.any()),
 });
 

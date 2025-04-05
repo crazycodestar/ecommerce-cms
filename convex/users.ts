@@ -69,7 +69,7 @@ export const populateUsersFromClerk = internalAction({
                 : null,
             })),
             private_metadata: user.privateMetadata,
-            public_metadata: user.publicMetadata,
+            public_metadata: {},
             unsafe_metadata: user.unsafeMetadata,
             object: "user",
           });

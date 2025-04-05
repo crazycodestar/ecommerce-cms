@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "dev:backend": "convex dev",
-    "dev:frontend": "next dev"
+    "dev:frontend": "next dev",
+    "prettier:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier:write": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.24.1",
@@ -43,6 +45,7 @@
     "motion": "^12.5.0",
     "next": "15.2.1",
     "next-themes": "^0.4.5",
+    "prettier": "^3.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
