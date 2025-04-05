@@ -9,8 +9,8 @@
     "lint": "next lint",
     "dev:backend": "convex dev",
     "dev:frontend": "next dev",
-    "prettier:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
-    "prettier:write": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\""
+    "prettier:check": "prettier --check \"app/**/*.{js,jsx,ts,tsx}\"",
+    "prettier:write": "prettier --write \"app/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.24.1",
