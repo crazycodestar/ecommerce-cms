@@ -2,14 +2,14 @@
 
 import useCartStore from "@/hooks/use-cart-store";
 import { cn } from "@/lib/utils";
-import { Search, ShoppingBag } from "lucide-react";
+import { Package, Search, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
 export function Nav() {
   const items = useCartStore((state) => state.items);
   return (
     <header>
-      <div className="mx-4 py-2">
+      <div className="mx-8 py-2">
         <div className="flex items-center justify-between py-6 border-b">
           {/* Logo */}
           <Link href="/" className="font-medium text-3xl">
@@ -27,11 +27,19 @@ export function Nav() {
           </div>
 
           {/* Navigation Icons */}
-          <div className="flex items-center gap-4 relative">
+          <div className="flex items-center gap-4 relative ml-4">
+            <Link
+              className="flex gap-1 bg-muted rounded-full sm:py-1 sm:px-3 items-center text-sm"
+              href="/order"
+              aria-label="Order Lookup"
+            >
+              <Package className="size-5 sm:size-4" />
+              <span className="hidden sm:inline">Track Order</span>
+            </Link>
             <Link href="/cart" aria-label="Shopping Bag">
               <ShoppingBag className="h-5 w-5" />
               {items.length === 0 ? null : (
-                <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 flex justify-center items-center text-xs size-4 rounded-full bg-primary text-primary-foreground">
+                <div className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 flex justify-center items-center text-xs size-4 rounded-full bg-primary text-primary-foreground">
                   {items.length}
                 </div>
               )}

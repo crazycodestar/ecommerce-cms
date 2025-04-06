@@ -282,6 +282,25 @@ export const Properties = Table("properties", {
   type: v.union(v.literal("string"), v.literal("number"), v.literal("array")),
 });
 
+export const Orders = Table("orders", {
+  storeId: v.id("stores"),
+  email: v.string(),
+  phone: v.string(),
+  shippingInformation: v.object({
+    firstName: v.string(),
+    lastName: v.string(),
+    address1: v.string(),
+    address2: v.optional(v.string()),
+    city: v.optional(v.string()),
+    zipCode: v.optional(v.string()),
+  }),
+  amount: v.number(),
+  url: v.string(),
+  accessCode: v.string(),
+  reference: v.string(),
+  status: v.union(v.literal("pending"), v.literal("success"), v.string()),
+});
+
 export default defineSchema({
   users: Users.table.index("by_tokenIdentifier", ["id"]),
   stores: Stores.table
@@ -303,4 +322,10 @@ export default defineSchema({
     .index("by_collectionId_productId", ["collectionId", "productId"])
     .index("by_productId", ["productId"]),
   unitTypes: UnitTypes.table.index("by_storeId", ["storeId"]),
+  orders: Orders.table
+    .index("by_storeId", ["storeId"])
+    .index("by_reference", ["reference"])
+    .index("by_storeId_reference", ["storeId", "reference"])
+    .index("by_email", ["email"])
+    .index("by_phone", ["phone"]),
 });

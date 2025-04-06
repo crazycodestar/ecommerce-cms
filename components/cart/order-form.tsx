@@ -28,7 +28,7 @@ export const metadataTypeSchema = z.discriminatedUnion("type", [
 ]);
 
 export const orderSchema = z.object({
-  productId: z.string(),
+  // productId: z.string(),
   variants: z.array(
     z.object({
       name: z.string(),
@@ -98,29 +98,6 @@ export const OrderProvider = ({
         </form>
       </Form>
     </OrderFormContext.Provider>
-  );
-};
-
-export const OrderForm = ({ children }: { children?: React.ReactNode }) => {
-  const form = useForm<OrderSchema>({
-    resolver: zodResolver(orderSchema),
-    defaultValues: {
-      productId: "",
-      variants: [],
-      metadatas: [],
-      quantity: 1,
-    },
-  });
-
-  const [isPending, startTransition] = React.useTransition();
-  const onSubmit = (values: OrderSchema) => {
-    console.log(values);
-  };
-
-  return (
-    <OrderProvider value={{ form, onSubmit, isPending }}>
-      {children}
-    </OrderProvider>
   );
 };
 

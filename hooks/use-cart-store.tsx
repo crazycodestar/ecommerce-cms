@@ -1,7 +1,12 @@
+"use client";
+
 import { Id } from "@/convex/_generated/dataModel";
 // import { isSameVariant } from "@/lib/utils";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
 
 // Type for a cart item
 export interface CartItem {
@@ -26,9 +31,9 @@ interface CartStore {
   items: CartItem[];
   // Cart actions
   addItem: (args: CartItem) => void;
-  removeItem: (productId: Id<"products">) => void;
-  incrementQuantity: (productId: Id<"products">) => void;
-  decrementQuantity: (productId: Id<"products">) => void;
+  removeItem: (index: number) => void;
+  incrementQuantity: (index: number) => void;
+  decrementQuantity: (index: number) => void;
   clearCart: () => void;
   // Utility functions
   getItemQuantity: (productId: Id<"products">) => number;
@@ -47,37 +52,31 @@ const useCartStore = create<CartStore>()(
           };
         }),
 
-      removeItem: (productId: Id<"products">) =>
+      removeItem: (index: number) =>
         set((state) => ({
-          items: state.items.filter((item) => item.productId !== productId),
+          items: state.items.filter((_, pos) => pos !== index),
         })),
 
-      incrementQuantity: (productId: Id<"products">) =>
+      incrementQuantity: (index: number) =>
         set((state) => ({
-          items: state.items.map((item) =>
-            item.productId === productId
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
+          items: state.items.map((item, pos) =>
+            pos === index ? { ...item, quantity: item.quantity + 1 } : item
           ),
         })),
 
-      decrementQuantity: (productId: Id<"products">) =>
+      decrementQuantity: (index: number) =>
         set((state) => {
-          const existingItem = state.items.find(
-            (item) => item.productId === productId
-          );
+          const existingItem = state.items.find((_, pos) => pos === index);
 
           if (existingItem && existingItem.quantity === 1) {
             return {
-              items: state.items.filter((item) => item.productId !== productId),
+              items: state.items.filter((_, pos) => pos !== index),
             };
           }
 
           return {
-            items: state.items.map((item) =>
-              item.productId === productId
-                ? { ...item, quantity: item.quantity - 1 }
-                : item
+            items: state.items.map((item, pos) =>
+              pos === index ? { ...item, quantity: item.quantity - 1 } : item
             ),
           };
         }),
@@ -100,5 +99,50 @@ const useCartStore = create<CartStore>()(
     }
   )
 );
+
+export const useCart = () => {
+  const items = useCartStore((state) => state.items);
+
+  const products = useQuery(
+    api.products.getProductsByIds,
+    !items.length
+      ? "skip"
+      : {
+          ids: items.map((i) => i.productId),
+        }
+  );
+
+  const formattedProducts = items.map((i) => {
+    const product = products?.find((p) => p._id === i.productId);
+    if (!product) return;
+
+    const price =
+      product.price +
+      (i.variants?.reduce((acc, variant) => {
+        const variantSet = product.variants?.find(
+          (variantSet) => variantSet.name === variant.name
+        );
+        const selectedOption = variantSet?.options.find(
+          (option) => option.name === variant.value
+        );
+        return acc + (selectedOption ? selectedOption.price : 0);
+      }, 0) ?? 0);
+    return {
+      ...product,
+      price,
+      ...i,
+    };
+  });
+
+  const isEmpty = !formattedProducts.length;
+  const isPending = products === undefined && !isEmpty;
+
+  const subTotal = formattedProducts.reduce(
+    (acc, product) => acc + (product?.price ?? 0) * (product?.quantity ?? 0),
+    0
+  );
+
+  return { formattedProducts, isPending, isEmpty, subTotal };
+};
 
 export default useCartStore;

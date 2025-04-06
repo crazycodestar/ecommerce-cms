@@ -1,12 +1,17 @@
 "use client";
 
-import useCartStore from "@/hooks/use-cart-store";
-import { Check, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import useCartStore, { useCart } from "@/hooks/use-cart-store";
+import { Info, MinusCircle, PlusCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function ShoppingBagPage() {
-  const { items, incrementQuantity, decrementQuantity, removeItem } =
-    useCartStore();
+  const incrementQuantity = useCartStore((state) => state.incrementQuantity);
+  const decrementQuantity = useCartStore((state) => state.decrementQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const { formattedProducts, isEmpty, isPending, subTotal } = useCart();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -17,7 +22,7 @@ export default function ShoppingBagPage() {
             {/* Shopping Bag Header */}
             <div className="mb-4">
               <h1 className="text-xl font-medium">
-                Shopping Bag ({items.length})
+                Shopping Bag ({formattedProducts.length})
               </h1>
               <p className="text-sm text-gray-600">
                 Items in your bag are not on hold.
@@ -25,64 +30,117 @@ export default function ShoppingBagPage() {
             </div>
 
             {/* Cart Item */}
-            {items.map((item, index) => (
-              <div key={index} className="border bg-white rounded-md p-4 mb-6">
-                <div className="flex flex-col md:flex-row">
-                  {/* Product Image */}
-                  <div className="md:w-1/4 mb-4 md:mb-0">
-                    <div className="aspect-[3/4] relative bg-gray-100">
-                      <Image
-                        src="/placeholder.svg?height=300&width=225&text=Zella+Leggings"
-                        alt="Zella Studio Luxe High Waist Pocket 7/8 Leggings"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Product Details */}
-                  <div className="md:w-2/4 md:px-4">
-                    <h3 className="font-medium mb-1">Zella</h3>
-                    <p className="text-sm mb-2">
-                      Studio Luxe High Waist Pocket 7/8 Leggings
-                    </p>
-                    <div className="text-sm text-gray-600 space-y-1 mb-4">
-                      <p>Size: Small</p>
-                      <p>Color: BLACK</p>
-                      <p>Item: 7389593</p>
-                    </div>
-
-                    <div className="flex items-center mb-4">
-                      <label htmlFor="quantity" className="text-sm mr-2">
-                        Qty
-                      </label>
-                      <select
-                        id="quantity"
-                        className="border rounded p-1 text-sm w-16"
-                      >
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center text-sm mb-2">
-                      <Check className="h-4 w-4 text-green-600 mr-1" />
-                      <span>Free returns anytime</span>
-                    </div>
-                    <p className="text-xs text-gray-600">Sold by Nordstrom</p>
-
-                    <div className="flex mt-4">
-                      <button className="text-blue-600 text-sm mr-4">
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            {isPending && (
+              <>
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} className="rounded-md p-4 mb-6 h-48" />
+                ))}
+              </>
+            )}
+            {!isEmpty ? null : (
+              <div className="border rounded-md flex flex-col justify-center items-center h-48">
+                {/* <div className="px-4 py-3 rounded-sm bg-muted text-muted-foreground">
+                  <Empty
+                </div> */}
+                <span>No Products in Cart</span>
+                <Button variant="link" asChild>
+                  <Link href="/">Continue Shopping</Link>
+                </Button>
               </div>
-            ))}
+            )}
+            {formattedProducts?.map(
+              (item, index) =>
+                item && (
+                  <div
+                    key={index}
+                    className="border bg-white rounded-md p-4 mb-6"
+                  >
+                    <div className="flex flex-col md:flex-row">
+                      {/* Product Image */}
+                      <div className="md:w-1/4 mb-4 md:mb-0">
+                        <div className="aspect-[3/4] relative bg-gray-100">
+                          <Image
+                            src={
+                              item.imageUrls[0] ??
+                              "/placeholder.svg?height=300&width=225&text=Zella+Leggings"
+                            }
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="md:w-2/4 md:px-4">
+                        <h3 className="font-medium mb-1">{item.name}</h3>
+                        <p className="text-sm mb-2">
+                          {item.price.toLocaleString("en-NG", {
+                            currency: "NGN",
+                            style: "currency",
+                          })}
+                        </p>
+                        {item.variants && (
+                          <div className="text-sm text-gray-600 space-y-1 mb-4">
+                            {item.variants.map((v, index) => (
+                              <p key={index}>
+                                {v.name}: {v.value}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+
+                        {item.metadatas && (
+                          <div className="text-sm text-gray-600 space-y-1 mb-4">
+                            {item.metadatas.map((v, index) => (
+                              <p key={index}>
+                                {v.name}: {v.value}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-4 items-center">
+                          <div className="flex items-center">
+                            <label htmlFor="quantity" className="text-sm mr-2">
+                              Qty
+                            </label>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                onClick={() => decrementQuantity(index)}
+                                className="rounded-full"
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <MinusCircle className="size-4" />
+                              </Button>
+                              <span>
+                                {item.quantity} {item.unit}
+                              </span>
+                              <Button
+                                onClick={() => incrementQuantity(index)}
+                                className="rounded-full"
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <PlusCircle className="size-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex">
+                            <button
+                              onClick={() => removeItem(index)}
+                              className="text-blue-600 cursor-pointer text-sm mr-4"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+            )}
           </div>
 
           {/* Order Summary */}
@@ -103,14 +161,66 @@ export default function ShoppingBagPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col gap-3 mb-3 border-t pt-2">
+                {isPending &&
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center"
+                    >
+                      <Skeleton className="h-4 w-[100px]" />
+                      <Skeleton className="h-4 w-[50px]" />
+                    </div>
+                  ))}
+                {formattedProducts.map(
+                  (product, index) =>
+                    product && (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center w-full"
+                      >
+                        <h3 className="truncate lg:max-w-[150px]">
+                          {product.name}
+                        </h3>
+                        <span className="font-normal ml-1 mr-auto">
+                          x{product.quantity}
+                        </span>
+                        <p>
+                          {product.price.toLocaleString("en-NG", {
+                            currency: "NGN",
+                            style: "currency",
+                          })}
+                        </p>
+                      </div>
+                    )
+                )}
+              </div>
+              <div className="flex justify-between items-center mb-4 border-t pt-2">
                 <span>Subtotal</span>
-                <span className="font-medium">$79.00</span>
+                {isPending ? (
+                  <Skeleton className="h-6 w-[50px]" />
+                ) : (
+                  <span className="font-medium">
+                    {isEmpty
+                      ? (0).toLocaleString("en-NG", {
+                          currency: "NGN",
+                          style: "currency",
+                        })
+                      : subTotal.toLocaleString("en-NG", {
+                          currency: "NGN",
+                          style: "currency",
+                        })}
+                  </span>
+                )}
               </div>
 
-              <button className="w-full bg-black text-white py-3 font-medium mb-3">
-                Check Out
-              </button>
+              <Button
+                asChild={!isPending && !isEmpty}
+                disabled={isPending || isEmpty}
+                className="rounded-none w-full flex justify-center bg-black text-white py-5 font-medium mb-3"
+              >
+                <Link href="/shipping">Checkout</Link>
+              </Button>
             </div>
           </div>
         </div>

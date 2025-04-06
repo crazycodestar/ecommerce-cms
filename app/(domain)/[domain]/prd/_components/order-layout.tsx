@@ -17,9 +17,10 @@ import React from "react";
 import { useForm } from "react-hook-form";
 
 export default function OrderLayout({
-  product: { unit, variants, metadatas, price },
+  product: { _id, unit, variants, metadatas, price },
 }: {
   product: {
+    _id: Id<"products">;
     unit: string;
     variants: {
       name: string;
@@ -36,7 +37,7 @@ export default function OrderLayout({
   const form = useForm<OrderSchema>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
-      productId: "",
+      productId: _id,
       variants: variants.map((v) => ({
         name: v.name,
       })),
@@ -68,9 +69,12 @@ export default function OrderLayout({
   const [isSubmitting, setSubmitting] = React.useState(false);
   const onSubmit = (values: OrderSchema) => {
     setSubmitting(true);
-    addProduct(
-      values as Omit<OrderSchema, "productId"> & { productId: Id<"products"> }
-    );
+    addProduct({
+      ...(values as Omit<OrderSchema, "productId"> & {
+        productId: Id<"products">;
+      }),
+      productId: _id,
+    });
     setTimeout(() => setSubmitting(false), 2000);
   };
 

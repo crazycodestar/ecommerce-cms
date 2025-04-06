@@ -30,7 +30,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { useMutation } from "convex/react";
 import { formatRelative } from "date-fns";
-import { Edit, MoreHorizontal, Pencil } from "lucide-react";
+import { Edit, Loader, MoreHorizontal, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTransition } from "react";
@@ -263,7 +263,10 @@ function RowAction({ row }: { row: Row<Product> }) {
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
               <DialogClose asChild disabled={isPending}>
-                <Button isPending={isPending}>Done</Button>
+                <Button disabled={isPending}>
+                  {isPending && <Loader className="mr-2 size-4 animate-spin" />}
+                  Done
+                </Button>
               </DialogClose>
             </div>
           </CollectionForm>

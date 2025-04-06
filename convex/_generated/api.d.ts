@@ -20,6 +20,8 @@ import type * as error from "../error.js";
 import type * as http from "../http.js";
 import type * as lib_image from "../lib/image.js";
 import type * as lib_slugify from "../lib/slugify.js";
+import type * as orders from "../orders.js";
+import type * as paystack from "../paystack.js";
 import type * as products from "../products.js";
 import type * as stores from "../stores.js";
 import type * as users from "../users.js";
@@ -41,6 +43,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/image": typeof lib_image;
   "lib/slugify": typeof lib_slugify;
+  orders: typeof orders;
+  paystack: typeof paystack;
   products: typeof products;
   stores: typeof stores;
   users: typeof users;
