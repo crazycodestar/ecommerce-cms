@@ -10,9 +10,11 @@ export default function DomainLayout({
 }) {
   return (
     <ConvexClientProviderWithoutAuth>
-      <Nav />
-      {children}
-      <Footer />
+      <div className="flex flex-col min-h-svh">
+        <Nav />
+        {children}
+        <Footer />
+      </div>
     </ConvexClientProviderWithoutAuth>
   );
 }

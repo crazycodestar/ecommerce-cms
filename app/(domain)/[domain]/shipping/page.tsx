@@ -2,7 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
-import useCartStore, { useCart } from "@/hooks/use-cart-store";
+import useCartStore, { useCart } from "@/lib/hooks/use-cart-store";
 import { showErrorToast } from "@/lib/handle-error";
 import { tryCatch } from "@/lib/try-catch";
 import { useAction } from "convex/react";

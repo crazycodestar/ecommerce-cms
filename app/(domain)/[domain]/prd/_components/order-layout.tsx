@@ -10,7 +10,7 @@ import {
   VariantField,
 } from "@/components/cart/order-form";
 import { Id } from "@/convex/_generated/dataModel";
-import useCartStore from "@/hooks/use-cart-store";
+import useCartStore from "@/lib/hooks/use-cart-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
 import React from "react";

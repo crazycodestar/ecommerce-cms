@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import useCartStore, { useCart } from "@/hooks/use-cart-store";
+import useCartStore, { useCart } from "@/lib/hooks/use-cart-store";
 import { Info, MinusCircle, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";

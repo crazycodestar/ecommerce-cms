@@ -39,7 +39,7 @@ export default function DomainPage() {
   if (contents === null) return { notFound: true };
 
   return (
-    <div className="min-h-svh flex-1 flex flex-col mx-4">
+    <div className="min-h-svh flex-1 flex flex-col md:mx-4">
       {contents.length !== 0 ? null : (
         <div className="flex flex-col items-center justify-center px-4 flex-1 w-full">
           <AnimatedGroup preset="blur-slide" className="text-center">

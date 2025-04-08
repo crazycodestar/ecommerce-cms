@@ -18,7 +18,7 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-4 px-4 py-4">
+      <div className="md:mx-4 px-4 py-4">
         {/* Product Detail Section */}
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Product Images */}

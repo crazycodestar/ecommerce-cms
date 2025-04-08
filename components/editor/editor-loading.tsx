@@ -3,24 +3,6 @@ import { Skeleton } from "../ui/skeleton";
 export const EditorLoading = () => {
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-200">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-32" />
-            <div className="flex space-x-4">
-              <Skeleton className="h-6 w-6 rounded-full" />
-              <Skeleton className="h-6 w-6 rounded-full" />
-            </div>
-          </div>
-          <div className="mt-2 flex space-x-6 overflow-x-auto py-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-16" />
-            ))}
-          </div>
-        </div>
-      </header>
-
       {/* Hero Banner */}
       <div className="relative">
         <Skeleton className="h-[400px] w-full" />

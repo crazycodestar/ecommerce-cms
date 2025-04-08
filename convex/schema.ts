@@ -268,12 +268,14 @@ export const MetadataPresets = Table("metadataPresets", {
 });
 
 // Categories schema
+// FIXME: Categories should have a slug
 export const Categories = Table("categories", {
   name: v.string(),
   storeId: v.id("stores"),
   parentId: v.optional(v.id("categories")),
 });
 
+// FIXME: properties should have a slug
 export const Properties = Table("properties", {
   name: v.string(),
   storeId: v.id("stores"),
@@ -307,7 +309,10 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_owner", ["owner"])
     .index("by_slug_owner", ["slug", "owner"]),
-  products: Products.table,
+  products: Products.table.index("by_categoryId_storeId", [
+    "categoryId",
+    "storeId",
+  ]),
   categories: Categories.table
     .index("by_storeId", ["storeId"])
     .index("by_parentId_storeId", ["parentId", "storeId"]),
