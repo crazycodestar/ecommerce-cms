@@ -1,5 +1,5 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { v, VString } from "convex/values";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
 import { Stores } from "./schema";
 import {
@@ -99,21 +99,54 @@ export const createStore = mutation({
   },
 });
 
+// Create a type utility to change the flag from "required" to "optional"
+// type ChangeToOptional<T> = T extends VString<infer U, "required">
+//   ? VString<U | undefined, "optional">
+//   : T;
+
+// type PartialStoreWithoutSystemFields = {
+//   [T in keyof typeof Stores.withoutSystemFields]: ChangeToOptional<(typeof Stores.withoutSystemFields)[T]>;
+// }
+
 export const updateStore = mutation({
   args: {
-    ...Stores.withoutSystemFields,
-    _id: Stores._id,
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    owner: v.optional(v.string()),
+    // Shipping Information with terminal
+    terminalSecretKey: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    line1: v.optional(v.string()),
+    line2: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    country: v.optional(v.string()),
+    // Payment Information with Paystack
+    publicKey: v.optional(v.string()),
+    secretKey: v.optional(v.string()),
+    slug: v.string(),
   },
-  handler: async (ctx, { _id, ...args }) => {
-    const tokenIdentifier = await getTokenIdentifier(ctx);
-    if (!tokenIdentifier) throw new UnauthorizedError();
+  handler: async (ctx, { slug, ...args }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_tokenIdentifier", (q) => q.eq("id", tokenIdentifier))
-      .unique();
-    if (!user) throw new NotFoundError("User not found");
+    if (store.slug !== slug)
+      throw new UnauthorizedError("Unauthorized to access store");
 
-    ctx.db.patch(_id, args);
+    ctx.db.patch(store._id, args);
   },
 });
+
+// export const internalUpdateStore = internalMutation({
+//   args: {
+//     ...omit(Stores.withoutSystemFields, ["owner"]),
+//     _id: Stores._id,
+//   },
+//   handler: (ctx, { _id, ...args }) => ctx.db.patch(_id, args),
+// });

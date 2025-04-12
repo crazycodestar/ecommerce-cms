@@ -24,6 +24,10 @@ export function Nav() {
       label: "Orders",
       route: `/dashboard/${slug}/orders`,
     },
+    {
+      label: "Settings",
+      route: `/dashboard/${slug}/settings`,
+    },
   ];
   return (
     <MenuNav

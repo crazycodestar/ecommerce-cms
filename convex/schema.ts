@@ -204,6 +204,20 @@ export const Stores = Table("stores", {
   owner: v.string(),
   slug: v.string(),
   contents: v.array(contentTypes),
+  // Shipping Information with terminal
+  terminalSecretKey: v.string(),
+  firstName: v.string(),
+  lastName: v.string(),
+  email: v.string(),
+  phone: v.string(),
+  line1: v.string(),
+  line2: v.string(),
+  city: v.string(),
+  state: v.string(),
+  country: v.string(),
+  // Payment Information with Paystack
+  publicKey: v.string(),
+  secretKey: v.string(),
 });
 
 // Product Schema
