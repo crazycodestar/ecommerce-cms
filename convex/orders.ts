@@ -1,8 +1,25 @@
-import { internalMutation } from "./_generated/server";
-import { NotFoundError } from "./error";
+import { omit } from "convex-helpers";
+import { v } from "convex/values";
+import { action, internalMutation, query } from "./_generated/server";
+import { InternalServerError, NotFoundError } from "./error";
 import { Orders } from "./schema";
+import { pick } from "convex-helpers";
+import { api, internal } from "./_generated/api";
 
-export const updateOrders = internalMutation({
+export const updateOrderPaymentInformation = internalMutation({
+  args: {
+    ...pick(Orders.withoutSystemFields, ["reference", "accessCode", "url"]),
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, { orderId, ...args }) => {
+    const order = await ctx.db.get(orderId);
+    if (!order) throw new NotFoundError("transaction not found");
+
+    return ctx.db.patch(order._id, args);
+  },
+});
+
+export const updateOrderPaymentStatus = internalMutation({
   args: {
     reference: Orders.withoutSystemFields.reference,
     status: Orders.withoutSystemFields.status,
@@ -20,5 +37,144 @@ export const updateOrders = internalMutation({
 
     // TODO: send out order success email to the user and new order email to the vendor
     if (status === "success") return;
+  },
+});
+
+export const createOrder = internalMutation({
+  args: {
+    ...omit(Orders.withoutSystemFields, [
+      "storeId",
+      "amount",
+      "url",
+      "accessCode",
+      "reference",
+      "status",
+      "slug",
+    ]),
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug, ...args }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+    if (!store) throw new InternalServerError("store not found");
+
+    const items = await Promise.all(
+      args.items.map(async (item) => {
+        const product = await ctx.db.get(item.productId);
+        if (!product) throw new InternalServerError("product not found");
+
+        const price =
+          product.price +
+          (item.variants?.reduce((acc, variant) => {
+            const variantSet = product.variants?.find(
+              (variantSet) => variantSet.name === variant.name
+            );
+            const selectedOption = variantSet?.options.find(
+              (option) => option.name === variant.value
+            );
+            return acc + (selectedOption ? selectedOption.price : 0);
+          }, 0) ?? 0);
+
+        return {
+          ...product,
+          price,
+          ...item,
+        };
+      })
+    );
+
+    const lastOrderSlug =
+      (
+        await ctx.db
+          .query("orders")
+          .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
+          .order("desc")
+          .first()
+      )?.slug ?? "#ORD-00000";
+    // #ORD-12345
+    const orderNumber = parseInt(lastOrderSlug.replace("#ORD-", ""));
+    console.log(typeof orderNumber, orderNumber);
+    const slug = "#ORD-" + (orderNumber + 1).toString().padStart(5, "0");
+
+    return ctx.db.insert("orders", {
+      ...args,
+      slug,
+      storeId: store._id,
+      amount: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
+      // shipping: 2000,
+      status: "pending",
+    });
+  },
+});
+
+export const getOrder = query({
+  args: {
+    orderId: v.id("orders"),
+  },
+  handler: (ctx, { orderId }) => ctx.db.get(orderId),
+});
+
+export const getOrderBySlug = query({
+  args: {
+    slug: v.string(),
+  },
+  handler: async (ctx, { slug }) => {
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique();
+    if (!order) throw new NotFoundError("transaction not found");
+
+    return order;
+  },
+});
+
+export const getOrderByReference = query({
+  args: {
+    reference: v.string(),
+  },
+  handler: async (ctx, { reference }) => {
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_reference", (q) => q.eq("reference", reference))
+      .unique();
+    if (!order) throw new NotFoundError("transaction not found");
+
+    return order;
+  },
+});
+
+export const initializeOrder = action({
+  args: {
+    ...omit(Orders.withoutSystemFields, [
+      "storeId",
+      "amount",
+      "url",
+      "accessCode",
+      "reference",
+      "status",
+      "slug",
+    ]),
+    storeSlug: v.string(),
+    callbackUrl: v.string(),
+  },
+  handler: async (
+    ctx,
+    { storeSlug, callbackUrl, ...args }
+  ): Promise<{
+    accessCode: string;
+    url: string;
+    slug: string;
+  }> => {
+    const orderId = await ctx.runMutation(internal.orders.createOrder, {
+      storeSlug,
+      ...args,
+    });
+    return ctx.runAction(api.paystack.initializeTransaction, {
+      orderId: orderId,
+      callbackUrl,
+    });
   },
 });

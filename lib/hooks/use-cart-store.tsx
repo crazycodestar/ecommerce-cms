@@ -112,27 +112,29 @@ export const useCart = () => {
         }
   );
 
-  const formattedProducts = items.map((i) => {
-    const product = products?.find((p) => p._id === i.productId);
-    if (!product) return;
+  const formattedProducts = items
+    .map((i) => {
+      const product = products?.find((p) => p._id === i.productId);
+      if (!product) return;
 
-    const price =
-      product.price +
-      (i.variants?.reduce((acc, variant) => {
-        const variantSet = product.variants?.find(
-          (variantSet) => variantSet.name === variant.name
-        );
-        const selectedOption = variantSet?.options.find(
-          (option) => option.name === variant.value
-        );
-        return acc + (selectedOption ? selectedOption.price : 0);
-      }, 0) ?? 0);
-    return {
-      ...product,
-      price,
-      ...i,
-    };
-  });
+      const price =
+        product.price +
+        (i.variants?.reduce((acc, variant) => {
+          const variantSet = product.variants?.find(
+            (variantSet) => variantSet.name === variant.name
+          );
+          const selectedOption = variantSet?.options.find(
+            (option) => option.name === variant.value
+          );
+          return acc + (selectedOption ? selectedOption.price : 0);
+        }, 0) ?? 0);
+      return {
+        ...product,
+        price,
+        ...i,
+      };
+    })
+    .filter((i): i is NonNullable<typeof i> => !!i);
 
   const isEmpty = !formattedProducts.length;
   const isPending = products === undefined && !isEmpty;

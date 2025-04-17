@@ -13,21 +13,22 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as collections from "../collections.js";
-import type * as contents from "../contents.js";
-import type * as context from "../context.js";
-import type * as error from "../error.js";
+import type * as shipping from "../shipping.js";
 import type * as http from "../http.js";
+import type * as context from "../context.js";
+import type * as collections from "../collections.js";
+import type * as utils from "../utils.js";
+import type * as stores from "../stores.js";
+import type * as packages from "../packages.js";
+import type * as products from "../products.js";
+import type * as orders from "../orders.js";
 import type * as lib_image from "../lib/image.js";
 import type * as lib_slugify from "../lib/slugify.js";
-import type * as orders from "../orders.js";
 import type * as paystack from "../paystack.js";
-import type * as products from "../products.js";
-import type * as shipping from "../shipping.js";
-import type * as stores from "../stores.js";
-import type * as terminal from "../terminal.js";
 import type * as users from "../users.js";
-import type * as utils from "../utils.js";
+import type * as terminal from "../terminal.js";
+import type * as contents from "../contents.js";
+import type * as error from "../error.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -38,21 +39,22 @@ import type * as utils from "../utils.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  collections: typeof collections;
-  contents: typeof contents;
-  context: typeof context;
-  error: typeof error;
+  shipping: typeof shipping;
   http: typeof http;
+  context: typeof context;
+  collections: typeof collections;
+  utils: typeof utils;
+  stores: typeof stores;
+  packages: typeof packages;
+  products: typeof products;
+  orders: typeof orders;
   "lib/image": typeof lib_image;
   "lib/slugify": typeof lib_slugify;
-  orders: typeof orders;
   paystack: typeof paystack;
-  products: typeof products;
-  shipping: typeof shipping;
-  stores: typeof stores;
-  terminal: typeof terminal;
   users: typeof users;
-  utils: typeof utils;
+  terminal: typeof terminal;
+  contents: typeof contents;
+  error: typeof error;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

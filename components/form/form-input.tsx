@@ -35,7 +35,15 @@ export const FormInput = <T extends FieldValues>({
         <FormItem className={cn("grid", containerClassNames)}>
           {label && <FormLabel>{label}</FormLabel>}
           <FormControl>
-            <Input {...inputProps} {...field} />
+            <Input
+              {...inputProps}
+              {...field}
+              onChange={
+                inputProps.type === "number"
+                  ? (e) => field.onChange(Number(e.target.value))
+                  : field.onChange
+              }
+            />
           </FormControl>
           {description && <FormDescription>{description}</FormDescription>}
           <FormMessage />

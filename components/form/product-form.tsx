@@ -22,6 +22,8 @@ import { VariantForm } from "./variant-form";
 import { MetadataForm } from "./metadata-form";
 import { RichTextFormInput, Tiptap } from "../tiptap";
 import { UnitTypeform } from "./unit-type-form";
+import { DataModel } from "@/convex/_generated/dataModel";
+import { ShippingForm } from "./shipping-form";
 
 interface ProductFormProps {
   onSubmit: (values: ProductSchema) => void;
@@ -283,6 +285,26 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
                 )}
               />
             </div>
+            <div className="py-4">
+              <div className="mb-4">
+                <div>
+                  <h1 className="text-2xl font-bold">Shipping Information</h1>
+                  <p className="text-muted-foreground">
+                    Fill in shipping information for this product
+                  </p>
+                </div>
+              </div>
+              <FormField
+                control={form.control}
+                name="variants"
+                render={() => (
+                  <FormItem>
+                    <ShippingForm form={form} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
         </div>
         {/* <pre>{JSON.stringify(values, null, 2)}</pre> */}
@@ -292,7 +314,12 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
   );
 }
 
-export const formatProductFromForm = (values: ProductSchema) => ({
+export const formatProductFromForm = (
+  values: ProductSchema
+): Omit<
+  DataModel["products"]["document"],
+  "_id" | "storeId" | "_creationTime"
+> => ({
   isUnspecified: values.isUnspecified,
   name: values.name,
   additionalInformation: values.additionalInformation,
@@ -318,4 +345,6 @@ export const formatProductFromForm = (values: ProductSchema) => ({
     })),
   })),
   metadataIds: values.metadatas.map((m) => m._id as Id<"metadatas">),
+  weight: values.weight,
+  packageId: values.packageId as Id<"packages">,
 });

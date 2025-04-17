@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { DataModel, Id } from "./_generated/dataModel";
-import { mutation, query, QueryCtx } from "./_generated/server";
+import { internalQuery, mutation, query, QueryCtx } from "./_generated/server";
 import { NotFoundError, UnauthorizedError } from "./error";
 import { Categories, Metadatas, Products, UnitTypes } from "./schema";
 import {
@@ -498,4 +498,29 @@ export const getUnitTypes = query(async (ctx) => {
     .query("unitTypes")
     .filter((q) => q.eq(q.field("storeId"), store._id))
     .collect();
+});
+
+// internal functions
+export const getProductsPackages = internalQuery({
+  args: {
+    productIds: v.array(v.id("products")),
+  },
+  handler: async (ctx, { productIds }) => {
+    return Promise.all(
+      productIds.map(async (productId) => {
+        const product = await ctx.db.get(productId);
+        if (!product) return;
+
+        return ctx.db.get(product.packageId);
+      })
+    );
+  },
+});
+
+export const getProductByIds = internalQuery({
+  args: {
+    productIds: v.array(v.id("products")),
+  },
+  handler: (ctx, { productIds }) =>
+    Promise.all(productIds.map((productId) => ctx.db.get(productId))),
 });

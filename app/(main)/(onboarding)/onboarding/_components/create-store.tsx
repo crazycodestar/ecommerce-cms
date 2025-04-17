@@ -53,6 +53,13 @@ import * as RPNInput from "react-phone-number-input";
 import Link from "next/link";
 import { tryCatch } from "@/convex/utils";
 import { omit } from "es-toolkit";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const shippingAddressSchema = z.object({
   terminalSecretKey: z
@@ -70,6 +77,7 @@ const shippingAddressSchema = z.object({
   line2: z.string().optional(),
   city: z.string().min(2, { message: "City is required." }),
   state: z.string().min(2, { message: "State is required." }),
+  zip: z.string().min(2, { message: "Zip is required" }),
   country: z.string().min(2, { message: "Country is required." }),
 });
 
@@ -130,6 +138,7 @@ export function CreateStore() {
           lastName: process.env.LAST_NAME || "",
           line1: process.env.LINE1 || "",
           line2: "",
+          zip: "",
           phone: process.env.PHONE || "",
           state: process.env.STATE || "",
           // payment
@@ -149,6 +158,7 @@ export function CreateStore() {
           lastName: "",
           line1: "",
           line2: "",
+          zip: "",
           phone: "",
           state: "",
           // payment
@@ -571,7 +581,9 @@ const ShippingAddressForm = ({
   form: UseFormReturn<CreateStoreSchema>;
 }) => {
   const states = useStates();
-  const cities = useCities(form.watch("state") || undefined);
+  const getStateCode = (state: string) =>
+    states.find((s) => s.name === state)?.isoCode;
+  const cities = useCities(getStateCode(form.watch("state")) || undefined);
   return (
     <div className="space-y-4">
       <div>
@@ -701,6 +713,21 @@ const ShippingAddressForm = ({
           </FormItem>
         )}
       />
+
+      <FormField
+        control={form.control}
+        name="zip"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Zip code</FormLabel>
+            <FormControl>
+              <Input placeholder="100001" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FormSelect control={form.control} name="country" label="Country">
           <FormSelectTrigger className="w-full">
@@ -710,21 +737,41 @@ const ShippingAddressForm = ({
             <FormSelectItem value="NG">Nigeria</FormSelectItem>
           </FormSelectContent>
         </FormSelect>
-        <FormSelect control={form.control} name="state" label="State">
-          <FormSelectTrigger
-            disabled={!form.watch("country")}
-            className="w-full"
-          >
-            <FormSelectValue placeholder="Select state" />
-          </FormSelectTrigger>
-          <FormSelectContent>
-            {states.map((state) => (
-              <FormSelectItem key={state.isoCode} value={state.isoCode}>
-                {state.name}
-              </FormSelectItem>
-            ))}
-          </FormSelectContent>
-        </FormSelect>
+
+        <FormField
+          control={form.control}
+          name={"state"}
+          render={({ field }) => (
+            <FormItem className="grid w-full">
+              <FormLabel>State</FormLabel>
+              <Select
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  form.setValue("city", "");
+                }}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger
+                    disabled={!form.watch("state")}
+                    className="w-full"
+                  >
+                    <SelectValue placeholder="State" />
+                  </SelectTrigger>
+                </FormControl>
+
+                <SelectContent>
+                  {states.map((state) => (
+                    <SelectItem key={state.isoCode} value={state.name}>
+                      {state.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormSelect control={form.control} name="city" label="City">
           <FormSelectTrigger disabled={!form.watch("state")} className="w-full">
             <FormSelectValue placeholder="Select city" />

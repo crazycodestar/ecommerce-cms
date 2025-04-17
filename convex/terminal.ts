@@ -1,23 +1,36 @@
 "use node";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { z } from "zod";
 import { v } from "convex/values";
-import { InternalServerError } from "./error";
+import { BadRequestError, InternalServerError, NotFoundError } from "./error";
+import { api, internal } from "./_generated/api";
+import { getTokenIdentifierWithAuthError, tryCatch } from "./utils";
+import { omit, pick } from "es-toolkit";
 
 const TERMINAL_URL =
   process.env.NODE_ENV == "production"
     ? "https://api.terminal.africa/v1"
     : "https://sandbox.terminal.africa/v1";
 
-const TERMINAL_SECRET =
-  process.env.NODE_ENV == "production"
-    ? process.env.TERMINAL_SECRET_PROD
-    : process.env.TERMINAL_SECRET_DEV;
+const getTerminalSecret = () => {
+  const TERMINAL_SECRET =
+    process.env.NODE_ENV == "production"
+      ? process.env.TERMINAL_SECRET_PROD
+      : process.env.TERMINAL_SECRET_DEV;
 
-export async function terminalFetch<T>(url: string, options: RequestInit = {}) {
+  if (!TERMINAL_SECRET)
+    throw new InternalServerError("Please set a terminal secret ENV");
+  return TERMINAL_SECRET;
+};
+
+export async function terminalFetch<T>(
+  url: string,
+  options: RequestInit = {},
+  terminalSecret: string
+) {
   options.headers = {
     ...options.headers,
-    Authorization: `Bearer ${TERMINAL_SECRET}`,
+    Authorization: `Bearer ${terminalSecret}`,
   };
 
   const response = await fetch(url, options);
@@ -27,7 +40,7 @@ export async function terminalFetch<T>(url: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     throw new InternalServerError(
-      `could not send terminal request error: ${await response.text()}`,
+      `could not send terminal request error: ${await response.text()}`
     );
   }
   const responseData: { data: T } = await response.json();
@@ -70,6 +83,8 @@ export const stateSchema = z.object({
 });
 
 export const rateSchema = z.object({
+  rate_id: z.string(),
+  // ^? I added
   amount: z.number(),
   cargo_type: z.string(),
   carrier_logo: z.string().url(),
@@ -95,6 +110,8 @@ export const rateSchema = z.object({
   insurance_coverage: z.number(),
   insurance_fee: z.number(),
   metadata: z.object({
+    recommended: z.string(),
+    // ^? I added
     address_payload: z.object({
       delivery_address: z.object({
         city: z.string(),
@@ -140,7 +157,7 @@ export const parcelSchema = z.object({
       value: z.number(),
       weight: z.number(),
       quantity: z.number(),
-    }),
+    })
   ),
   parcel_id: z.string(),
   total_weight: z.number(),
@@ -185,7 +202,7 @@ export const arrangedShipmentSchema = z.object({
       description: z.string(),
       location: z.string(),
       status: z.string(),
-    }),
+    })
   ),
   extras: z.object({
     reference: z.string(),
@@ -196,53 +213,132 @@ export const arrangedShipmentSchema = z.object({
 });
 
 export const getCarriers = action({
-  args: {},
-  handler: async () => {
+  args: {
+    terminalSecretKey: v.string(),
+  },
+  handler: async (_, { terminalSecretKey }) => {
     const response = await terminalFetch<{
       carriers: z.infer<typeof carrierSchema>[];
-    }>(`${TERMINAL_URL}/carriers/?active=true`);
+    }>(`${TERMINAL_URL}/carriers/?active=true`, {}, terminalSecretKey);
 
     return response.carriers.filter((carrier) =>
-      carrier.available_countries.includes("NG"),
+      carrier.available_countries.includes("NG")
     );
   },
 });
 
+const handleCreatePackageFromPackages = ({
+  packages,
+  terminalSecretKey,
+}: {
+  packages: {
+    width: number;
+    height: number;
+    length: number;
+    weight: number;
+  }[];
+  terminalSecretKey: string;
+}) => {
+  let package_ = {
+    name: Math.random().toString(36).substring(7), // generates random string
+    width: 0,
+    height: 0,
+    length: 0,
+    weight: 0,
+    type: "box" as const,
+  };
+  packages.forEach((p) => {
+    package_.width += p.width;
+    package_.height += p.height;
+    package_.length += p.length;
+    package_.weight += p.weight;
+  });
+
+  const formattedPackage = pick(package_, [
+    "name",
+    "width",
+    "height",
+    "length",
+    "weight",
+    "type",
+  ]);
+
+  return handleCreatePackaging(formattedPackage, terminalSecretKey);
+};
+
 export const getRatesForShipment = action({
   args: {
-    parcel: v.object({
-      packagingId: v.string(),
-      items: v.array(
-        v.object({
-          name: v.string(),
-          description: v.string(),
-          quantity: v.number(),
-          value: v.number(),
-          weight: v.number(),
-        }),
-      ),
-    }),
-    pickupAddress: v.string(),
     deliveryAddress: v.object({
       city: v.string(),
       country: v.string(),
       state: v.string(),
       email: v.string(),
       line1: v.string(),
-      line2: v.string(),
+      line2: v.optional(v.string()),
       firstName: v.string(),
       lastName: v.string(),
       phone: v.string(),
       zip: v.string(),
     }),
+    storeSlug: v.string(),
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        name: v.string(),
+        description: v.string(),
+        value: v.number(),
+        weight: v.number(),
+        quantity: v.number(),
+      })
+    ),
   },
 
-  handler: async (_, args) => {
-    const receiver = await handleCreateAddress(args.deliveryAddress);
-    const parcel = await handleCreateParcel(args.parcel);
-    const response = await terminalFetch<z.infer<typeof rateSchema>[]>(
-      `${TERMINAL_URL}/rates/shipment?pickup_address=${args.pickupAddress}&delivery_address=${receiver.address_id}&parcel_id=${parcel.parcel_id}`,
+  handler: async (ctx, { storeSlug, items, ...args }) => {
+    // get store terminal Id
+    const { terminalSecretKey, terminalStoreAddressId: pickupAddress } =
+      await ctx.runQuery(internal.stores.getStoreBySlug, { storeSlug });
+
+    // calculate package size and create new package Id
+    let packagingId: string | undefined;
+    const packages = await ctx.runQuery(internal.products.getProductsPackages, {
+      productIds: items.map((i) => i.productId),
+    });
+    const filteredPackages = packages.filter((i): i is NonNullable<typeof i> =>
+      Boolean(i)
     );
+
+    if (filteredPackages.length === 0)
+      throw new NotFoundError("Products not found");
+    if (filteredPackages.length === 1)
+      packagingId = filteredPackages[0].terminalPackageId!;
+    if (filteredPackages.length > 1) {
+      const package_ = await handleCreatePackageFromPackages({
+        packages: filteredPackages,
+        terminalSecretKey,
+      });
+      packagingId = package_.packaging_id;
+    }
+
+    if (!packagingId) throw new InternalServerError();
+
+    // create parcel
+    const parcelInfo = {
+      packagingId: packagingId,
+      items: items.map((i) => omit(i, ["productId"])),
+    };
+    const receiver = await handleCreateAddress(
+      args.deliveryAddress,
+      terminalSecretKey
+    );
+    const parcel = await handleCreateParcel(parcelInfo, terminalSecretKey);
+    const response: z.infer<typeof rateSchema>[] = await terminalFetch<
+      z.infer<typeof rateSchema>[]
+    >(
+      `${TERMINAL_URL}/rates/shipment?pickup_address=${pickupAddress}&delivery_address=${receiver.address_id}&parcel_id=${parcel.parcel_id}`,
+      {},
+      terminalSecretKey
+    );
+
     return response;
   },
 });
@@ -251,26 +347,32 @@ export const getDropOffLocations = action({
   args: {
     state: v.string(),
     city: v.string(),
+    terminalSecretKey: v.string(),
   },
-  handler: async (_, args) => {
+  handler: async (_, { terminalSecretKey, ...args }) => {
     const response = await terminalFetch<z.infer<typeof addressSchema>[]>(
       `${TERMINAL_URL}/carriers/locations/drop-off/?country=NG&state=${args.state}&city=${args.city}&carrier=1`,
+      {},
+      terminalSecretKey
     );
 
     return response;
   },
 });
 
-async function handleCreateParcel(args: {
-  packagingId: string;
-  items: {
-    name: string;
-    description: string;
-    quantity: number;
-    value: number;
-    weight: number;
-  }[];
-}) {
+async function handleCreateParcel(
+  args: {
+    packagingId: string;
+    items: {
+      name: string;
+      description: string;
+      quantity: number;
+      value: number;
+      weight: number;
+    }[];
+  },
+  terminalSecretKey: string
+) {
   return await terminalFetch<z.infer<typeof parcelSchema>>(
     `${TERMINAL_URL}/parcels/`,
     {
@@ -284,23 +386,27 @@ async function handleCreateParcel(args: {
         packaging: args.packagingId,
         description: args.items.reduce<string>(
           (acc, item) => acc + item.name + "\n",
-          "",
+          ""
         ),
         weight_unit: "kg",
       }),
     },
+    terminalSecretKey
   );
 }
 
-async function handleCreatePackaging(args: {
-  name: string;
-  width: number;
-  height: number;
-  length: number;
-  weight: number;
-  type: "box" | "envelope" | "soft-packaging";
-}) {
-  return await terminalFetch<z.infer<typeof packagingSchema>>(
+export async function handleCreatePackaging(
+  args: {
+    name: string;
+    width: number;
+    height: number;
+    length: number;
+    weight: number;
+    type: "box" | "envelope" | "soft-packaging";
+  },
+  terminalSecretKey: string
+) {
+  return terminalFetch<z.infer<typeof packagingSchema>>(
     `${TERMINAL_URL}/packaging/`,
     {
       method: "POST",
@@ -311,21 +417,25 @@ async function handleCreatePackaging(args: {
         size_unit: "cm",
       }),
     },
+    terminalSecretKey
   );
 }
 
-async function handleCreateAddress(args: {
-  city: string;
-  country: string;
-  state: string;
-  email: string;
-  line1: string;
-  line2: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  zip: string;
-}) {
+async function handleCreateAddress(
+  args: {
+    city: string;
+    country: string;
+    state: string;
+    email: string;
+    line1: string;
+    line2?: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    zip: string;
+  },
+  terminalSecretKey: string
+) {
   return await terminalFetch<z.infer<typeof addressSchema>>(
     `${TERMINAL_URL}/addresses/`,
     {
@@ -344,6 +454,7 @@ async function handleCreateAddress(args: {
         zip: args.zip,
       }),
     },
+    terminalSecretKey
   );
 }
 
@@ -357,26 +468,42 @@ export const createParcel = action({
         quantity: v.number(),
         value: v.number(),
         weight: v.number(),
-      }),
+      })
     ),
+    terminalSecretKey: v.string(),
   },
-  handler: async (_, args) => handleCreateParcel(args),
+  handler: async (_, { terminalSecretKey, ...args }) =>
+    handleCreateParcel(args, terminalSecretKey),
 });
 
 export const createPackaging = action({
   args: {
-    name: v.string(),
-    width: v.number(),
-    height: v.number(),
-    length: v.number(),
-    weight: v.number(),
-    type: v.union(
-      v.literal("box"),
-      v.literal("envelope"),
-      v.literal("soft-packaging"),
-    ),
+    packageId: v.id("packages"),
+    terminalSecretKey: v.string(),
   },
-  handler: async (_, args) => handleCreatePackaging(args),
+  handler: async (ctx, { packageId, terminalSecretKey }) => {
+    const package_ = await ctx.runQuery(
+      internal.packages.internalGetPackageById,
+      { packageId }
+    );
+    if (!package_) throw new NotFoundError("Package not found");
+    const formattedPackage = pick(package_, [
+      "name",
+      "width",
+      "height",
+      "length",
+      "weight",
+      "type",
+    ]);
+    const res = await handleCreatePackaging(
+      formattedPackage,
+      terminalSecretKey
+    );
+    await ctx.runMutation(
+      internal.packages.updatePackageWithTerminalPackageId,
+      { packageId, terminalPackageId: res.packaging_id }
+    );
+  },
 });
 
 export const createAddress = action({
@@ -386,22 +513,27 @@ export const createAddress = action({
     state: v.string(),
     email: v.string(),
     line1: v.string(),
-    line2: v.string(),
+    line2: v.optional(v.string()),
     firstName: v.string(),
     lastName: v.string(),
     phone: v.string(),
     zip: v.string(),
+    terminalSecretKey: v.string(),
   },
-  handler: async (_, args) => handleCreateAddress(args),
+  handler: async (_, { terminalSecretKey, ...args }) =>
+    handleCreateAddress(args, terminalSecretKey),
 });
 
-export const getStates = action({
-  handler: async () => {
-    const response = await terminalFetch<z.infer<typeof stateSchema>[]>(
-      `${TERMINAL_URL}/states/?country_code=NG`,
-    );
-    return response;
-  },
+export const getStates = action(async () => {
+  // we have to use our own secret_key here because of convex's architect and I can't figure out a way around it
+  const terminalSecret = getTerminalSecret();
+  const response = await terminalFetch<z.infer<typeof stateSchema>[]>(
+    `${TERMINAL_URL}/states/?country_code=NG`,
+    {},
+    terminalSecret
+  );
+
+  return response;
 });
 
 export const getCities = action({
@@ -409,9 +541,11 @@ export const getCities = action({
     stateCode: v.string(),
   },
   handler: async (_, args) => {
+    const terminalSecretKey = getTerminalSecret();
     const response = await terminalFetch<z.infer<typeof citySchema>[]>(
       `${TERMINAL_URL}/cities/?country_code=NG&state_code=${args.stateCode}`,
       {},
+      terminalSecretKey
     );
     return response;
   },
@@ -433,37 +567,51 @@ export const createShipment = action({
       phone: v.string(),
       zip: v.string(),
     }),
-    parcel: v.object({
-      packagingId: v.string(),
-      items: v.array(
-        v.object({
-          name: v.string(),
-          description: v.string(),
-          quantity: v.number(),
-          value: v.number(),
-          weight: v.number(),
-        }),
-      ),
-    }),
+    parcels: v.array(
+      v.object({
+        packagingId: v.string(),
+        items: v.array(
+          v.object({
+            name: v.string(),
+            description: v.string(),
+            quantity: v.number(),
+            value: v.number(),
+            weight: v.number(),
+          })
+        ),
+      })
+    ),
+    terminalSecretKey: v.string(),
   },
 
-  handler: async (_, args) => {
-    const receiver = await handleCreateAddress(args.deliveryAddress);
-    const parcel = await handleCreateParcel(args.parcel);
+  handler: async (_, { terminalSecretKey, ...args }) => {
+    const receiver = await handleCreateAddress(
+      args.deliveryAddress,
+      terminalSecretKey
+    );
+    const parcel = await Promise.all(
+      args.parcels.map((parcel) =>
+        handleCreateParcel(parcel, terminalSecretKey)
+      )
+    );
 
     const shipmentResponse = await terminalFetch<
       z.infer<typeof shipmentSchema>
-    >(`${TERMINAL_URL}/shipments/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    >(
+      `${TERMINAL_URL}/shipments/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          address_from: args.pickupAddress,
+          address_to: receiver.address_id,
+          parcels: parcel.map((p) => p.parcel_id),
+        }),
       },
-      body: JSON.stringify({
-        address_from: args.pickupAddress,
-        address_to: receiver.address_id,
-        parcel: parcel.parcel_id,
-      }),
-    });
+      terminalSecretKey
+    );
 
     return await terminalFetch<z.infer<typeof arrangedShipmentSchema>>(
       `${TERMINAL_URL}/shipments/pickup`,
@@ -475,9 +623,10 @@ export const createShipment = action({
         body: JSON.stringify({
           rate_id: args.rateId,
           shipment_id: shipmentResponse.shipment_id,
-          parcel: parcel.parcel_id,
+          parcels: parcel.map((p) => p.parcel_id),
         }),
       },
+      terminalSecretKey
     );
   },
 });
@@ -485,22 +634,27 @@ export const createShipment = action({
 export const enableCarriers = action({
   args: {
     ids: v.array(v.string()),
+    terminalSecretKey: v.string(),
   },
 
-  handler: async (_, args) => {
-    await terminalFetch(`${TERMINAL_URL}/carriers/multiple/enable`, {
-      method: "POST",
-      body: JSON.stringify({
-        carriers: args.ids.map((id) => {
-          return {
-            carrier_id: id,
-            domestic: true,
-            regional: true,
-            international: false,
-          };
+  handler: async (_, { terminalSecretKey, ...args }) => {
+    await terminalFetch(
+      `${TERMINAL_URL}/carriers/multiple/enable`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          carriers: args.ids.map((id) => {
+            return {
+              carrier_id: id,
+              domestic: true,
+              regional: true,
+              international: false,
+            };
+          }),
         }),
-      }),
-    });
+      },
+      terminalSecretKey
+    );
 
     return "success";
   },

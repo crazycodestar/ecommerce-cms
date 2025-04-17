@@ -33,6 +33,8 @@ export default function ProductsPage() {
       stock: 0,
       isUnspecified: false,
       categoryId: "",
+      weight: 0,
+      packageId: "",
     },
   });
 

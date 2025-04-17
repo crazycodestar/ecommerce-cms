@@ -101,6 +101,8 @@ export const productSchema = z
         _id: z.string(),
       })
     ),
+    weight: z.number(),
+    packageId: z.string().min(1, { message: "Pacage is required" }),
   })
   .refine(
     (val) => {

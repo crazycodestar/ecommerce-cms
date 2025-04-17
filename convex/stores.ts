@@ -1,13 +1,25 @@
 import { v, VString } from "convex/values";
-import { internalMutation, mutation, query } from "./_generated/server";
-import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
+import {
+  internalAction,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
+import {
+  ConflictError,
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from "./error";
 import { Stores } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifier,
   getTokenIdentifierWithAuthError,
 } from "./utils";
-import { omit } from "es-toolkit";
+import { omit, pick } from "es-toolkit";
+import { api, internal } from "./_generated/api";
 
 export const getMyStore = query({
   handler: async (ctx) => {
@@ -23,6 +35,14 @@ export const getMyStore = query({
       slug: store.slug,
     };
   },
+});
+
+export const getStoreByTokenIdentifier = internalQuery({
+  args: {
+    tokenIdentifier: v.string(),
+  },
+  handler: (ctx, { tokenIdentifier }) =>
+    getStoreByTokenIdentifierWithAuthError(ctx, tokenIdentifier),
 });
 
 export const getStore = query({
@@ -62,6 +82,47 @@ export const getStoreCategories = query({
   },
 });
 
+export const createTerminalStoreAddressId = internalAction({
+  args: {
+    storeId: v.id("stores"),
+  },
+  handler: async (ctx, { storeId }) => {
+    const store = await ctx.runQuery(internal.stores.getStoreById, { storeId });
+    if (!store) throw new InternalServerError();
+
+    const address = await ctx.runAction(
+      api.terminal.createAddress,
+      pick(store, [
+        "city",
+        "country",
+        "state",
+        "email",
+        "line1",
+        "line2",
+        "firstName",
+        "lastName",
+        "phone",
+        "zip",
+        "terminalSecretKey",
+      ])
+    );
+
+    await ctx.runMutation(internal.stores.updateStoreTerminalAddressId, {
+      storeId: store._id,
+      terminalStoreAddressId: address.address_id,
+    });
+  },
+});
+
+export const updateStoreTerminalAddressId = internalMutation({
+  args: {
+    storeId: v.id("stores"),
+    terminalStoreAddressId: v.string(),
+  },
+  handler: (ctx, { storeId, terminalStoreAddressId }) =>
+    ctx.db.patch(storeId, { terminalStoreAddressId }),
+});
+
 export const createStore = mutation({
   args: omit(Stores.withoutSystemFields, ["owner", "contents"]),
 
@@ -88,6 +149,12 @@ export const createStore = mutation({
       owner: tokenIdentifier,
       contents: [],
     });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.stores.createTerminalStoreAddressId,
+      { storeId }
+    );
 
     // Add "unit" unit type for store
     await ctx.db.insert("unitTypes", {
@@ -121,6 +188,7 @@ export const updateStore = mutation({
     phone: v.optional(v.string()),
     line1: v.optional(v.string()),
     line2: v.optional(v.string()),
+    zip: v.optional(v.string()),
     city: v.optional(v.string()),
     state: v.optional(v.string()),
     country: v.optional(v.string()),
@@ -139,14 +207,72 @@ export const updateStore = mutation({
     if (store.slug !== slug)
       throw new UnauthorizedError("Unauthorized to access store");
 
-    ctx.db.patch(store._id, args);
+    // compare addresses
+    const shippingInfo = pick(args, [
+      "firstName",
+      "lastName",
+      "email",
+      "phone",
+      "line1",
+      "line2",
+      "zip",
+      "city",
+      "state",
+      "country",
+    ]);
+    const hasShippingInfoBeenUpdated = !Object.entries(shippingInfo).every(
+      ([key, value]) => {
+        if (!value) return true;
+        if (!(key in store)) return true;
+
+        return store[key as keyof typeof store] === value;
+      }
+    );
+    if (hasShippingInfoBeenUpdated)
+      await ctx.scheduler.runAfter(
+        0,
+        internal.stores.createTerminalStoreAddressId,
+        { storeId: store._id }
+      );
+
+    return ctx.db.patch(store._id, args);
   },
 });
 
-// export const internalUpdateStore = internalMutation({
-//   args: {
-//     ...omit(Stores.withoutSystemFields, ["owner"]),
-//     _id: Stores._id,
-//   },
-//   handler: (ctx, { _id, ...args }) => ctx.db.patch(_id, args),
-// });
+// internal functions
+export const getStoreTerminalSecretKey = internalQuery({
+  args: {
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+    if (!store) return null;
+
+    return store.terminalSecretKey;
+  },
+});
+
+export const getStoreById = internalQuery({
+  args: {
+    storeId: v.id("stores"),
+  },
+  handler: (ctx, { storeId }) => ctx.db.get(storeId),
+});
+
+export const getStoreBySlug = internalQuery({
+  args: {
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+    if (!store) throw new NotFoundError("Store not found");
+
+    return store;
+  },
+});

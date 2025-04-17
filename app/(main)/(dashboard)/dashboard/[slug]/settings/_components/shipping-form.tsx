@@ -1,12 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFieldArray, useForm } from "react-hook-form";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { cn } from "@/lib/utils";
 // import {} from "@/components/ui/sonner";
+import {
+  FormSelect,
+  FormSelectContent,
+  FormSelectItem,
+  FormSelectTrigger,
+  FormSelectValue,
+} from "@/components/form/form-select";
+import {
+  CountrySelect,
+  FlagComponent,
+  PhoneInput,
+} from "@/components/phone-input";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,33 +29,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { api } from "@/convex/_generated/api";
+import { tryCatch } from "@/convex/utils";
+import { useAction, useMutation } from "convex/react";
+import { Loader, SquareArrowOutUpRight } from "lucide-react";
+import React from "react";
+import * as RPNInput from "react-phone-number-input";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import {
-  FormSelect,
-  FormSelectContent,
-  FormSelectItem,
-  FormSelectTrigger,
-  FormSelectValue,
-} from "@/components/form/form-select";
-import { Loader, SquareArrowOutUpRight } from "lucide-react";
-import * as RPNInput from "react-phone-number-input";
-import {
-  CountrySelect,
-  FlagComponent,
-  PhoneInput,
-} from "@/components/phone-input";
-import React from "react";
-import { useAction, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { tryCatch } from "@/convex/utils";
+import { SelectValue } from "@radix-ui/react-select";
 
 const shippingAddressSchema = z.object({
   terminalSecretKey: z
@@ -60,6 +58,7 @@ const shippingAddressSchema = z.object({
   phone: z.string().min(10, { message: "Please enter a valid phone number." }),
   line1: z.string().min(5, { message: "Address line 1 is required." }),
   line2: z.string().optional(),
+  zip: z.string().min(2, { message: "Zip is required" }),
   city: z.string().min(2, { message: "City is required." }),
   state: z.string().min(2, { message: "State is required." }),
   country: z.string().min(2, { message: "Country is required." }),
@@ -121,7 +120,9 @@ export function ShippingForm({
   });
 
   const states = useStates();
-  const cities = useCities(form.watch("state") || undefined);
+  const getStateCode = (state: string) =>
+    states.find((s) => s.name === state)?.isoCode;
+  const cities = useCities(getStateCode(form.watch("state")) || undefined);
 
   const [isPending, startTransition] = React.useTransition();
   const updateStore = useMutation(api.stores.updateStore);
@@ -136,7 +137,7 @@ export function ShippingForm({
 
       if (error)
         return void toast.error("Failed to update store. Try again later");
-      toast.success("Profile updated.");
+      toast.success("Shipping info updated.");
     });
   }
 
@@ -268,6 +269,20 @@ export function ShippingForm({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="zip"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Zip code</FormLabel>
+                <FormControl>
+                  <Input placeholder="100001" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <FormSelect control={form.control} name="country" label="Country">
               <FormSelectTrigger className="w-full">
@@ -277,21 +292,40 @@ export function ShippingForm({
                 <FormSelectItem value="NG">Nigeria</FormSelectItem>
               </FormSelectContent>
             </FormSelect>
-            <FormSelect control={form.control} name="state" label="State">
-              <FormSelectTrigger
-                disabled={!form.watch("country")}
-                className="w-full"
-              >
-                <FormSelectValue placeholder="Select state" />
-              </FormSelectTrigger>
-              <FormSelectContent>
-                {states.map((state) => (
-                  <FormSelectItem key={state.isoCode} value={state.isoCode}>
-                    {state.name}
-                  </FormSelectItem>
-                ))}
-              </FormSelectContent>
-            </FormSelect>
+            <FormField
+              control={form.control}
+              name={"state"}
+              render={({ field }) => (
+                <FormItem className="grid w-full">
+                  <FormLabel>State</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      form.setValue("city", "");
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger
+                        disabled={!form.watch("state")}
+                        className="w-full"
+                      >
+                        <SelectValue placeholder="State" />
+                      </SelectTrigger>
+                    </FormControl>
+
+                    <SelectContent>
+                      {states.map((state) => (
+                        <SelectItem key={state.isoCode} value={state.name}>
+                          {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormSelect control={form.control} name="city" label="City">
               <FormSelectTrigger
                 disabled={!form.watch("state")}

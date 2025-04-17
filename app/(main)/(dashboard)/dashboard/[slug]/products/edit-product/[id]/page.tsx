@@ -54,6 +54,8 @@ export default function EditProductPage() {
       product.metadataIds?.map((m) => ({
         _id: m,
       })) ?? [],
+    weight: product.weight ?? 0,
+    packageId: product.packageId ?? "",
   };
   return (
     <>

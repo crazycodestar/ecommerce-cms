@@ -211,10 +211,12 @@ export const Stores = Table("stores", {
   email: v.string(),
   phone: v.string(),
   line1: v.string(),
-  line2: v.string(),
+  line2: v.optional(v.string()),
   city: v.string(),
   state: v.string(),
   country: v.string(),
+  zip: v.string(),
+  terminalStoreAddressId: v.string(),
   // Payment Information with Paystack
   publicKey: v.string(),
   secretKey: v.string(),
@@ -254,6 +256,9 @@ export const Products = Table("products", {
     })
   ),
   metadataIds: v.optional(v.array(v.id("metadatas"))),
+  // FIXME: migration
+  weight: v.number(),
+  packageId: v.id("packages"),
 });
 
 // UnitType schema
@@ -299,22 +304,65 @@ export const Properties = Table("properties", {
 });
 
 export const Orders = Table("orders", {
-  storeId: v.id("stores"),
-  email: v.string(),
+  slug: v.string(),
+  items: v.array(
+    v.object({
+      productId: v.id("products"),
+      quantity: v.number(),
+      variants: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            value: v.string(),
+          })
+        )
+      ),
+      metadatas: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            value: v.union(v.string(), v.number()),
+          })
+        )
+      ),
+    })
+  ),
+  // Shipping Information
+  firstName: v.string(),
+  lastName: v.string(),
+  line1: v.string(),
+  line2: v.optional(v.string()),
+  state: v.string(),
+  city: v.string(),
+  zip: v.string(),
+  country: v.string(),
+  rateId: v.string(),
   phone: v.string(),
-  shippingInformation: v.object({
-    firstName: v.string(),
-    lastName: v.string(),
-    address1: v.string(),
-    address2: v.optional(v.string()),
-    city: v.optional(v.string()),
-    zipCode: v.optional(v.string()),
-  }),
+  email: v.string(),
+  // Additional Information
+  storeId: v.id("stores"),
   amount: v.number(),
-  url: v.string(),
-  accessCode: v.string(),
-  reference: v.string(),
+  shipping: v.number(),
+  url: v.optional(v.string()),
+  accessCode: v.optional(v.string()),
+  reference: v.optional(v.string()),
   status: v.union(v.literal("pending"), v.literal("success"), v.string()),
+});
+
+// Packages
+export const Packages = Table("packages", {
+  name: v.string(),
+  width: v.number(),
+  height: v.number(),
+  length: v.number(),
+  weight: v.number(),
+  type: v.union(
+    v.literal("box"),
+    v.literal("envelope"),
+    v.literal("soft-packaging")
+  ),
+  storeId: v.id("stores"),
+  terminalPackageId: v.optional(v.string()),
 });
 
 export default defineSchema({
@@ -346,5 +394,7 @@ export default defineSchema({
     .index("by_reference", ["reference"])
     .index("by_storeId_reference", ["storeId", "reference"])
     .index("by_email", ["email"])
-    .index("by_phone", ["phone"]),
+    .index("by_phone", ["phone"])
+    .index("by_slug", ["slug"]),
+  packages: Packages.table.index("by_storeId", ["storeId"]),
 });

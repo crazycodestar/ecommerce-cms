@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface OrderType {
   email: string;
   phone: string;
