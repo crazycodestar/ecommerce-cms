@@ -1,10 +1,11 @@
 import { omit } from "convex-helpers";
 import { v } from "convex/values";
-import { action, internalMutation, query } from "./_generated/server";
+import { action, internalMutation, query, QueryCtx } from "./_generated/server";
 import { InternalServerError, NotFoundError } from "./error";
 import { Orders } from "./schema";
 import { pick } from "convex-helpers";
 import { api, internal } from "./_generated/api";
+import { DataModel, Id } from "./_generated/dataModel";
 
 export const updateOrderPaymentInformation = internalMutation({
   args: {
@@ -92,11 +93,11 @@ export const createOrder = internalMutation({
           .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
           .order("desc")
           .first()
-      )?.slug ?? "#ORD-00000";
-    // #ORD-12345
-    const orderNumber = parseInt(lastOrderSlug.replace("#ORD-", ""));
+      )?.slug ?? "ORD-00000";
+    // ORD-12345
+    const orderNumber = parseInt(lastOrderSlug.replace("ORD-", ""));
     console.log(typeof orderNumber, orderNumber);
-    const slug = "#ORD-" + (orderNumber + 1).toString().padStart(5, "0");
+    const slug = "ORD-" + (orderNumber + 1).toString().padStart(5, "0");
 
     return ctx.db.insert("orders", {
       ...args,
@@ -113,7 +114,12 @@ export const getOrder = query({
   args: {
     orderId: v.id("orders"),
   },
-  handler: (ctx, { orderId }) => ctx.db.get(orderId),
+  handler: async (ctx, { orderId }) => {
+    const order = await ctx.db.get(orderId);
+    if (!order) return null;
+
+    return order;
+  },
 });
 
 export const getOrderBySlug = query({
@@ -131,18 +137,74 @@ export const getOrderBySlug = query({
   },
 });
 
-export const getOrderByReference = query({
-  args: {
-    reference: v.string(),
-  },
-  handler: async (ctx, { reference }) => {
-    const order = await ctx.db
-      .query("orders")
-      .withIndex("by_reference", (q) => q.eq("reference", reference))
-      .unique();
-    if (!order) throw new NotFoundError("transaction not found");
+const getOrderDetails = async (
+  ctx: QueryCtx,
+  order: DataModel["orders"]["document"]
+) => {
+  const items = await Promise.all(
+    order.items.map(async (item) => {
+      const product = await ctx.db.get(item.productId);
+      if (!product) throw new InternalServerError("product not found");
 
-    return order;
+      const price =
+        product.price +
+        (item.variants?.reduce((acc, variant) => {
+          const variantSet = product.variants?.find(
+            (variantSet) => variantSet.name === variant.name
+          );
+          const selectedOption = variantSet?.options.find(
+            (option) => option.name === variant.value
+          );
+          return acc + (selectedOption ? selectedOption.price : 0);
+        }, 0) ?? 0);
+
+      return {
+        ...pick(product, ["name", "price"]),
+        price,
+        ...item,
+      };
+    })
+  );
+
+  return {
+    ...order,
+    items,
+  };
+};
+
+export const getOrderByReferenceOrSlug = query({
+  args: {
+    option: v.union(
+      v.object({
+        slug: v.string(),
+      }),
+      v.object({
+        reference: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, { option }) => {
+    if ("reference" in option) {
+      const order = await ctx.db
+        .query("orders")
+        .withIndex("by_reference", (q) => q.eq("reference", option.reference))
+        .unique();
+
+      if (!order) return null;
+      return getOrderDetails(ctx, order);
+    }
+
+    if ("slug" in option) {
+      const order = await ctx.db
+        .query("orders")
+        .withIndex("by_slug", (q) => q.eq("slug", option.slug))
+        .unique();
+
+      if (!order) return null;
+      return getOrderDetails(ctx, order);
+    }
+
+    return null;
   },
 });
 

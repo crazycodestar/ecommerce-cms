@@ -1,7 +1,7 @@
 import { CheckCircle2, Clock, Package, Truck } from "lucide-react";
 
 interface OrderTrackerProps {
-  status: "succes" | "pending";
+  status: "success" | "pending";
 }
 
 export function OrderTracker({ status }: OrderTrackerProps) {
@@ -9,17 +9,17 @@ export function OrderTracker({ status }: OrderTrackerProps) {
   const steps = [
     { id: 1, name: "Order Placed", icon: Clock, completed: true },
     { id: 2, name: "Processing", icon: Package, completed: true },
-    { id: 3, name: "Shipped", icon: Truck, completed: status === "succes" },
+    { id: 3, name: "Shipped", icon: Truck, completed: status === "success" },
     {
       id: 4,
       name: "Delivered",
       icon: CheckCircle2,
-      completed: status === "succes",
+      completed: status === "success",
     },
   ];
 
   // Determine the current step based on status
-  const currentStep = status === "succes" ? 4 : 2;
+  const currentStep = status === "success" ? 4 : 2;
 
   return (
     <div className="py-4">

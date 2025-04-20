@@ -14,7 +14,7 @@ export function OrderSkeleton() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Order Tracker Skeleton */}
-          <div className="py-4">
+          {/* <div className="py-4">
             <div className="relative">
               <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted" />
               <div className="relative flex justify-between">
@@ -26,7 +26,7 @@ export function OrderSkeleton() {
                 ))}
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Customer Information Skeleton */}
           <div>

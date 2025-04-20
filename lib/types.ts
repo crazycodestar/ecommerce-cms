@@ -3,11 +3,9 @@ import { z } from "zod";
 export interface OrderType {
   email: string;
   phone: string;
-  order: {
-    product: {
-      name: string;
-      price: number;
-    };
+  items: {
+    name: string;
+    price: number;
     quantity: number;
     variants?: {
       name: string;
@@ -28,6 +26,6 @@ export interface OrderType {
   };
   amount: number;
   deliveryAmount: number;
-  reference: string;
-  status: "succes" | "pending";
+  reference?: string;
+  status: "success" | "pending";
 }

@@ -2,52 +2,38 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { OrderDetails } from "./order-details";
-import { mockOrders } from "@/lib/mock-data";
-import type { OrderType } from "@/lib/types";
 import { OrderSkeleton } from "./order-skeleton";
 
 export function OrderLookup() {
-  const [orderId, setOrderId] = useState("");
-  const [order, setOrder] = useState<OrderType | null>(null);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const slug = searchParams.get("slug");
+  const reference = searchParams.get("reference");
+
+  const canLoad = !(!reference && !slug);
+  const order = useQuery(
+    api.orders.getOrderByReferenceOrSlug,
+    !canLoad
+      ? "skip"
+      : {
+          option: reference ? { reference } : { slug: slug! },
+        }
+  );
+
+  const isPending = canLoad && order === undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
 
-    try {
-      // In a real app, this would be an API call
-      // For demo purposes, we're using mock data
-      setTimeout(() => {
-        const foundOrder = mockOrders.find((o) => o.reference === orderId);
-
-        if (foundOrder) {
-          setOrder(foundOrder);
-          // Update URL with order ID for sharing/bookmarking
-          router.push(`?orderId=${orderId}`, { scroll: false });
-        } else {
-          setError(
-            "Order not found. Please check your order ID and try again."
-          );
-          setOrder(null);
-        }
-        setIsLoading(false);
-      }, 800); // Simulate network delay
-    } catch (err) {
-      setError(
-        "An error occurred while fetching your order. Please try again."
-      );
-      setIsLoading(false);
-    }
+    const slug = (e.target as HTMLFormElement).slug.value;
+    router.push(`?slug=${slug}`, { scroll: false });
   };
 
   return (
@@ -57,27 +43,52 @@ export function OrderLookup() {
           <Label htmlFor="orderId">Order ID</Label>
           <div className="flex gap-2">
             <Input
-              id="orderId"
+              id="slug"
               placeholder="Enter your order ID (e.g., ORD-12345)"
-              value={orderId}
-              onChange={(e) => setOrderId(e.target.value)}
+              // value={orderSlug}
+              // onChange={(e) => setOrderId(e.target.value)}
               className="flex-1"
               required
             />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Searching..." : "Track Order"}
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Searching..." : "Track Order"}
             </Button>
           </div>
         </div>
       </form>
 
-      {error && !isLoading && (
+      {!isPending && order === null && (
         <div className="bg-destructive/10 text-destructive p-4 rounded-md">
-          {error}
+          Order not found. Please ensure you entered in the order number
+          correctly.
         </div>
       )}
 
-      {isLoading ? <OrderSkeleton /> : order && <OrderDetails order={order} />}
+      {isPending ? (
+        <OrderSkeleton />
+      ) : (
+        order && (
+          <OrderDetails
+            order={{
+              amount: order.amount,
+              deliveryAmount: order.shipping,
+              email: order.email,
+              items: order.items,
+              phone: order.phone,
+              reference: order.slug,
+              shippingInformation: {
+                address1: order.line1,
+                address2: order.line2,
+                city: order.city,
+                firstName: order.firstName,
+                lastName: order.lastName,
+                zipCode: order.zip,
+              },
+              status: order.status as "pending" | "success",
+            }}
+          />
+        )
+      )}
     </div>
   );
 }

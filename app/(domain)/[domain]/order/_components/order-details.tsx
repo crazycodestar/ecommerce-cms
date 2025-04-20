@@ -15,19 +15,19 @@ export function OrderDetails({ order }: OrderDetailsProps) {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-            <CardTitle>Order #{order.reference}</CardTitle>
+            <CardTitle>{order.reference}</CardTitle>
             <Badge
-              variant={order.status === "succes" ? "default" : "outline"}
+              variant={order.status === "success" ? "default" : "outline"}
               className="w-fit"
             >
               Payment Status{" "}
               <Separator orientation="vertical" className="min-h-3" />
-              {order.status === "succes" ? "Completed" : "Pending"}
+              {order.status === "success" ? "Completed" : "Pending"}
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <OrderTracker status={order.status} />
+          {/* <OrderTracker status={order.status} /> */}
 
           <div>
             <h3 className="font-semibold mb-2">Customer Information</h3>
@@ -37,7 +37,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 {order.email}
               </div>
               <div>
-                <span className="text-muted-foreground">Phone:</span>{" "}
+                <span className="text-muted-foreground">Phone:</span> +234
                 {order.phone}
               </div>
             </div>
@@ -71,16 +71,16 @@ export function OrderDetails({ order }: OrderDetailsProps) {
           <div>
             <h3 className="font-semibold mb-2">Order Items</h3>
             <div className="space-y-4">
-              {order.order.map((item, index) => (
+              {order.items.map((item, index) => (
                 <div key={index} className="border rounded-md p-3">
                   <div className="flex justify-between mb-2">
-                    <div className="font-medium">{item.product.name}</div>
+                    <div className="font-medium">{item.name}</div>
                     <div className="font-medium">
-                      {formatCurrency(item.product.price * item.quantity)}
+                      {formatCurrency(item.price * item.quantity)}
                     </div>
                   </div>
                   <div className="text-sm text-muted-foreground mb-2">
-                    {formatCurrency(item.product.price)} × {item.quantity}
+                    {formatCurrency(item.price)} × {item.quantity}
                   </div>
 
                   {item.variants && item.variants.length > 0 && (
@@ -118,7 +118,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
-              <span>{formatCurrency(order.amount - order.deliveryAmount)}</span>
+              <span>{formatCurrency(order.amount)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Shipping</span>
@@ -127,7 +127,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
             <Separator className="my-2" />
             <div className="flex justify-between font-medium">
               <span>Total</span>
-              <span>{formatCurrency(order.amount)}</span>
+              <span>{formatCurrency(order.amount + order.deliveryAmount)}</span>
             </div>
           </div>
         </CardContent>
