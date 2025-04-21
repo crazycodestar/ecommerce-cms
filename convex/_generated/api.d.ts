@@ -15,6 +15,9 @@ import type {
 } from "convex/server";
 import type * as shipping from "../shipping.js";
 import type * as http from "../http.js";
+import type * as email from "../email.js";
+import type * as email_templates_store_owner_notification from "../email_templates/store_owner_notification.js";
+import type * as email_templates_order_confirmation from "../email_templates/order_confirmation.js";
 import type * as context from "../context.js";
 import type * as collections from "../collections.js";
 import type * as utils from "../utils.js";
@@ -41,6 +44,9 @@ import type * as error from "../error.js";
 declare const fullApi: ApiFromModules<{
   shipping: typeof shipping;
   http: typeof http;
+  email: typeof email;
+  "email_templates/store_owner_notification": typeof email_templates_store_owner_notification;
+  "email_templates/order_confirmation": typeof email_templates_order_confirmation;
   context: typeof context;
   collections: typeof collections;
   utils: typeof utils;

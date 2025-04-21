@@ -15,6 +15,7 @@ import {
   Text,
 } from "@react-email/components";
 import { Tailwind } from "@react-email/tailwind";
+import { formatCurrency } from "../utils";
 
 interface OrderVariant {
   name: string;
@@ -58,7 +59,7 @@ interface StoreOwnerNotificationEmailProps {
   reference: string;
   status: "succes" | "pending";
   orderDate: string;
-  dashboardUrl: string;
+  orderUrl: string;
 }
 
 export const StoreOwnerNotificationEmail = ({
@@ -71,12 +72,8 @@ export const StoreOwnerNotificationEmail = ({
   reference,
   status,
   orderDate,
-  dashboardUrl,
+  orderUrl,
 }: StoreOwnerNotificationEmailProps) => {
-  const formatPrice = (price: number) => {
-    return `$${price.toFixed(2)}`;
-  };
-
   const totalAmount = amount + deliveryAmount;
   const totalItems = order.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -85,7 +82,7 @@ export const StoreOwnerNotificationEmail = ({
       <Tailwind>
         <Head />
         <Preview>
-          New Order: #{reference} - ${totalAmount.toFixed(2)}
+          New Order: #{reference} - {formatCurrency(totalAmount)}
         </Preview>
         <Body className="bg-gray-100 font-sans">
           <Container className="bg-white mx-auto p-0 max-w-[600px] shadow-sm">
@@ -111,7 +108,7 @@ export const StoreOwnerNotificationEmail = ({
                 </Column>
                 <Column align="right">
                   <Button
-                    href={`${dashboardUrl}/orders/${reference}`}
+                    href={orderUrl}
                     className="bg-indigo-600 rounded px-4 py-2.5 text-white text-sm font-bold no-underline text-center"
                   >
                     View Order Details
@@ -154,10 +151,10 @@ export const StoreOwnerNotificationEmail = ({
                   </Text>
                   <Text className="text-sm m-0 mb-3 text-gray-800">
                     <Link
-                      href={`tel:${phone}`}
+                      href={`tel:+234${phone}`}
                       className="text-indigo-600 no-underline"
                     >
-                      {phone}
+                      +234{phone}
                     </Link>
                   </Text>
                 </Column>
@@ -241,10 +238,10 @@ export const StoreOwnerNotificationEmail = ({
                         {item.quantity}
                       </td>
                       <td className="p-3 text-sm text-gray-800 align-top">
-                        {formatPrice(item.product.price)}
+                        {formatCurrency(item.product.price)}
                       </td>
                       <td className="p-3 text-sm text-gray-800 align-top">
-                        {formatPrice(item.product.price * item.quantity)}
+                        {formatCurrency(item.product.price * item.quantity)}
                       </td>
                     </tr>
                   ))}
@@ -258,7 +255,7 @@ export const StoreOwnerNotificationEmail = ({
                       Subtotal:
                     </td>
                     <td className="text-right p-1 text-sm text-gray-800 w-[80px]">
-                      {formatPrice(amount)}
+                      {formatCurrency(amount)}
                     </td>
                   </tr>
                   <tr>
@@ -266,7 +263,7 @@ export const StoreOwnerNotificationEmail = ({
                       Shipping:
                     </td>
                     <td className="text-right p-1 text-sm text-gray-800 w-[80px]">
-                      {formatPrice(deliveryAmount)}
+                      {formatCurrency(deliveryAmount)}
                     </td>
                   </tr>
                   <tr>
@@ -274,34 +271,11 @@ export const StoreOwnerNotificationEmail = ({
                       Total:
                     </td>
                     <td className="text-right p-2 text-base font-bold text-gray-800 w-[80px]">
-                      {formatPrice(totalAmount)}
+                      {formatCurrency(totalAmount)}
                     </td>
                   </tr>
                 </tbody>
               </table>
-            </Section>
-
-            <Hr className="border-gray-200 my-0" />
-
-            <Section className="p-5 sm:p-6">
-              <Row>
-                <Column align="center">
-                  <Button
-                    href={`${dashboardUrl}/orders/${reference}/process`}
-                    className="bg-green-500 rounded px-4 py-2.5 text-white text-sm font-bold no-underline text-center w-[150px]"
-                  >
-                    Process Order
-                  </Button>
-                </Column>
-                <Column align="center">
-                  <Button
-                    href={`${dashboardUrl}/orders/${reference}/print`}
-                    className="bg-gray-100 rounded px-4 py-2.5 text-gray-700 text-sm font-bold no-underline text-center w-[150px] border border-gray-300"
-                  >
-                    Print Invoice
-                  </Button>
-                </Column>
-              </Row>
             </Section>
 
             <Hr className="border-gray-200 my-0" />
@@ -322,61 +296,6 @@ export const StoreOwnerNotificationEmail = ({
   );
 };
 
-// Example data
-const orderData = {
-  email: "customer@example.com",
-  phone: "+1 (555) 123-4567",
-  order: [
-    {
-      product: {
-        imageUrl: "https://example.com/images/product1.jpg",
-        name: "Premium Wireless Headphones",
-        price: 129.99,
-      },
-      quantity: 1,
-      variants: [
-        {
-          name: "Color",
-          value: "Black",
-        },
-      ],
-    },
-    {
-      product: {
-        imageUrl: "https://example.com/images/product2.jpg",
-        name: "Smartphone Case",
-        price: 24.99,
-      },
-      quantity: 2,
-      variants: [
-        {
-          name: "Color",
-          value: "Blue",
-        },
-        {
-          name: "Material",
-          value: "Silicone",
-        },
-      ],
-    },
-  ],
-  shippingInformation: {
-    firstName: "John",
-    lastName: "Doe",
-    address1: "123 Main Street",
-    address2: "Apt 4B",
-    city: "New York",
-    zipCode: "10001",
-  },
-  amount: 179.97,
-  deliveryAmount: 9.99,
-  reference: "ORD-12345",
-  status: "succes",
-  orderDate: "June 8, 2024 - 10:23 AM",
-  dashboardUrl: "https://admin.yourstore.com",
-};
-
-StoreOwnerNotificationEmail.PreviewProps =
-  orderData as StoreOwnerNotificationEmailProps;
-
-export default StoreOwnerNotificationEmail;
+export default (props: StoreOwnerNotificationEmailProps) => (
+  <StoreOwnerNotificationEmail {...props} />
+);

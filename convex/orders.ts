@@ -56,8 +56,14 @@ export const updateOrderPaymentStatus = internalMutation({
       status,
     });
 
-    // TODO: send out order success email to the user and new order email to the vendor
-    if (status === "success") return;
+    if (status === "success") {
+      ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
+        orderId: order._id,
+      });
+      ctx.scheduler.runAfter(0, internal.email.sendOrderNotification, {
+        orderId: order._id,
+      });
+    }
   },
 });
 
@@ -138,7 +144,7 @@ export const getOrder = query({
     const order = await ctx.db.get(orderId);
     if (!order) return null;
 
-    return order;
+    return getOrderDetails(ctx, order);
   },
 });
 
@@ -178,10 +184,15 @@ const getOrderDetails = async (
           return acc + (selectedOption ? selectedOption.price : 0);
         }, 0) ?? 0);
 
+      const imageUrl = await ctx.storage.getUrl(product.images[0]);
+      if (!imageUrl)
+        throw new InternalServerError("failed to generate imageUrl");
+
       return {
         ...pick(product, ["name", "price"]),
         price,
         ...item,
+        imageUrl,
       };
     })
   );
