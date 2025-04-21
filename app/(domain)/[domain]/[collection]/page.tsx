@@ -18,15 +18,23 @@ export default function CollectionPage() {
     domain: string;
     collection: string;
   }>();
-  const properties = useQuery(api.collections.getFilters, { storeSlug });
+  const properties = useQuery(
+    api.collections.getFilters,
+    !storeSlug ? "skip" : { storeSlug }
+  );
   const { handleTogglePropertyFilter, isChecked, filterByPropertyId } =
     useFilter(properties);
   const filterByPropertyIdEntries = Object.entries(filterByPropertyId);
 
-  const collection = useQuery(api.collections.getCollectionBySlugAndStoreSlug, {
-    storeSlug,
-    slug: collectionSlug,
-  });
+  const collection = useQuery(
+    api.collections.getCollectionBySlugAndStoreSlug,
+    !storeSlug
+      ? "skip"
+      : {
+          storeSlug,
+          slug: collectionSlug,
+        }
+  );
   const getProperties = () => {
     const shouldCall = filterByPropertyIdEntries.some((p) => p[1].length > 0);
     if (!shouldCall) return;
@@ -37,11 +45,13 @@ export default function CollectionPage() {
   };
   const products = useQuery(
     api.collections.getProductsByCollectionSlugAndStoreSlug,
-    {
-      storeSlug,
-      collectionSlug,
-      properties: getProperties(),
-    }
+    !storeSlug
+      ? "skip"
+      : {
+          storeSlug,
+          collectionSlug,
+          properties: getProperties(),
+        }
   );
 
   const bottomRef = React.useRef<HTMLDivElement>(null);

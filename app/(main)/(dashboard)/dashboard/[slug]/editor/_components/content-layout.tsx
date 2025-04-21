@@ -41,9 +41,6 @@ const useAddContentForm = (callbackfn: (data: ContentSchema) => void) => {
     defaultValues: {
       content: {
         object: {
-          collectionId: "",
-          description: "",
-          imageIds: [],
           title: "",
           imageId: "",
           items: [],
@@ -139,9 +136,10 @@ export function ContentLayout({
               ...(name === "carousel" && {
                 name,
                 object: {
-                  imageIds: object.imageIds.map(
-                    (i) => i.imageId as Id<"_storage">
-                  ),
+                  content: object.content.map((i) => ({
+                    imageId: i.imageId,
+                    collectionId: i.collectionId,
+                  })),
                 },
               }),
               ...(name === "collectionCarousel" && {
@@ -313,11 +311,14 @@ export function ContentLayout({
                     onRemove={() => remove(index)}
                   >
                     <HeroCarousel
-                      imageIds={form
+                      content={form
                         .watch(
-                          `contents.${index}.content.content.object.imageIds`
+                          `contents.${index}.content.content.object.content`
                         )
-                        .map((i) => i.imageId as Id<"_storage">)}
+                        .map((i) => ({
+                          imageId: i.imageId as Id<"_storage">,
+                          collectionId: i.collectionId as Id<"collections">,
+                        }))}
                     />
                   </EditWrapper>
                 </div>

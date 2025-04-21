@@ -67,3 +67,15 @@ export const getContentsByStoreSlug = query({
     return store.contents;
   },
 });
+
+export const getCollectionSlugs = query({
+  args: {
+    collectionIds: v.array(v.id("collections")),
+  },
+  handler: async (ctx, { collectionIds }) => {
+    const collections = await Promise.all(
+      collectionIds.map((id) => ctx.db.get(id))
+    );
+    return collections.filter(Boolean);
+  },
+});

@@ -140,7 +140,12 @@ export type UserCreate = z.infer<typeof userCreateSchema>;
 export const carousel = v.object({
   name: v.literal("carousel"),
   object: v.object({
-    imageIds: v.array(v.id("_storage")),
+    content: v.array(
+      v.object({
+        imageId: v.id("_storage"),
+        collectionId: v.id("collections"),
+      })
+    ),
   }),
 });
 

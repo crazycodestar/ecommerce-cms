@@ -18,14 +18,22 @@ export default function BrowsePage() {
     domain: string;
     category: Id<"categories">;
   }>();
-  const properties = useQuery(api.collections.getFilters, { storeSlug });
+  const properties = useQuery(
+    api.collections.getFilters,
+    !storeSlug ? "skip" : { storeSlug }
+  );
   const { handleTogglePropertyFilter, isChecked, filterByPropertyId } =
     useFilter(properties);
 
-  const category = useQuery(api.collections.getCategoryByIdAndStoreSlug, {
-    storeSlug,
-    categoryId,
-  });
+  const category = useQuery(
+    api.collections.getCategoryByIdAndStoreSlug,
+    !storeSlug
+      ? "skip"
+      : {
+          storeSlug,
+          categoryId,
+        }
+  );
   // const {
   //   results: products,
   //   status,
@@ -50,11 +58,13 @@ export default function BrowsePage() {
   };
   const products = useQuery(
     api.collections.getProductsByCategoryIdAndStoreSlug,
-    {
-      categoryId,
-      storeSlug,
-      properties: getProperties(),
-    }
+    !storeSlug
+      ? "skip"
+      : {
+          categoryId,
+          storeSlug,
+          properties: getProperties(),
+        }
   );
 
   // const isPending = status === "LoadingFirstPage";

@@ -13,26 +13,22 @@ import { CollectionsCarousel } from "@/components/editor/collections-carousel";
 import { HeroCarousel } from "@/components/editor/hero-carousel";
 import { ProductCarousel } from "@/components/editor/product-carousel";
 import { ShopByCategory } from "@/components/editor/shop-by-category";
+import { useStoreSlug } from "@/lib/hooks/use-store-slug";
 
 export default function DomainPage() {
+  const { storeSlug } = useStoreSlug();
   // FIXME: change to GetContentByStoreSlug
-  const [domain, setDomain] = React.useState<string>("");
-  const subdomain = !domain || domain === "www" ? "localhost" : domain;
+
   const contents = useQuery(
     api.contents.getContentsByStoreSlug,
-    !subdomain
+    !storeSlug
       ? "skip"
       : {
-          storeSlug: domain,
+          storeSlug,
         }
   );
 
-  React.useEffect(() => {
-    setDomain(window.location.hostname.split(".")[0]);
-  }, []);
-
-  if (!domain || domain === "www" || domain === "localhost")
-    return <EditorLoading />;
+  if (!storeSlug) return <EditorLoading />;
 
   const isPending = contents === undefined;
   if (isPending) return <EditorLoading />;
@@ -64,13 +60,13 @@ export default function DomainPage() {
                 title={object.title}
                 description={object.description}
                 collectionId={object.collectionId}
-                storeSlug={domain}
+                storeSlug={storeSlug}
               />
             </div>
           )}
           {name === "carousel" && (
             <div className="mx-4">
-              <HeroCarousel imageIds={object.imageIds} />
+              <HeroCarousel content={object.content} />
             </div>
           )}
           {name === "collectionCarousel" && (

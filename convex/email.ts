@@ -8,6 +8,15 @@ import OrderConfirmationEmail from "./email_templates/order_confirmation";
 import StoreOwnerNotificationEmail from "./email_templates/store_owner_notification";
 import { NotFoundError } from "./error";
 
+const getSiteurl = () => {
+  if (process.env.SITE_URL) {
+    return process.env.SITE_URL;
+  }
+  return "localhost:3000";
+};
+const urlScheme =
+  process.env.NODE_ENV === "production" ? "https://" : "http://";
+
 // Define return type for the action
 interface EmailResult {
   success: boolean;
@@ -87,6 +96,8 @@ export const sendOrderConfirmation = internalAction({
     orderId: v.id("orders"),
   },
   handler: async (ctx, { orderId }) => {
+    const siteUrl = getSiteurl();
+
     const order = await ctx.runQuery(api.orders.getOrder, { orderId });
     if (!order) throw new NotFoundError("order not found");
 
@@ -114,7 +125,7 @@ export const sendOrderConfirmation = internalAction({
           zipCode: order.zip,
           address2: order.line2,
         },
-        trackingUrl: `http://convertly.localhost:3000/order?slug=${order.slug}`,
+        trackingUrl: `${urlScheme}${store.slug}.${siteUrl}/order?slug=${order.slug}`,
         order: order.items.map((item) => ({
           ...item,
           product: {
@@ -137,6 +148,8 @@ export const sendOrderNotification = internalAction({
     orderId: v.id("orders"),
   },
   handler: async (ctx, { orderId }) => {
+    const siteUrl = getSiteurl();
+
     const order = await ctx.runQuery(api.orders.getOrder, { orderId });
     if (!order) throw new NotFoundError("order not found");
 
@@ -177,7 +190,7 @@ export const sendOrderNotification = internalAction({
           month: "long",
           day: "numeric",
         }),
-        orderUrl: `${process.env.NEXT_PUBLIC_CONVEX_URL}/dashboard/${store.slug}/orders`,
+        orderUrl: `${urlScheme}${siteUrl}/dashboard/${store.slug}/orders`,
       }),
     });
 

@@ -1,4 +1,4 @@
-import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { MinusCircle, PlusCircle } from "lucide-react";
@@ -15,16 +15,16 @@ import {
   FormSelectValue,
 } from "./form-select";
 import { FormTextArea } from "./form-text-area";
-import { ImagePicker } from "./image-array-form";
 import { ImageUploader } from "./image-uploader";
 
 const carouselSchema = z.object({
   name: z.literal("carousel"),
   object: z.object({
-    imageIds: z
+    content: z
       .array(
         z.object({
           imageId: z.string(),
+          collectionId: z.string(),
         })
       )
       .min(1, { message: "Atleast one image is required" }),
@@ -147,7 +147,7 @@ export function AddContentForm({
             </FormSelectItem>
           </FormSelectContent>
         </FormSelect>
-        <pre>{JSON.stringify(form.watch("index"), null, 2)}</pre>
+        {/* <pre>{JSON.stringify(form.watch("index"), null, 2)}</pre> */}
         <input {...form.register("index")} type="hidden" value={index} />
         <>
           <Separator className="my-4" />
@@ -339,25 +339,59 @@ function CollectionCarouselForm({
 function CarouselForm({ form }: { form: UseFormReturn<ContentSchema> }) {
   const fieldArray = useFieldArray({
     control: form.control,
-    name: "content.object.imageIds",
+    name: "content.object.content",
   });
 
+  const collections = useQuery(api.collections.getStoreCollections);
+
   return (
-    <FormField
-      control={form.control}
-      name="content.object.imageIds"
-      render={() => (
-        <FormItem>
-          <ImagePicker
-            // @ts-expect-error incompatible fieldArray types -> but like they should be
-            fieldArray={fieldArray}
-            containerClassName="flex flex-col gap-2"
-            imageClassName="aspect-[5/2]"
+    <>
+      {/* <pre>{JSON.stringify(form.watch("content.object.items"), null, 2)}</pre> */}
+      {fieldArray.fields.map((item, index) => (
+        <div key={item.id} className="flex flex-col gap-4">
+          <ImageUploader
+            control={form.control}
+            name={`content.object.content.${index}.imageId`}
+            label="Image"
           />
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+          <FormSelect
+            label="Select a collection"
+            control={form.control}
+            name={`content.object.content.${index}.collectionId`}
+          >
+            <FormSelectTrigger className="w-full">
+              <FormSelectValue placeholder="Select a collection" />
+            </FormSelectTrigger>
+            <FormSelectContent>
+              {collections?.map((collection) => (
+                <FormSelectItem key={collection._id} value={collection._id}>
+                  {collection.name}
+                </FormSelectItem>
+              ))}
+            </FormSelectContent>
+          </FormSelect>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => fieldArray.remove(index)}
+          >
+            <MinusCircle className="size-4" /> Remove
+          </Button>
+          <Separator />
+        </div>
+      ))}
+      <Button
+        type="button"
+        onClick={() =>
+          fieldArray.append({
+            imageId: "",
+            collectionId: "",
+          })
+        }
+      >
+        <PlusCircle className="size-4" /> Add Item
+      </Button>
+    </>
   );
 }
 

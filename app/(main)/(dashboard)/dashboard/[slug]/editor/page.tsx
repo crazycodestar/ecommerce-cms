@@ -26,8 +26,9 @@ export default function ContentPage() {
                     name: content.name,
                     object: {
                       ...(content.name === "carousel" && {
-                        imageIds: content.object.imageIds.map((imageId) => ({
-                          imageId,
+                        content: content.object.content.map((content) => ({
+                          imageId: content.imageId,
+                          collectionId: content.collectionId,
                         })),
                       }),
                       ...(content.name === "banner" && {

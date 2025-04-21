@@ -25,9 +25,14 @@ export function Nav() {
   const [activeId, setActiveId] = React.useState<Id<"categories"> | null>(null);
   const items = useCartStore((state) => state.items);
   const { storeSlug } = useStoreSlug();
-  const categories = useQuery(api.collections.getCategoriesByStoreSlug, {
-    storeSlug,
-  });
+  const categories = useQuery(
+    api.collections.getCategoriesByStoreSlug,
+    !storeSlug
+      ? "skip"
+      : {
+          storeSlug,
+        }
+  );
 
   const isPending = categories === undefined;
   return (
@@ -164,10 +169,12 @@ const SubCategoryMenu = ({ parentId }: { parentId: Id<"categories"> }) => {
   const { storeSlug } = useStoreSlug();
   const subCategories = useQuery(
     api.collections.getSubCategoriesByParentIdAndStoreSlug,
-    {
-      storeSlug,
-      parentId,
-    }
+    !storeSlug
+      ? "skip"
+      : {
+          storeSlug,
+          parentId,
+        }
   );
 
   return (
@@ -193,10 +200,12 @@ const SubCategoryMenuMobile = ({
   const { storeSlug } = useStoreSlug();
   const subCategories = useQuery(
     api.collections.getSubCategoriesByParentIdAndStoreSlug,
-    {
-      storeSlug,
-      parentId,
-    }
+    !storeSlug
+      ? "skip"
+      : {
+          storeSlug,
+          parentId,
+        }
   );
   return (
     <div className="flex flex-col gap-4 pl-8">
