@@ -26,7 +26,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { ChevronRight, PlusCircle, X } from "lucide-react";
+import { ChevronRight, Loader, PlusCircle, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Control,
@@ -367,7 +367,9 @@ const CategoryForm = ({ children }: { children: React.ReactNode }) => {
               >
                 Cancel
               </Button>
-              <Button isPending={isPending} type="submit">
+
+              <Button disabled={isPending}>
+                {isPending && <Loader className="mr-2 size-4 animate-spin" />}
                 Create Category
               </Button>
             </div>
@@ -484,8 +486,9 @@ const SubcategoryForm = ({
               >
                 Cancel
               </Button>
-              <Button isPending={isPending} type="submit">
-                Create Subcategory
+              <Button disabled={isPending}>
+                {isPending && <Loader className="mr-2 size-4 animate-spin" />}
+                Create SubCategory
               </Button>
             </div>
           </form>

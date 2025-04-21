@@ -82,4 +82,22 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/paystack",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const signature: string = request.headers.get(
+      "x-paystack-signature"
+    ) as string;
+
+    const data = await request.json();
+    const result = await ctx.runAction(internal.paystack.fulfill, {
+      signature,
+      payload: data,
+    });
+    if (result.success) return new Response(null, { status: 200 });
+    return new Response("Webhook Error", { status: 400 });
+  }),
+});
+
 export default http;

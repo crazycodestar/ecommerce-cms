@@ -1,6 +1,6 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
 import { Table } from "convex-helpers/server";
+import { defineSchema } from "convex/server";
+import { v } from "convex/values";
 import { z } from "zod";
 import { Collections, CollectionsOnProducts } from "./collections";
 
@@ -137,12 +137,94 @@ export const userCreateSchema = userSchema
   });
 export type UserCreate = z.infer<typeof userCreateSchema>;
 
+export const carousel = v.object({
+  name: v.literal("carousel"),
+  object: v.object({
+    content: v.array(
+      v.object({
+        imageId: v.id("_storage"),
+        collectionId: v.id("collections"),
+      })
+    ),
+  }),
+});
+
+export const productCarousel = v.object({
+  name: v.literal("productCarousel"),
+  object: v.object({
+    title: v.string(),
+    description: v.string(),
+    collectionId: v.id("collections"),
+  }),
+});
+
+export const banner = v.object({
+  name: v.literal("banner"),
+  object: v.object({
+    imageId: v.id("_storage"),
+    link: v.string(),
+  }),
+});
+
+export const collectionCarousel = v.object({
+  name: v.literal("collectionCarousel"),
+  object: v.object({
+    items: v.array(
+      v.object({
+        imageId: v.id("_storage"),
+        title: v.string(),
+        description: v.string(),
+        collectionId: v.id("collections"),
+      })
+    ),
+  }),
+});
+
+export const categories = v.object({
+  name: v.literal("categories"),
+  object: v.object({
+    items: v.array(
+      v.object({
+        imageId: v.id("_storage"),
+        title: v.string(),
+        categoryId: v.id("categories"),
+      })
+    ),
+  }),
+});
+
+// untion of all content types
+export const contentTypes = v.union(
+  carousel,
+  productCarousel,
+  banner,
+  collectionCarousel,
+  categories
+);
+
 // Store schema
 export const Stores = Table("stores", {
   name: v.string(),
   description: v.string(),
   owner: v.string(),
   slug: v.string(),
+  contents: v.array(contentTypes),
+  // Shipping Information with terminal
+  terminalSecretKey: v.string(),
+  firstName: v.string(),
+  lastName: v.string(),
+  email: v.string(),
+  phone: v.string(),
+  line1: v.string(),
+  line2: v.optional(v.string()),
+  city: v.string(),
+  state: v.string(),
+  country: v.string(),
+  zip: v.string(),
+  terminalStoreAddressId: v.optional(v.string()),
+  // Payment Information with Paystack
+  publicKey: v.string(),
+  secretKey: v.string(),
 });
 
 // Product Schema
@@ -179,6 +261,9 @@ export const Products = Table("products", {
     })
   ),
   metadataIds: v.optional(v.array(v.id("metadatas"))),
+  // FIXME: migration
+  weight: v.number(),
+  packageId: v.id("packages"),
 });
 
 // UnitType schema
@@ -207,12 +292,14 @@ export const MetadataPresets = Table("metadataPresets", {
 });
 
 // Categories schema
+// FIXME: Categories should have a slug
 export const Categories = Table("categories", {
   name: v.string(),
   storeId: v.id("stores"),
   parentId: v.optional(v.id("categories")),
 });
 
+// FIXME: properties should have a slug
 export const Properties = Table("properties", {
   name: v.string(),
   storeId: v.id("stores"),
@@ -221,13 +308,83 @@ export const Properties = Table("properties", {
   type: v.union(v.literal("string"), v.literal("number"), v.literal("array")),
 });
 
+export const Orders = Table("orders", {
+  slug: v.string(),
+  items: v.array(
+    v.object({
+      productId: v.id("products"),
+      quantity: v.number(),
+      variants: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            value: v.string(),
+          })
+        )
+      ),
+      metadatas: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            value: v.union(v.string(), v.number()),
+          })
+        )
+      ),
+    })
+  ),
+  // Shipping Information
+  firstName: v.string(),
+  lastName: v.string(),
+  line1: v.string(),
+  line2: v.optional(v.string()),
+  state: v.string(),
+  city: v.string(),
+  zip: v.string(),
+  country: v.string(),
+  rateId: v.string(),
+  phone: v.string(),
+  email: v.string(),
+  // terminalFields
+  terminalAddressId: v.string(),
+  terminalParcelId: v.string(),
+  terminalTrackingNumber: v.optional(v.string()),
+  terminalTrackingUrl: v.optional(v.string()),
+  // Additional Information
+  storeId: v.id("stores"),
+  amount: v.number(),
+  shipping: v.number(),
+  url: v.optional(v.string()),
+  accessCode: v.optional(v.string()),
+  reference: v.optional(v.string()),
+  status: v.union(v.literal("pending"), v.literal("success"), v.string()),
+});
+
+// Packages
+export const Packages = Table("packages", {
+  name: v.string(),
+  width: v.number(),
+  height: v.number(),
+  length: v.number(),
+  weight: v.number(),
+  type: v.union(
+    v.literal("box"),
+    v.literal("envelope"),
+    v.literal("soft-packaging")
+  ),
+  storeId: v.id("stores"),
+  terminalPackageId: v.optional(v.string()),
+});
+
 export default defineSchema({
   users: Users.table.index("by_tokenIdentifier", ["id"]),
   stores: Stores.table
     .index("by_slug", ["slug"])
     .index("by_owner", ["owner"])
     .index("by_slug_owner", ["slug", "owner"]),
-  products: Products.table,
+  products: Products.table.index("by_categoryId_storeId", [
+    "categoryId",
+    "storeId",
+  ]),
   categories: Categories.table
     .index("by_storeId", ["storeId"])
     .index("by_parentId_storeId", ["parentId", "storeId"]),
@@ -242,4 +399,12 @@ export default defineSchema({
     .index("by_collectionId_productId", ["collectionId", "productId"])
     .index("by_productId", ["productId"]),
   unitTypes: UnitTypes.table.index("by_storeId", ["storeId"]),
+  orders: Orders.table
+    .index("by_storeId", ["storeId"])
+    .index("by_reference", ["reference"])
+    .index("by_storeId_reference", ["storeId", "reference"])
+    .index("by_email", ["email"])
+    .index("by_phone", ["phone"])
+    .index("by_slug", ["slug"]),
+  packages: Packages.table.index("by_storeId", ["storeId"]),
 });

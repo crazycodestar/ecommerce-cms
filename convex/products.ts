@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { DataModel, Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query, QueryCtx } from "./_generated/server";
 import { NotFoundError, UnauthorizedError } from "./error";
 import { Categories, Metadatas, Products, UnitTypes } from "./schema";
 import {
@@ -20,63 +20,87 @@ export const getProductImageUrl = query({
   },
 });
 
+async function getRichProduct(ctx: QueryCtx, id: Id<"products">) {
+  const product = await ctx.db.get(id);
+  if (!product)
+    throw new ConvexError({
+      title: "Not Found",
+      message: "No Product Found",
+    });
+
+  // FIXME: move into a shared function
+  async function getCategoryById(
+    parentId: Id<"categories">
+  ): Promise<DataModel["categories"]["document"][]> {
+    const c = await ctx.db.get(parentId);
+    if (!c) return [];
+    if (!c.parentId) return [c];
+
+    const cat = await getCategoryById(c.parentId);
+    if (!cat) return [c];
+    return [c, ...cat];
+  }
+
+  const categoryTree = await getCategoryById(product.categoryId);
+  const richProduct = {
+    ...product,
+    imageUrls: await Promise.all(
+      product.images.map((image) => ctx.storage.getUrl(image))
+    ),
+    price: product.price,
+    categoryTree,
+    properties: await Promise.all(
+      product.properties.map(async (p) => ({
+        ...p,
+        property: await ctx.db.get(p.propertyId),
+      }))
+    ),
+    unit: (await ctx.db.get(product.unitType))?.name,
+    variants:
+      product.variants &&
+      (await Promise.all(
+        product.variants.map(async (v) => ({
+          ...v,
+          options: await Promise.all(
+            v.options.map(async (o) => ({
+              ...o,
+              image: o.imageId
+                ? await ctx.storage.getUrl(o.imageId)
+                : undefined,
+            }))
+          ),
+        }))
+      )),
+    // update
+    metadatas:
+      product.metadataIds &&
+      (await Promise.all(
+        product.metadataIds.map(async (m) => ({
+          _id: m,
+          metadata: await ctx.db.get(m),
+        }))
+      )),
+    comment: null,
+  };
+
+  return richProduct;
+}
+
+export const getProductsByIds = query({
+  args: {
+    ids: v.array(v.id("products")),
+  },
+  handler: async (ctx, { ids }) => {
+    return Promise.all(ids.map((id) => getRichProduct(ctx, id)));
+  },
+});
+
 export const getProductById = query({
   args: {
     id: v.id("products"),
   },
   handler: async (ctx, { id }) => {
-    const product = await ctx.db.get(id);
-    if (!product)
-      throw new ConvexError({
-        title: "Not Found",
-        message: "No Product Found",
-      });
-
-    // FIXME: move into a shared function
-    async function getCategoryById(
-      parentId: Id<"categories">
-    ): Promise<DataModel["categories"]["document"][]> {
-      const c = await ctx.db.get(parentId);
-      if (!c) return [];
-      if (!c.parentId) return [c];
-
-      const cat = await getCategoryById(c.parentId);
-      if (!cat) return [c];
-      return [c, ...cat];
-    }
-
-    const categoryTree = await getCategoryById(product.categoryId);
-    const richProduct = {
-      ...product,
-      imageUrls: await Promise.all(
-        product.images.map((image) => ctx.storage.getUrl(image))
-      ),
-      price: product.price,
-      categoryTree,
-      properties: await Promise.all(
-        product.properties.map(async (p) => ({
-          ...p,
-          property: await ctx.db.get(p.propertyId),
-        }))
-      ),
-      variants:
-        product.variants &&
-        (await Promise.all(
-          product.variants.map(async (v) => ({
-            ...v,
-            options: await Promise.all(
-              v.options.map(async (o) => ({
-                ...o,
-                image: o.imageId
-                  ? await ctx.storage.getUrl(o.imageId)
-                  : undefined,
-              }))
-            ),
-          }))
-        )),
-      comment: null,
-    };
-
+    const richProduct = await getRichProduct(ctx, id);
     return richProduct;
   },
 });
@@ -474,4 +498,29 @@ export const getUnitTypes = query(async (ctx) => {
     .query("unitTypes")
     .filter((q) => q.eq(q.field("storeId"), store._id))
     .collect();
+});
+
+// internal functions
+export const getProductsPackages = internalQuery({
+  args: {
+    productIds: v.array(v.id("products")),
+  },
+  handler: async (ctx, { productIds }) => {
+    return Promise.all(
+      productIds.map(async (productId) => {
+        const product = await ctx.db.get(productId);
+        if (!product) return;
+
+        return ctx.db.get(product.packageId);
+      })
+    );
+  },
+});
+
+export const getProductByIds = internalQuery({
+  args: {
+    productIds: v.array(v.id("products")),
+  },
+  handler: (ctx, { productIds }) =>
+    Promise.all(productIds.map((productId) => ctx.db.get(productId))),
 });

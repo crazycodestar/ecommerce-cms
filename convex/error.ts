@@ -1,5 +1,16 @@
 import { ConvexError } from "convex/values";
 
+export class BadRequestError extends ConvexError<{
+  code: string;
+  message?: string;
+}> {
+  constructor(message?: string) {
+    super({
+      code: "BAD_REQUEST",
+      message,
+    });
+  }
+}
 export class UnauthorizedError extends ConvexError<{
   code: string;
   message?: string;
