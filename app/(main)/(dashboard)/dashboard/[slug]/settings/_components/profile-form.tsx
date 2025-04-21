@@ -1,37 +1,27 @@
 "use client";
 
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { cn } from "@/lib/utils";
 // import {} from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import React from "react";
-import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { tryCatch } from "@/convex/utils";
+import { useMutation } from "convex/react";
 import { Loader } from "lucide-react";
+import React from "react";
+import { toast } from "sonner";
 
 const storeInfoSchema = z.object({
   name: z.string().min(3).max(50),
@@ -40,12 +30,6 @@ const storeInfoSchema = z.object({
 });
 
 type StoreInfoValues = z.infer<typeof storeInfoSchema>;
-
-// This can come from your database or API.
-const defaultValues: Partial<StoreInfoValues> = {
-  name: "",
-  description: "",
-};
 
 export function ProfileForm({
   defaultValues,

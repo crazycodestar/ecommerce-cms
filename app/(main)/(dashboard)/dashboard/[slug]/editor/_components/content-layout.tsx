@@ -221,7 +221,8 @@ export function ContentLayout({
     setAllFormValues: setAllAddFormValues,
   } = useAddContentForm(handleAddContent);
 
-  const handleOpenAddSheet = (index?: number) => {
+  // const handleOpenAddSheet = (index?: number) => {
+  const handleOpenAddSheet = () => {
     addContentForm.reset();
     // FIXME: support insert
     // addContentForm.setValue("index", index?.toString() ?? "");

@@ -6,6 +6,26 @@ import { Orders } from "./schema";
 import { pick } from "convex-helpers";
 import { api, internal } from "./_generated/api";
 import { DataModel, Id } from "./_generated/dataModel";
+import {
+  getStoreByTokenIdentifierWithAuthError,
+  getTokenIdentifierWithAuthError,
+} from "./utils";
+
+export const updateOrderTrackingInformation = internalMutation({
+  args: {
+    ...pick(Orders.withoutSystemFields, [
+      "terminalTrackingNumber",
+      "terminalTrackingUrl",
+    ]),
+    orderId: v.id("orders"),
+  },
+  handler: async (ctx, { orderId, ...args }) => {
+    const order = await ctx.db.get(orderId);
+    if (!order) throw new NotFoundError("order not found");
+
+    return ctx.db.patch(order._id, args);
+  },
+});
 
 export const updateOrderPaymentInformation = internalMutation({
   args: {
@@ -14,7 +34,7 @@ export const updateOrderPaymentInformation = internalMutation({
   },
   handler: async (ctx, { orderId, ...args }) => {
     const order = await ctx.db.get(orderId);
-    if (!order) throw new NotFoundError("transaction not found");
+    if (!order) throw new NotFoundError("order not found");
 
     return ctx.db.patch(order._id, args);
   },
@@ -31,7 +51,7 @@ export const updateOrderPaymentStatus = internalMutation({
       .withIndex("by_reference", (q) => q.eq("reference", reference))
       .unique();
 
-    if (!order) throw new NotFoundError("transaction not found");
+    if (!order) throw new NotFoundError("order not found");
     await ctx.db.patch(order._id, {
       status,
     });
@@ -131,7 +151,7 @@ export const getOrderBySlug = query({
       .query("orders")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .unique();
-    if (!order) throw new NotFoundError("transaction not found");
+    if (!order) throw new NotFoundError("order not found");
 
     return order;
   },
@@ -239,4 +259,21 @@ export const initializeOrder = action({
       callbackUrl,
     });
   },
+});
+
+export const getMyStoreOrders = query(async (ctx) => {
+  const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+  const store = await getStoreByTokenIdentifierWithAuthError(
+    ctx,
+    tokenIdentifier
+  );
+
+  const orders = await ctx.db
+    .query("orders")
+    .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
+    .filter((q) => q.eq(q.field("status"), "success"))
+    .collect();
+
+  if (!orders) return null;
+  return Promise.all(orders.map((order) => getOrderDetails(ctx, order)));
 });

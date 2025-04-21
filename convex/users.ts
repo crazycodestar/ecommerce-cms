@@ -131,7 +131,7 @@ export const deleteUser = internalMutation({
 });
 
 export const processOnboarding = internalMutation({
-  args: omit(Stores.withoutSystemFields, ["owner"]),
+  args: omit(Stores.withoutSystemFields, ["owner", "terminalStoreAddressId"]),
   handler: async (ctx, args) => {
     await ctx.runMutation(api.stores.createStore, args);
     return "success";
@@ -139,7 +139,11 @@ export const processOnboarding = internalMutation({
 });
 
 export const submitOnboarding = action({
-  args: omit(Stores.withoutSystemFields, ["owner", "contents"]),
+  args: omit(Stores.withoutSystemFields, [
+    "owner",
+    "contents",
+    "terminalStoreAddressId",
+  ]),
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifier(ctx);
     if (!tokenIdentifier) throw new UnauthorizedError();

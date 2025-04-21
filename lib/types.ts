@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 export interface OrderType {
   email: string;
   phone: string;
@@ -26,6 +24,8 @@ export interface OrderType {
   };
   amount: number;
   deliveryAmount: number;
-  reference?: string;
+  terminalTrackingNumber?: string;
+  terminalTrackingUrl?: string;
+  reference: string;
   status: "success" | "pending";
 }

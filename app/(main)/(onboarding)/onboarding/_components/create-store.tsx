@@ -43,16 +43,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/convex/_generated/api";
-import { showErrorToast } from "@/lib/handle-error";
-import { cn } from "@/lib/utils";
-import { useUser } from "@clerk/clerk-react";
-import { useAction } from "convex/react";
-import * as RPNInput from "react-phone-number-input";
-import Link from "next/link";
-import { tryCatch } from "@/convex/utils";
-import { omit } from "es-toolkit";
 import {
   Select,
   SelectContent,
@@ -60,6 +50,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/convex/_generated/api";
+import { tryCatch } from "@/convex/utils";
+import { showErrorToast } from "@/lib/handle-error";
+import { cn } from "@/lib/utils";
+import { useUser } from "@clerk/clerk-react";
+import { useAction } from "convex/react";
+import { omit } from "es-toolkit";
+import Link from "next/link";
+import * as RPNInput from "react-phone-number-input";
 
 const shippingAddressSchema = z.object({
   terminalSecretKey: z
@@ -204,7 +204,7 @@ export function CreateStore() {
     } else {
       // Trigger validation errors
       result.error.errors.forEach((error) => {
-        form.setError(error.path[0] as any, {
+        form.setError(error.path[0] as keyof CreateStoreSchema, {
           type: "manual",
           message: error.message,
         });
@@ -246,8 +246,8 @@ export function CreateStore() {
       <div className="mb-2">
         <h1 className="text-3xl font-bold tracking-tight">Create Your Store</h1>
         <p className="mt-2 text-muted-foreground">
-          Set up your online store in just a few steps. We'll guide you through
-          the process.
+          Set up your online store in just a few steps. We&apos;ll guide you
+          through the process.
         </p>
       </div>
 

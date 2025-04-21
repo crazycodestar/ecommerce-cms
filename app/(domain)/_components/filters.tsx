@@ -1,25 +1,16 @@
 "use client";
 
-import { FormInput } from "@/components/form/form-input";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useStoreSlug } from "@/lib/hooks/use-store-slug";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "convex/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 // type FilterContext = {
 //   isChecked: (propertyId: Id<"properties">, name: string) => boolean;
@@ -58,7 +49,7 @@ export const useFilter = (
     if (isInit) {
       setIsInit(false);
       const filterByProperty: Record<Id<"properties">, string[]> = {};
-      properties.forEach(({ _id, name, options }) => {
+      properties.forEach(({ _id }) => {
         const value = searchParams.getAll(`filterBy${_id}`);
         return (filterByProperty[_id] = value);
       });
@@ -82,12 +73,12 @@ export const useFilter = (
     router.push(`${pathname}${queryString ? `?${queryString}` : ""}`);
   }, [properties, filterByPropertyId]);
 
-  const filterByPrice = searchParams.get("filterByPrice");
+  // const filterByPrice = searchParams.get("filterByPrice");
 
-  const [filterByPriceRange, setFilterByPriceRange] = React.useState<{
-    min: number;
-    max: number;
-  } | null>(null);
+  // const [filterByPriceRange, setFilterByPriceRange] = React.useState<{
+  //   min: number;
+  //   max: number;
+  // } | null>(null);
 
   //   React.useEffect(() => {
   //     if (filterByProperty) {
@@ -96,12 +87,12 @@ export const useFilter = (
   //     }
   //   }, []);
 
-  React.useEffect(() => {
-    if (filterByPrice) {
-      const [min, max] = filterByPrice.split(",").map(Number);
-      setFilterByPriceRange({ min, max });
-    }
-  }, [filterByPrice]);
+  // React.useEffect(() => {
+  //   if (filterByPrice) {
+  //     const [min, max] = filterByPrice.split(",").map(Number);
+  //     setFilterByPriceRange({ min, max });
+  //   }
+  // }, [filterByPrice]);
 
   const handleTogglePropertyFilter = (
     propertyId: Id<"properties">,
@@ -267,71 +258,71 @@ export const Filters = ({
   );
 };
 
-const formSchema = z
-  .object({
-    min: z.coerce.number().min(0, {
-      message: "The minimum amount is zero",
-    }),
-    max: z.coerce.number().min(0, {
-      message: "The minimum amount is zero",
-    }),
-  })
-  .refine(
-    (data) => {
-      if (data.min && data.max) {
-        return data.min <= data.max;
-      }
-      return true;
-    },
-    {
-      message: "The minimum amount must be less than the maximum amount",
-      path: ["max"],
-    }
-  );
+// const formSchema = z
+//   .object({
+//     min: z.coerce.number().min(0, {
+//       message: "The minimum amount is zero",
+//     }),
+//     max: z.coerce.number().min(0, {
+//       message: "The minimum amount is zero",
+//     }),
+//   })
+//   .refine(
+//     (data) => {
+//       if (data.min && data.max) {
+//         return data.min <= data.max;
+//       }
+//       return true;
+//     },
+//     {
+//       message: "The minimum amount must be less than the maximum amount",
+//       path: ["max"],
+//     }
+//   );
 
-const PriceForm = ({
-  handlePriceFilter,
-}: {
-  handlePriceFilter: (values: z.infer<typeof formSchema>) => void;
-}) => {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      min: 0,
-      max: 0,
-    },
-  });
+// const PriceForm = ({
+//   handlePriceFilter,
+// }: {
+//   handlePriceFilter: (values: z.infer<typeof formSchema>) => void;
+// }) => {
+//   const form = useForm<z.infer<typeof formSchema>>({
+//     resolver: zodResolver(formSchema),
+//     defaultValues: {
+//       min: 0,
+//       max: 0,
+//     },
+//   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    handlePriceFilter(values);
-  }
+//   function onSubmit(values: z.infer<typeof formSchema>) {
+//     handlePriceFilter(values);
+//   }
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-        <div className="flex items-center gap-3 mt-2">
-          <FormInput
-            type="text"
-            placeholder="Min"
-            control={form.control}
-            name="min"
-            className="border rounded-md px-2 py-1 w-full"
-          />
-          <span>-</span>
-          <FormInput
-            type="text"
-            placeholder="Max"
-            control={form.control}
-            name="max"
-            className="border rounded-md px-2 py-1 w-full"
-          />
-        </div>
-        <div className="flex justify-end mt-2">
-          <Button variant="outline" size="sm" className="w-full">
-            Apply
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
-};
+//   return (
+//     <Form {...form}>
+//       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+//         <div className="flex items-center gap-3 mt-2">
+//           <FormInput
+//             type="text"
+//             placeholder="Min"
+//             control={form.control}
+//             name="min"
+//             className="border rounded-md px-2 py-1 w-full"
+//           />
+//           <span>-</span>
+//           <FormInput
+//             type="text"
+//             placeholder="Max"
+//             control={form.control}
+//             name="max"
+//             className="border rounded-md px-2 py-1 w-full"
+//           />
+//         </div>
+//         <div className="flex justify-end mt-2">
+//           <Button variant="outline" size="sm" className="w-full">
+//             Apply
+//           </Button>
+//         </div>
+//       </form>
+//     </Form>
+//   );
+// };

@@ -17,7 +17,7 @@ import useCartStore from "@/lib/hooks/use-cart-store";
 import { useStoreSlug } from "@/lib/hooks/use-store-slug";
 import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
-import { Menu, Package, Plus, Search, ShoppingBag } from "lucide-react";
+import { Menu, Package, Plus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 

@@ -34,13 +34,6 @@ const paystackInfoSchema = z.object({
 
 type PaystackInfoValues = z.infer<typeof paystackInfoSchema>;
 
-// This can come from your database or API.
-const defaultValues: Partial<PaystackInfoValues> = {
-  publicKey: "",
-  secretKey: "",
-  hasAddedWebhookAndCallbackURL: true,
-};
-
 export function PaymentForm({
   defaultValues,
   slug,

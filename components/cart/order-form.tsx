@@ -1,12 +1,11 @@
 import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
-import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
+import { useFieldArray, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { Form, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { Input } from "../ui/input";
 import { FormInput } from "../form/form-input";
 import { ImageUploader } from "../form/image-uploader";
+import { Form, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import { Input } from "../ui/input";
 
 export const metadataTypeSchema = z.discriminatedUnion("type", [
   z.object({

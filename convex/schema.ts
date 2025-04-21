@@ -216,7 +216,7 @@ export const Stores = Table("stores", {
   state: v.string(),
   country: v.string(),
   zip: v.string(),
-  terminalStoreAddressId: v.string(),
+  terminalStoreAddressId: v.optional(v.string()),
   // Payment Information with Paystack
   publicKey: v.string(),
   secretKey: v.string(),
@@ -339,6 +339,11 @@ export const Orders = Table("orders", {
   rateId: v.string(),
   phone: v.string(),
   email: v.string(),
+  // terminalFields
+  terminalAddressId: v.string(),
+  terminalParcelId: v.string(),
+  terminalTrackingNumber: v.optional(v.string()),
+  terminalTrackingUrl: v.optional(v.string()),
   // Additional Information
   storeId: v.id("stores"),
   amount: v.number(),

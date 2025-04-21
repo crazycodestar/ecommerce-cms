@@ -124,7 +124,11 @@ export const updateStoreTerminalAddressId = internalMutation({
 });
 
 export const createStore = mutation({
-  args: omit(Stores.withoutSystemFields, ["owner", "contents"]),
+  args: omit(Stores.withoutSystemFields, [
+    "owner",
+    "contents",
+    "terminalStoreAddressId",
+  ]),
 
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifier(ctx);

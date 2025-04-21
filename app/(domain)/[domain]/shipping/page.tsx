@@ -26,22 +26,32 @@ import { z } from "zod";
 
 type ShipmentRates = (typeof api.terminal.getRatesForShipment)["_returnType"];
 
-const shippingFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  line1: z.string().min(1, "Address is required"),
-  line2: z.string().optional(),
-  state: z.string().min(1, "State is required"),
-  city: z.string().min(1, "City is required"),
-  zip: z.string().min(1, "Zip code is required"),
-  country: z.string().default("Nigeria"),
-  email: z.string().email("Invalid email address"),
-  rateId: z.string().min(1, { message: "Please select a shipment option" }),
-  phone: z
-    .string()
-    .regex(/^[0-9]{10}$/, "Please enter a valid 10-digit phone number"),
-  saveAddress: z.boolean().default(false),
-});
+const shippingFormSchema = z
+  .object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    line1: z.string().min(1, "Address is required"),
+    line2: z.string().optional(),
+    state: z.string().min(1, "State is required"),
+    city: z.string().min(1, "City is required"),
+    zip: z.string().min(1, "Zip code is required"),
+    country: z.string().default("Nigeria"),
+    email: z.string().email("Invalid email address"),
+    rateId: z.string().min(1, { message: "Please select a shipment option" }),
+    terminalAddressId: z.string(),
+    terminalParcelId: z.string(),
+    phone: z
+      .string()
+      .regex(/^[0-9]{10}$/, "Please enter a valid 10-digit phone number"),
+    saveAddress: z.boolean().default(false),
+  })
+  .refine(
+    (args) => args.rateId && args.terminalAddressId && args.terminalParcelId,
+    {
+      message: "Please select a shipment option",
+      path: ["rateId"],
+    }
+  );
 type ShippingFormSchema = z.infer<typeof shippingFormSchema>;
 
 const useStates = () => {
@@ -124,6 +134,8 @@ export default function CheckoutPage() {
             variants: p.variants,
           })),
           shipping: selectedRate.amount,
+          terminalAddressId: values.terminalAddressId,
+          terminalParcelId: values.terminalParcelId,
         })
       );
 
@@ -238,8 +250,10 @@ export default function CheckoutPage() {
   );
 
   const [isOpen, setOpen] = React.useState(false);
-  const handleSelectRate = (rateId: string) => {
-    setValue("rateId", rateId);
+  const handleSelectRate = (rate: ShipmentRates[number]) => {
+    setValue("rateId", rate.rate_id);
+    setValue("terminalAddressId", rate.delivery_address);
+    setValue("terminalParcelId", rate.parcel);
     setOpen(false);
   };
 
@@ -582,7 +596,7 @@ export default function CheckoutPage() {
                           <div
                             key={index}
                             className="flex flex-col p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                            onClick={() => handleSelectRate(rate.rate_id)}
+                            onClick={() => handleSelectRate(rate)}
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">

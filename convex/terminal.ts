@@ -2,10 +2,16 @@
 import { action, internalAction } from "./_generated/server";
 import { z } from "zod";
 import { v } from "convex/values";
-import { BadRequestError, InternalServerError, NotFoundError } from "./error";
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from "./error";
 import { api, internal } from "./_generated/api";
 import { getTokenIdentifierWithAuthError, tryCatch } from "./utils";
 import { omit, pick } from "es-toolkit";
+import { Unauthenticated } from "convex/react";
 
 const TERMINAL_URL =
   process.env.NODE_ENV == "production"
@@ -84,6 +90,7 @@ export const stateSchema = z.object({
 
 export const rateSchema = z.object({
   rate_id: z.string(),
+  parcel: z.string(),
   // ^? I added
   amount: z.number(),
   cargo_type: z.string(),
@@ -553,47 +560,20 @@ export const getCities = action({
 
 export const createShipment = action({
   args: {
-    rateId: v.string(),
-    pickupAddress: v.string(),
-    deliveryAddress: v.object({
-      city: v.string(),
-      country: v.string(),
-      state: v.string(),
-      email: v.string(),
-      line1: v.string(),
-      line2: v.string(),
-      firstName: v.string(),
-      lastName: v.string(),
-      phone: v.string(),
-      zip: v.string(),
-    }),
-    parcels: v.array(
-      v.object({
-        packagingId: v.string(),
-        items: v.array(
-          v.object({
-            name: v.string(),
-            description: v.string(),
-            quantity: v.number(),
-            value: v.number(),
-            weight: v.number(),
-          })
-        ),
-      })
-    ),
-    terminalSecretKey: v.string(),
+    orderId: v.id("orders"),
   },
+  handler: async (ctx, { orderId }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await ctx.runQuery(
+      internal.stores.getStoreByTokenIdentifier,
+      { tokenIdentifier }
+    );
 
-  handler: async (_, { terminalSecretKey, ...args }) => {
-    const receiver = await handleCreateAddress(
-      args.deliveryAddress,
-      terminalSecretKey
-    );
-    const parcel = await Promise.all(
-      args.parcels.map((parcel) =>
-        handleCreateParcel(parcel, terminalSecretKey)
-      )
-    );
+    const order = await ctx.runQuery(api.orders.getOrder, { orderId });
+    if (!order) throw new NotFoundError("order not found");
+
+    if (store._id !== order.storeId)
+      throw new UnauthorizedError("unauthorized access");
 
     const shipmentResponse = await terminalFetch<
       z.infer<typeof shipmentSchema>
@@ -605,15 +585,15 @@ export const createShipment = action({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          address_from: args.pickupAddress,
-          address_to: receiver.address_id,
-          parcels: parcel.map((p) => p.parcel_id),
+          address_from: store.terminalStoreAddressId,
+          address_to: order.terminalAddressId,
+          parcels: [order.terminalParcelId],
         }),
       },
-      terminalSecretKey
+      store.terminalSecretKey
     );
 
-    return await terminalFetch<z.infer<typeof arrangedShipmentSchema>>(
+    const res = await terminalFetch<z.infer<typeof arrangedShipmentSchema>>(
       `${TERMINAL_URL}/shipments/pickup`,
       {
         method: "POST",
@@ -621,13 +601,21 @@ export const createShipment = action({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          rate_id: args.rateId,
+          rate_id: order.rateId,
           shipment_id: shipmentResponse.shipment_id,
-          parcels: parcel.map((p) => p.parcel_id),
+          parcels: [order.terminalParcelId],
         }),
       },
-      terminalSecretKey
+      store.terminalSecretKey
     );
+
+    await ctx.runMutation(internal.orders.updateOrderTrackingInformation, {
+      orderId,
+      terminalTrackingNumber: res.extras.tracking_number,
+      terminalTrackingUrl: res.extras.tracking_url,
+    });
+
+    return { success: "true" };
   },
 });
 

@@ -1,11 +1,10 @@
 import { Separator } from "@/components/ui/separator";
-import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { getAuthToken } from "@/lib/auth";
-import { ShippingForm } from "../_components/shipping-form";
-import { PaymentForm } from "../_components/payment-form";
-import Link from "next/link";
+import { fetchQuery } from "convex/nextjs";
 import { SquareArrowOutUpRight } from "lucide-react";
+import Link from "next/link";
+import { PaymentForm } from "../_components/payment-form";
 
 export default async function SettingsGeneralPage({
   params,

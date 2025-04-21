@@ -2,7 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
-import { usePaginatedQuery, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { Filter } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";

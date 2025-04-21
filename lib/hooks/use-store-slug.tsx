@@ -7,5 +7,5 @@ export function useStoreSlug() {
   }, []);
   const subdomain = !domain || domain === "www" ? undefined : domain;
 
-  return { storeSlug: subdomain };
+  return { storeSlug: subdomain ?? "" };
 }

@@ -1,9 +1,8 @@
-import type { OrderType } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { cn, formatCurrency } from "@/lib/utils";
-import { OrderTracker } from "./order-tracker";
+import type { OrderType } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 interface OrderDetailsProps {
   order: OrderType;

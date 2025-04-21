@@ -8,12 +8,8 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useQuery } from "convex/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
 import React from "react";
 
 export const HeroCarousel = ({ imageIds }: { imageIds: Id<"_storage">[] }) => {
