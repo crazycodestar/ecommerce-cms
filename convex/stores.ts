@@ -123,12 +123,14 @@ export const updateStoreTerminalAddressId = internalMutation({
     ctx.db.patch(storeId, { terminalStoreAddressId }),
 });
 
+export const createStoreArgs = omit(Stores.withoutSystemFields, [
+  "owner",
+  "contents",
+  "terminalStoreAddressId",
+]);
+
 export const createStore = mutation({
-  args: omit(Stores.withoutSystemFields, [
-    "owner",
-    "contents",
-    "terminalStoreAddressId",
-  ]),
+  args: createStoreArgs,
 
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifier(ctx);
