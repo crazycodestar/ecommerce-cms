@@ -753,7 +753,7 @@ const ShippingAddressForm = ({
               >
                 <FormControl>
                   <SelectTrigger
-                    disabled={!form.watch("state")}
+                    disabled={!form.watch("country")}
                     className="w-full"
                   >
                     <SelectValue placeholder="State" />
