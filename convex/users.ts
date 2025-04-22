@@ -12,6 +12,7 @@ import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
 import { Stores, Users } from "./schema";
 import { getTokenIdentifier } from "./utils";
 import { Id } from "./_generated/dataModel";
+import { createStoreArgs } from "./stores";
 
 export const getCurrentUser = query(async (ctx) => {
   const identity = await ctx.auth.getUserIdentity();
@@ -131,7 +132,7 @@ export const deleteUser = internalMutation({
 });
 
 export const processOnboarding = internalMutation({
-  args: omit(Stores.withoutSystemFields, ["owner", "terminalStoreAddressId"]),
+  args: createStoreArgs,
   handler: async (ctx, args) => {
     await ctx.runMutation(api.stores.createStore, args);
     return "success";
@@ -139,20 +140,13 @@ export const processOnboarding = internalMutation({
 });
 
 export const submitOnboarding = action({
-  args: omit(Stores.withoutSystemFields, [
-    "owner",
-    "contents",
-    "terminalStoreAddressId",
-  ]),
+  args: createStoreArgs,
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifier(ctx);
     if (!tokenIdentifier) throw new UnauthorizedError();
 
     try {
-      await ctx.runMutation(internal.users.processOnboarding, {
-        ...args,
-        contents: [],
-      });
+      await ctx.runMutation(internal.users.processOnboarding, args);
       const res = await clerkClient().users.updateUser(tokenIdentifier, {
         publicMetadata: {
           onboardingComplete: true,

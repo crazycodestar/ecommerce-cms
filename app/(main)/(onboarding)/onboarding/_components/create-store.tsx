@@ -125,47 +125,26 @@ export function CreateStore() {
 
   const form = useForm<CreateStoreSchema>({
     resolver: zodResolver(createStoreSchema),
-    defaultValues: isDevelopment
-      ? {
-          name: process.env.STORE_NAME || "",
-          description: process.env.STORE_DESCRIPTION || "",
-          slug: "",
-          // shipping
-          city: process.env.CITY || "",
-          country: process.env.COUNTRY || "",
-          email: process.env.EMAIL || "",
-          firstName: process.env.FIRST_NAME || "",
-          lastName: process.env.LAST_NAME || "",
-          line1: process.env.LINE1 || "",
-          line2: "",
-          zip: "",
-          phone: process.env.PHONE || "",
-          state: process.env.STATE || "",
-          // payment
-          publicKey: process.env.PUBLIC_KEY || "",
-          secretKey: process.env.SECRET_KEY || "",
-          terminalSecretKey: process.env.TERMINAL_SECRET_KEY || "",
-        }
-      : {
-          name: "",
-          description: "",
-          slug: "",
-          // shipping
-          city: "",
-          country: "",
-          email: "",
-          firstName: "",
-          lastName: "",
-          line1: "",
-          line2: "",
-          zip: "",
-          phone: "",
-          state: "",
-          // payment
-          publicKey: "",
-          secretKey: "",
-          terminalSecretKey: "",
-        },
+    defaultValues: {
+      name: "",
+      description: "",
+      slug: "",
+      // shipping
+      city: "",
+      country: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      line1: "",
+      line2: "",
+      zip: "",
+      phone: "",
+      state: "",
+      // payment
+      publicKey: "",
+      secretKey: "",
+      terminalSecretKey: "",
+    },
   });
 
   // Get the current schema based on the step
