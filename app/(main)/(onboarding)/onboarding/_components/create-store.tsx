@@ -121,8 +121,6 @@ export function CreateStore() {
   const [isCreatePending, startCreateTransaction] = React.useTransition();
   const submitOnboarding = useAction(api.users.submitOnboarding);
 
-  const isDevelopment = process.env.NODE_ENV === "development";
-
   const form = useForm<CreateStoreSchema>({
     resolver: zodResolver(createStoreSchema),
     defaultValues: {
