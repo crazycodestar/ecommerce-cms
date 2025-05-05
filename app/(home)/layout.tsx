@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <ConvexClientProvider>
       <div className="min-h-svh flex flex-col">
-        <header className="container px-4 mx-auto flex justify-between items-center gap-4 h-18">
+        <header className="sticky top-0 z-50 backdrop-blur-lg container px-4 mx-auto flex justify-between items-center gap-4 h-18">
           <Image src="/logo.svg" alt="logo" width={56} height={56} />
           <div className="flex items-center gap-4">
             <SignedOut>
