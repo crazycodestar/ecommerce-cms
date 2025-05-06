@@ -2,7 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const isOnboardingRoute = createRouteMatcher(["/onboarding"]);
-const isPublicRoute = createRouteMatcher(["/home", "/"]);
+const isPublicRoute = createRouteMatcher(["/home", "/", "/chat"]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
@@ -22,8 +22,10 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     process.env.VERCEL_URL)!;
   const customSubDomain = hostname?.replace(domain, "");
+  // @ts-expect-error preview branch not recognized
+  const isPreviewBranch = process.env.NODE_ENV !== "preview";
 
-  if (customSubDomain) {
+  if (!isPreviewBranch && customSubDomain) {
     return NextResponse.rewrite(
       new URL(`/${customSubDomain}${pathWithSearchParams}`, req.url)
     );
