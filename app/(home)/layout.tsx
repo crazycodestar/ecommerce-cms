@@ -1,3 +1,5 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   SignInButton,
   SignUpButton,
@@ -6,10 +8,9 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import { type Metadata } from "next";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
 import { ConvexClientProvider } from "../ConvexClientProvider";
-import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Convertly CMS",
@@ -24,32 +25,40 @@ export default function RootLayout({
   return (
     <ConvexClientProvider>
       <div className="min-h-svh flex flex-col">
-        <header className="sticky top-0 z-50 backdrop-blur-lg container px-4 mx-auto flex justify-between items-center gap-4 h-18">
-          <Image src="/logo.svg" alt="logo" width={56} height={56} />
-          <div className="flex items-center gap-4">
-            <SignedOut>
-              <SignInButton>
-                <Button size="sm" className="uppercase text-xs">
-                  Sign In
+        <header className="sticky top-0 z-50 backdrop-blur-lg">
+          <nav className="container px-4 mx-auto flex justify-between items-center gap-4 h-18">
+            <Link href="/">
+              <Image src="/logo.svg" alt="logo" width={56} height={56} />
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/chat"
+                className="flex gap-2 items-center cursor-pointer"
+              >
+                <p className="uppercase text-xs">Chat</p>
+                <Badge variant="outline">New</Badge>
+              </Link>
+              <SignedOut>
+                <SignInButton>
+                  <p className="uppercase text-xs cursor-pointer">Sign In</p>
+                </SignInButton>
+                <SignUpButton>
+                  <Button
+                    size="sm"
+                    className="uppercase text-xs cursor-pointer"
+                  >
+                    Get Started
+                  </Button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <Button asChild size="sm" className="uppercase text-xs">
+                  <Link href={`/dashboard/`}>Dashboard</Link>
                 </Button>
-              </SignInButton>
-              <SignUpButton>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="uppercase text-xs"
-                >
-                  Sign Up
-                </Button>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              <Button asChild size="sm" className="uppercase text-xs">
-                <Link href={`/dashboard/`}>Dashboard</Link>
-              </Button>
-              <UserButton />
-            </SignedIn>
-          </div>
+                <UserButton />
+              </SignedIn>
+            </div>
+          </nav>
         </header>
         <article className="flex-1 flex flex-col">{children}</article>
       </div>
