@@ -22,7 +22,6 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     process.env.VERCEL_URL)!;
   const customSubDomain = hostname?.replace(domain, "");
-  console.log(process.env.NODE_ENV);
   // @ts-expect-error preview branch not recognized
   const isPreviewBranch = process.env.NODE_ENV !== "preview";
 

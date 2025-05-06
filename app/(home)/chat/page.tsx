@@ -90,7 +90,7 @@ export default async function Chat() {
                 width: 343.06,
                 height: 213.43,
               }}
-              imageContainerClassName="pt-4"
+              imageContainerClassName="pt-4 md:px-4"
               title="Messaging with AI"
               description="Automate conversations with AI powered chatbots"
             />
@@ -126,7 +126,7 @@ export default async function Chat() {
                 width: 354,
                 height: 279,
               }}
-              imageContainerClassName="pt-8"
+              imageContainerClassName="pt-8 md:px-4"
               title="Shortcuts and Templates"
               description="Save time with templates and shortcuts"
             />
