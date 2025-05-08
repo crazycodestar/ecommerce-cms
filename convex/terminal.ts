@@ -647,3 +647,108 @@ export const enableCarriers = action({
     return "success";
   },
 });
+
+// http endpoints
+export const apiGetCities = internalAction({
+  args: {
+    stateCode: v.string(),
+  },
+  handler: async (_, args) => {
+    const terminalSecretKey = getTerminalSecret();
+    const response = await terminalFetch<z.infer<typeof citySchema>[]>(
+      `${TERMINAL_URL}/cities/?country_code=NG&state_code=${args.stateCode}`,
+      {},
+      terminalSecretKey
+    );
+    return response;
+  },
+});
+
+export const apiGetStates = internalAction(async () => {
+  // we have to use our own secret_key here because of convex's architect and I can't figure out a way around it
+  const terminalSecret = getTerminalSecret();
+  const response = await terminalFetch<z.infer<typeof stateSchema>[]>(
+    `${TERMINAL_URL}/states/?country_code=NG`,
+    {},
+    terminalSecret
+  );
+
+  return response;
+});
+
+export const apiGetRatesForShipment = internalAction({
+  args: {
+    deliveryAddress: v.object({
+      city: v.string(),
+      country: v.string(),
+      state: v.string(),
+      email: v.string(),
+      line1: v.string(),
+      line2: v.optional(v.string()),
+      firstName: v.string(),
+      lastName: v.string(),
+      phone: v.string(),
+      zip: v.string(),
+    }),
+    storeSlug: v.string(),
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        name: v.string(),
+        description: v.string(),
+        value: v.number(),
+        weight: v.number(),
+        quantity: v.number(),
+      })
+    ),
+  },
+
+  handler: async (ctx, { storeSlug, items, ...args }) => {
+    // get store terminal Id
+    const { terminalSecretKey, terminalStoreAddressId: pickupAddress } =
+      await ctx.runQuery(internal.stores.getStoreBySlug, { storeSlug });
+
+    // calculate package size and create new package Id
+    let packagingId: string | undefined;
+    const packages = await ctx.runQuery(internal.products.getProductsPackages, {
+      productIds: items.map((i) => i.productId),
+    });
+    const filteredPackages = packages.filter((i): i is NonNullable<typeof i> =>
+      Boolean(i)
+    );
+
+    if (filteredPackages.length === 0)
+      throw new NotFoundError("Products not found");
+    if (filteredPackages.length === 1)
+      packagingId = filteredPackages[0].terminalPackageId!;
+    if (filteredPackages.length > 1) {
+      const package_ = await handleCreatePackageFromPackages({
+        packages: filteredPackages,
+        terminalSecretKey,
+      });
+      packagingId = package_.packaging_id;
+    }
+
+    if (!packagingId) throw new InternalServerError();
+
+    // create parcel
+    const parcelInfo = {
+      packagingId: packagingId,
+      items: items.map((i) => omit(i, ["productId"])),
+    };
+    const receiver = await handleCreateAddress(
+      args.deliveryAddress,
+      terminalSecretKey
+    );
+    const parcel = await handleCreateParcel(parcelInfo, terminalSecretKey);
+    const response: z.infer<typeof rateSchema>[] = await terminalFetch<
+      z.infer<typeof rateSchema>[]
+    >(
+      `${TERMINAL_URL}/rates/shipment?pickup_address=${pickupAddress}&delivery_address=${receiver.address_id}&parcel_id=${parcel.parcel_id}`,
+      {},
+      terminalSecretKey
+    );
+
+    return response;
+  },
+});

@@ -5,12 +5,57 @@ import { Webhook } from "svix";
 import { WebhookEvent } from "@clerk/backend";
 import { userSchema } from "./schema";
 import { z, ZodError } from "zod";
+import { Id } from "./_generated/dataModel";
+import * as terminal from "./terminal";
 
 const http = httpRouter();
 
 const userDeleteSchema = z.object({
   deleted: z.boolean(),
   id: z.optional(z.string()),
+});
+
+const initializeOrderSchema = z.object({
+  storeSlug: z.string(),
+  callbackUrl: z.string().url(),
+  items: z.array(
+    z.object({
+      productId: z.string(),
+      quantity: z.number().int().positive(),
+      variants: z
+        .array(
+          z.object({
+            name: z.string(),
+            value: z.string(),
+          })
+        )
+        .optional(),
+      metadatas: z
+        .array(
+          z.object({
+            name: z.string(),
+            value: z.union([z.string(), z.number()]),
+          })
+        )
+        .optional(),
+    })
+  ),
+  firstName: z.string(),
+  lastName: z.string(),
+  line1: z.string(),
+  line2: z.string().optional(),
+  state: z.string(),
+  city: z.string(),
+  zip: z.string(),
+  country: z.string(),
+  rateId: z.string(),
+  phone: z.string(),
+  email: z.string().email(),
+  terminalAddressId: z.string(),
+  terminalParcelId: z.string(),
+  terminalTrackingNumber: z.string().optional(),
+  terminalTrackingUrl: z.string().optional(),
+  shipping: z.number(),
 });
 
 http.route({
@@ -97,6 +142,292 @@ http.route({
     });
     if (result.success) return new Response(null, { status: 200 });
     return new Response("Webhook Error", { status: 400 });
+  }),
+});
+
+http.route({
+  path: "/api/collections/get-filters",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+
+    if (!storeSlug) {
+      return new Response("Store slug is required", { status: 400 });
+    }
+
+    const result = await ctx.runQuery(internal.collections.apiGetFilters, {
+      storeSlug,
+    });
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/collections/get-collection-by-slug-and-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+    const slug = searchParams.get("slug");
+
+    if (!storeSlug)
+      return new Response("Store slug is required", { status: 400 });
+    if (!slug) return new Response("Slug is required", { status: 400 });
+
+    const result = await ctx.runQuery(
+      internal.collections.apiGetCollectionBySlugAndStoreSlug,
+      {
+        storeSlug,
+        slug,
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/collections/get-products-by-collection-slug-and-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+    const collectionSlug = searchParams.get("collectionSlug");
+
+    if (!storeSlug)
+      return new Response("Store slug is required", { status: 400 });
+    if (!collectionSlug)
+      return new Response("Collection slug is required", { status: 400 });
+
+    const result = await ctx.runQuery(
+      internal.collections.apiGetProductsByCollectionSlugAndStoreSlug,
+      {
+        storeSlug,
+        collectionSlug,
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/collections/get-category-by-id-and-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+    const categoryId = searchParams.get("categoryId");
+
+    if (!storeSlug)
+      return new Response("Store slug is required", { status: 400 });
+    if (!categoryId)
+      return new Response("Category ID is required", { status: 400 });
+
+    const result = await ctx.runQuery(
+      internal.collections.apiGetCategoryByIdAndStoreSlug,
+      {
+        storeSlug,
+        categoryId: categoryId as Id<"categories">,
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/collections/get-products-by-category-id-and-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+    const categoryId = searchParams.get("categoryId");
+
+    if (!storeSlug)
+      return new Response("Store slug is required", { status: 400 });
+    if (!categoryId)
+      return new Response("Category ID is required", { status: 400 });
+
+    const result = await ctx.runQuery(
+      internal.collections.apiGetProductsByCategoryIdAndStoreSlug,
+      {
+        storeSlug,
+        categoryId: categoryId as Id<"categories">,
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/products/get-product-by-id",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) return new Response("Product ID is required", { status: 400 });
+
+    const result = await ctx.runQuery(internal.products.apiGetProductById, {
+      id: id as Id<"products">,
+    });
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/categories/get-sub-categories-by-parent-id-and-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+    const parentId = searchParams.get("parentId");
+
+    if (!storeSlug)
+      return new Response("Store slug is required", { status: 400 });
+    if (!parentId)
+      return new Response("Parent ID is required", { status: 400 });
+
+    const result = await ctx.runQuery(
+      internal.collections.apiGetSubCategoriesByParentIdAndStoreSlug,
+      {
+        storeSlug,
+        parentId: parentId as Id<"categories">,
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/categories/get-categories-by-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+
+    if (!storeSlug)
+      return new Response("Store slug is required", { status: 400 });
+
+    const result = await ctx.runQuery(
+      internal.collections.apiGetCategoriesByStoreSlug,
+      {
+        storeSlug,
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/terminal/states",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    const result = await ctx.runAction(internal.terminal.apiGetStates);
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/terminal/cities",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const stateCode = searchParams.get("stateCode");
+
+    if (!stateCode) {
+      return new Response("State code is required", { status: 400 });
+    }
+
+    const result = await ctx.runAction(internal.terminal.apiGetCities, {
+      stateCode,
+    });
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/terminal/rates",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const body = await request.json();
+    const { deliveryAddress, storeSlug, items } = body;
+
+    if (!deliveryAddress || !storeSlug || !items) {
+      return new Response("Missing required fields", { status: 400 });
+    }
+
+    const result = await ctx.runAction(
+      internal.terminal.apiGetRatesForShipment,
+      {
+        deliveryAddress,
+        storeSlug,
+        items,
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/orders/get-order-by-reference-or-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const reference = searchParams.get("reference");
+    const slug = searchParams.get("slug");
+
+    if (!reference && !slug) {
+      return new Response("Either reference or slug is required", {
+        status: 400,
+      });
+    }
+
+    const result = await ctx.runQuery(
+      internal.orders.apiGetOrderByReferenceOrSlug,
+      {
+        option: reference ? { reference } : { slug: slug! },
+      }
+    );
+    return new Response(JSON.stringify(result), { status: 200 });
+  }),
+});
+
+http.route({
+  path: "/api/orders/initialize",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      const validatedData = initializeOrderSchema.parse(body) as z.infer<
+        typeof initializeOrderSchema
+      > & {
+        items: {
+          productId: Id<"products">;
+          quantity: number;
+          variants?: { value: string; name: string }[];
+          metadatas?: { value: string | number; name: string }[];
+        }[];
+      };
+
+      const result = await ctx.runAction(internal.orders.apiInitializeOrder, {
+        ...validatedData,
+      });
+      return new Response(JSON.stringify(result), { status: 200 });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return new Response(
+          JSON.stringify({
+            error: "Invalid request data",
+            details: error.errors,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      throw error;
+    }
   }),
 });
 
