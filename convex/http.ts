@@ -58,6 +58,37 @@ const initializeOrderSchema = z.object({
   shipping: z.number(),
 });
 
+// Helper function to handle CORS
+const handleCORS = (request: Request) => {
+  const headers = request.headers;
+
+  console.log("origin", headers.get("Origin"));
+  console.log(
+    "access-control-request-method",
+    headers.get("Access-Control-Request-Method")
+  );
+  console.log(
+    "access-control-request-headers",
+    headers.get("Access-Control-Request-Headers")
+  );
+
+  if (
+    headers.get("Origin") !== null &&
+    headers.get("Access-Control-Request-Method") !== null &&
+    headers.get("Access-Control-Request-Headers") !== null
+  ) {
+    return new Response(null, {
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400",
+      }),
+    });
+  }
+  return new Response();
+};
+
 http.route({
   path: "/clerk",
   method: "POST",
@@ -153,14 +184,32 @@ http.route({
     const storeSlug = searchParams.get("storeSlug");
 
     if (!storeSlug) {
-      return new Response("Store slug is required", { status: 400 });
+      return new Response("Store slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
     }
 
     const result = await ctx.runQuery(internal.collections.apiGetFilters, {
       storeSlug,
     });
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/collections/get-filters",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -172,8 +221,21 @@ http.route({
     const slug = searchParams.get("slug");
 
     if (!storeSlug)
-      return new Response("Store slug is required", { status: 400 });
-    if (!slug) return new Response("Slug is required", { status: 400 });
+      return new Response("Store slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    if (!slug)
+      return new Response("Slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
 
     const result = await ctx.runQuery(
       internal.collections.apiGetCollectionBySlugAndStoreSlug,
@@ -182,8 +244,20 @@ http.route({
         slug,
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/collections/get-collection-by-slug-and-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -195,9 +269,21 @@ http.route({
     const collectionSlug = searchParams.get("collectionSlug");
 
     if (!storeSlug)
-      return new Response("Store slug is required", { status: 400 });
+      return new Response("Store slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
     if (!collectionSlug)
-      return new Response("Collection slug is required", { status: 400 });
+      return new Response("Collection slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
 
     const result = await ctx.runQuery(
       internal.collections.apiGetProductsByCollectionSlugAndStoreSlug,
@@ -206,8 +292,20 @@ http.route({
         collectionSlug,
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/collections/get-products-by-collection-slug-and-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -219,9 +317,21 @@ http.route({
     const categoryId = searchParams.get("categoryId");
 
     if (!storeSlug)
-      return new Response("Store slug is required", { status: 400 });
+      return new Response("Store slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
     if (!categoryId)
-      return new Response("Category ID is required", { status: 400 });
+      return new Response("Category ID is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
 
     const result = await ctx.runQuery(
       internal.collections.apiGetCategoryByIdAndStoreSlug,
@@ -230,8 +340,20 @@ http.route({
         categoryId: categoryId as Id<"categories">,
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/collections/get-category-by-id-and-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -241,21 +363,39 @@ http.route({
     const { searchParams } = new URL(request.url);
     const storeSlug = searchParams.get("storeSlug");
     const categoryId = searchParams.get("categoryId");
+    const properties = searchParams.get("properties");
 
-    if (!storeSlug)
-      return new Response("Store slug is required", { status: 400 });
-    if (!categoryId)
-      return new Response("Category ID is required", { status: 400 });
+    if (!storeSlug || !categoryId)
+      return new Response("Store slug and category ID are required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
 
     const result = await ctx.runQuery(
       internal.collections.apiGetProductsByCategoryIdAndStoreSlug,
       {
         storeSlug,
         categoryId: categoryId as Id<"categories">,
+        properties: properties ? JSON.parse(properties) : undefined,
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/collections/get-products-by-category-id-and-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -265,13 +405,32 @@ http.route({
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
-    if (!id) return new Response("Product ID is required", { status: 400 });
+    if (!id)
+      return new Response("Product ID is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
 
     const result = await ctx.runQuery(internal.products.apiGetProductById, {
       id: id as Id<"products">,
     });
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/products/get-product-by-id",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -283,9 +442,21 @@ http.route({
     const parentId = searchParams.get("parentId");
 
     if (!storeSlug)
-      return new Response("Store slug is required", { status: 400 });
+      return new Response("Store slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
     if (!parentId)
-      return new Response("Parent ID is required", { status: 400 });
+      return new Response("Parent ID is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
 
     const result = await ctx.runQuery(
       internal.collections.apiGetSubCategoriesByParentIdAndStoreSlug,
@@ -294,8 +465,20 @@ http.route({
         parentId: parentId as Id<"categories">,
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/categories/get-sub-categories-by-parent-id-and-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -306,7 +489,13 @@ http.route({
     const storeSlug = searchParams.get("storeSlug");
 
     if (!storeSlug)
-      return new Response("Store slug is required", { status: 400 });
+      return new Response("Store slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
 
     const result = await ctx.runQuery(
       internal.collections.apiGetCategoriesByStoreSlug,
@@ -314,8 +503,20 @@ http.route({
         storeSlug,
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/categories/get-categories-by-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -323,8 +524,20 @@ http.route({
   method: "GET",
   handler: httpAction(async (ctx) => {
     const result = await ctx.runAction(internal.terminal.apiGetStates);
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/terminal/states",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -335,14 +548,32 @@ http.route({
     const stateCode = searchParams.get("stateCode");
 
     if (!stateCode) {
-      return new Response("State code is required", { status: 400 });
+      return new Response("State code is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
     }
 
     const result = await ctx.runAction(internal.terminal.apiGetCities, {
       stateCode,
     });
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/terminal/cities",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -353,19 +584,37 @@ http.route({
     const { deliveryAddress, storeSlug, items } = body;
 
     if (!deliveryAddress || !storeSlug || !items) {
-      return new Response("Missing required fields", { status: 400 });
+      return new Response("Missing required fields", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
     }
 
     const result = await ctx.runAction(
       internal.terminal.apiGetRatesForShipment,
       {
         deliveryAddress,
-        storeSlug,
         items,
+        storeSlug,
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/terminal/rates",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -379,6 +628,10 @@ http.route({
     if (!reference && !slug) {
       return new Response("Either reference or slug is required", {
         status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
       });
     }
 
@@ -388,8 +641,20 @@ http.route({
         option: reference ? { reference } : { slug: slug! },
       }
     );
-    return new Response(JSON.stringify(result), { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
   }),
+});
+
+http.route({
+  path: "/api/orders/get-order-by-reference-or-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 http.route({
@@ -412,7 +677,13 @@ http.route({
       const result = await ctx.runAction(internal.orders.apiInitializeOrder, {
         ...validatedData,
       });
-      return new Response(JSON.stringify(result), { status: 200 });
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
     } catch (error) {
       if (error instanceof ZodError) {
         return new Response(
@@ -422,13 +693,63 @@ http.route({
           }),
           {
             status: 400,
-            headers: { "Content-Type": "application/json" },
+            headers: new Headers({
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+              Vary: "origin",
+            }),
           }
         );
       }
       throw error;
     }
   }),
+});
+
+http.route({
+  path: "/api/orders/initialize",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
+});
+
+http.route({
+  path: "/api/contents/get-contents-by-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const url = new URL(request.url);
+    const storeSlug = url.searchParams.get("storeSlug");
+
+    if (!storeSlug) {
+      return new Response(JSON.stringify({ error: "Store slug is required" }), {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    }
+
+    const result = await ctx.runQuery(
+      internal.contents.apiGetContentsByStoreSlug,
+      {
+        storeSlug,
+      }
+    );
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
+  }),
+});
+
+http.route({
+  path: "/api/contents/get-contents-by-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
 export default http;

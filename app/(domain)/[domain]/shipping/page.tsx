@@ -8,13 +8,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/convex/_generated/api";
 import { showErrorToast } from "@/lib/handle-error";
 import useCartStore, { useCart } from "@/lib/hooks/use-cart-store";
 import { useStoreSlug } from "@/lib/hooks/use-store-slug";
 import { tryCatch } from "@/lib/try-catch";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAction } from "convex/react";
 import { ChevronLeft, Loader, TruckIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,46 +21,57 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ordersAPI, terminalAPI } from "@/app/api";
 
-type ShipmentRates = (typeof api.terminal.getRatesForShipment)["_returnType"];
+type ShipmentRate = {
+  rate_id: string;
+  amount: number;
+  delivery_address: string;
+  parcel: string;
+  carrier_logo: string;
+  carrier_name: string;
+  currency: string;
+  carrier_rate_description: string;
+  delivery_time: string;
+  pickup_time: string;
+  metadata: {
+    [key: string]: any;
+  };
+};
 
-const shippingFormSchema = z
-  .object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    line1: z.string().min(1, "Address is required"),
-    line2: z.string().optional(),
-    state: z.string().min(1, "State is required"),
-    city: z.string().min(1, "City is required"),
-    zip: z.string().min(1, "Zip code is required"),
-    country: z.string().default("Nigeria"),
-    email: z.string().email("Invalid email address"),
-    rateId: z.string().min(1, { message: "Please select a shipment option" }),
-    terminalAddressId: z.string(),
-    terminalParcelId: z.string(),
-    phone: z
-      .string()
-      .regex(/^[0-9]{10}$/, "Please enter a valid 10-digit phone number"),
-    saveAddress: z.boolean().default(false),
-  })
-  .refine(
-    (args) => args.rateId && args.terminalAddressId && args.terminalParcelId,
-    {
-      message: "Please select a shipment option",
-      path: ["rateId"],
-    }
-  );
+type OrderInitResponse = {
+  accessCode: string;
+  url: string;
+  slug: string;
+};
+
+const shippingFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(1, "Phone number is required"),
+  line1: z.string().min(1, "Address is required"),
+  line2: z.string().optional(),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zip: z.string().min(1, "ZIP code is required"),
+  country: z.string().min(1, "Country is required"),
+  rateId: z.string().min(1, "Please select a shipping rate"),
+  terminalAddressId: z.string().min(1, "Address ID is required"),
+  terminalParcelId: z.string().min(1, "Parcel ID is required"),
+  saveAddress: z.boolean().default(false),
+});
+
 type ShippingFormSchema = z.infer<typeof shippingFormSchema>;
 
 const useStates = () => {
   const [states, setStates] = React.useState<
     { name: string; countryCode: string; isoCode: string }[]
   >([]);
-  const getStates = useAction(api.terminal.getStates);
 
   React.useEffect(() => {
     const fetchStates = async () => {
-      const { data, error } = await tryCatch(getStates());
+      const { data, error } = await tryCatch(terminalAPI.getStates());
       if (error) return toast.error("Failed to fetch states");
       setStates(data);
     };
@@ -77,13 +86,12 @@ const useCities = (stateCode?: string) => {
   const [cities, setCities] = React.useState<
     { name: string; stateCode: string; countryCode: string }[]
   >([]);
-  const getCities = useAction(api.terminal.getCities);
 
   React.useEffect(() => {
     if (!stateCode) return;
 
     const fetchCities = async () => {
-      const { data, error } = await tryCatch(getCities({ stateCode }));
+      const { data, error } = await tryCatch(terminalAPI.getCities(stateCode));
       if (error) return toast.error("Failed to fetch cities");
       setCities(data);
     };
@@ -105,7 +113,6 @@ export default function CheckoutPage() {
     setOrigin(window.location.origin);
   }, []);
 
-  const initializeOrder = useAction(api.orders.initializeOrder);
   const [isOrderProcessing, startTransition] = React.useTransition();
   async function onSubmit(values: ShippingFormSchema) {
     if (!origin || !storeSlug || !selectedRate) return;
@@ -113,7 +120,7 @@ export default function CheckoutPage() {
 
     startTransition(async () => {
       const { data, error } = await tryCatch(
-        initializeOrder({
+        ordersAPI.initialize({
           callbackUrl,
           city: values.city,
           country: values.country,
@@ -143,8 +150,7 @@ export default function CheckoutPage() {
       if (!data) return;
 
       clearCart();
-      const { url } = data;
-      router.push(url);
+      router.push(data.url);
     });
   }
 
@@ -157,24 +163,23 @@ export default function CheckoutPage() {
   } = useForm<ShippingFormSchema>({
     resolver: zodResolver(shippingFormSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      line1: "",
-      line2: "",
-      city: "",
-      state: "",
-      zip: "",
+      firstName: "John",
+      lastName: "Doe",
+      line1: "123 Main St",
+      line2: "Apt 4B",
+      city: "Lagos",
+      state: "Lagos",
+      zip: "10001",
       country: "NG",
-      email: "",
-      phone: "",
+      email: "johndoe@example.com",
+      phone: "1234567890",
       rateId: "",
       saveAddress: false,
     },
   });
 
-  const getRatesForShipment = useAction(api.terminal.getRatesForShipment);
   const [canGetShipmentRates, setCanGetShipmpentRates] = React.useState(false);
-  const [shipmentRates, setShipmentRates] = React.useState<ShipmentRates>([]);
+  const [shipmentRates, setShipmentRates] = React.useState<ShipmentRate[]>([]);
 
   const getDeliveryAddressFormat = () => ({
     country: "NG",
@@ -203,9 +208,10 @@ export default function CheckoutPage() {
     if (!formattedProducts.length) return;
 
     const { data, error } = await tryCatch(
-      getRatesForShipment({
-        deliveryAddress: getDeliveryAddressFormat(),
-        items: formattedProducts
+      terminalAPI.getRates(
+        storeSlug,
+        getDeliveryAddressFormat(),
+        formattedProducts
           .filter((p): p is NonNullable<typeof p> => !!p)
           .map((p) => ({
             productId: p._id,
@@ -214,17 +220,15 @@ export default function CheckoutPage() {
             description: p.additionalInformation?.slice(0, 100) ?? "",
             value: p.price,
             weight: p.weight,
-          })),
-        storeSlug,
-      })
+          }))
+      )
     );
-    if (error) return toast.error("Failed to fetch rates");
+    if (error) {
+      console.error(error);
+      return toast.error("Failed to fetch rates");
+    }
     setShipmentRates(data);
   };
-
-  // async function onSubmit(values: ShippingFormSchema) {
-  //   console.log("values: ", values);
-  // }
 
   const states = useStates();
   const getStateCode = (state: string) =>
@@ -236,7 +240,7 @@ export default function CheckoutPage() {
   );
 
   const [isOpen, setOpen] = React.useState(false);
-  const handleSelectRate = (rate: ShipmentRates[number]) => {
+  const handleSelectRate = (rate: ShipmentRate) => {
     setValue("rateId", rate.rate_id);
     setValue("terminalAddressId", rate.delivery_address);
     setValue("terminalParcelId", rate.parcel);

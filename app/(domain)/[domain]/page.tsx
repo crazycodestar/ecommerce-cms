@@ -3,8 +3,6 @@
 import { EditorLoading } from "@/components/editor/editor-loading";
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
 import { Button } from "@/components/ui/button";
-import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
 import { PackageOpen } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -14,25 +12,39 @@ import { HeroCarousel } from "@/components/editor/hero-carousel";
 import { ProductCarousel } from "@/components/editor/product-carousel";
 import { ShopByCategory } from "@/components/editor/shop-by-category";
 import { useStoreSlug } from "@/lib/hooks/use-store-slug";
+import { contentsAPI } from "@/app/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { ContentSchema } from "@/app/api/returnTypes";
 
 export default function DomainPage() {
   const { storeSlug } = useStoreSlug();
-  // FIXME: change to GetContentByStoreSlug
+  const [contents, setContents] = React.useState<ContentSchema[]>([]);
 
-  const contents = useQuery(
-    api.contents.getContentsByStoreSlug,
-    !storeSlug
-      ? "skip"
-      : {
-          storeSlug,
-        }
-  );
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchContents = async () => {
+      if (!storeSlug) return;
+
+      try {
+        const data = await contentsAPI.getContentsByStoreSlug(storeSlug);
+        setContents(data);
+      } catch (error) {
+        console.error("Failed to fetch contents:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchContents();
+  }, [storeSlug]);
 
   if (!storeSlug) return <EditorLoading />;
 
-  const isPending = contents === undefined;
-  if (isPending) return <EditorLoading />;
+  if (isLoading) return <EditorLoading />;
   if (contents === null) return { notFound: true };
+
+  // return <pre>{JSON.stringify(contents, null, 2)}</pre>;
 
   return (
     <div className="min-h-svh flex-1 flex flex-col md:mx-4">
@@ -54,34 +66,51 @@ export default function DomainPage() {
       )}
       {contents.map(({ name, object }, index) => (
         <React.Fragment key={index}>
-          {name === "productCarousel" && (
+          {name === "productCarousel" &&
+            object.title &&
+            object.description &&
+            object.collectionId && (
+              <div className="mx-4">
+                <ProductCarousel
+                  title={object.title}
+                  description={object.description}
+                  // @ts-expect-error type Id is disregarded in the API response
+                  collectionId={object.collectionId}
+                  storeSlug={storeSlug}
+                />
+              </div>
+            )}
+          {name === "carousel" && object.content && (
             <div className="mx-4">
-              <ProductCarousel
-                title={object.title}
-                description={object.description}
-                collectionId={object.collectionId}
-                storeSlug={storeSlug}
-              />
-            </div>
-          )}
-          {name === "carousel" && (
-            <div className="mx-4">
+              {/* @ts-expect-error type Id is disregarded in the API response */}
               <HeroCarousel content={object.content} />
             </div>
           )}
-          {name === "collectionCarousel" && (
+          {name === "collectionCarousel" && object.items && (
             <div className="mx-4">
+              {/* @ts-expect-error type Id is disregarded in the API response */}
               <CollectionsCarousel slides={object.items} />
             </div>
           )}
-          {name === "categories" && (
+          {name === "categories" && object.items && (
             <div className="mx-4">
-              <ShopByCategory categories={object.items} />
+              <ShopByCategory
+                // @ts-expect-error type Id is disregarded in the API response
+                categories={object.items.map((item) => ({
+                  imageId: item.imageId,
+                  title: item.title,
+                  categoryId: item.categoryId as Id<"categories">,
+                }))}
+              />
             </div>
           )}
-          {name === "banner" && (
+          {name === "banner" && object.imageId && object.link && (
             <div className="mx-4">
-              <Banner imageId={object.imageId} link={object.link} />
+              <Banner
+                // @ts-expect-error type Id is disregarded in the API response
+                imageId={object.imageId}
+                link={object.link}
+              />
             </div>
           )}
           <div className="h-8 md:h-12 w-full" />
