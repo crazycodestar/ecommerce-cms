@@ -593,21 +593,31 @@ http.route({
       });
     }
 
-    const result = await ctx.runAction(
-      internal.terminal.apiGetRatesForShipment,
-      {
-        deliveryAddress,
-        items,
-        storeSlug,
-      }
-    );
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: new Headers({
-        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-        Vary: "origin",
-      }),
-    });
+    try {
+      const result = await ctx.runAction(
+        internal.terminal.apiGetRatesForShipment,
+        {
+          deliveryAddress,
+          items,
+          storeSlug,
+        }
+      );
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({ error: "Failed to get rates" }), {
+        status: 500,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    }
   }),
 });
 
@@ -748,6 +758,103 @@ http.route({
 
 http.route({
   path: "/api/contents/get-contents-by-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
+});
+
+http.route({
+  path: "/api/contents/get-image-url",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const imageId = searchParams.get("imageId");
+
+    if (!imageId) {
+      return new Response("Image ID is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    }
+
+    const result = await ctx.runQuery(internal.contents.apiGetImageUrl, {
+      imageId: imageId as Id<"_storage">,
+    });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
+  }),
+});
+
+http.route({
+  path: "/api/contents/get-image-url",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
+});
+
+http.route({
+  path: "/api/products/get-products-by-ids",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const ids = searchParams.get("ids")?.split(",");
+
+    if (!ids || !Array.isArray(ids)) {
+      return new Response("Product IDs array is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    }
+
+    const result = await ctx.runQuery(internal.products.apiGetProductsByIds, {
+      ids: ids.map((id) => id as Id<"products">),
+    });
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
+  }),
+});
+
+http.route({
+  path: "/api/products/get-products-by-ids",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
+});
+
+http.route({
+  path: "/api/contents/generate-upload-url",
+  method: "POST",
+  handler: httpAction(async (ctx) => {
+    const result = await ctx.runMutation(
+      internal.contents.apiGenerateUploadUrl
+    );
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
+  }),
+});
+
+http.route({
+  path: "/api/contents/generate-upload-url",
   method: "OPTIONS",
   handler: httpAction(async (_, request) => handleCORS(request)),
 });

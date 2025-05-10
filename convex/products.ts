@@ -534,3 +534,12 @@ export const apiGetProductById = internalQuery({
     return richProduct;
   },
 });
+
+export const apiGetProductsByIds = internalQuery({
+  args: {
+    ids: v.array(v.id("products")),
+  },
+  handler: async (ctx, { ids }) => {
+    return Promise.all(ids.map((id) => getRichProduct(ctx, id)));
+  },
+});

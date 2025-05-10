@@ -1,5 +1,10 @@
 import { pick } from "convex-helpers";
-import { internalQuery, mutation, query } from "./_generated/server";
+import {
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
 import { Stores } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
@@ -99,3 +104,16 @@ export const apiGetContentsByStoreSlug = internalQuery({
     return store.contents;
   },
 });
+
+export const apiGetImageUrl = internalQuery({
+  args: {
+    imageId: v.id("_storage"),
+  },
+  handler: async (ctx, { imageId }) => {
+    return ctx.storage.getUrl(imageId);
+  },
+});
+
+export const apiGenerateUploadUrl = internalMutation(async (ctx) =>
+  ctx.storage.generateUploadUrl()
+);
