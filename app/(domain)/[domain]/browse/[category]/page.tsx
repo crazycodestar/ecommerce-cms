@@ -2,97 +2,110 @@
 
 import { Filters, useFilter } from "@/app/(domain)/_components/filters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useStoreSlug } from "@/lib/hooks/use-store-slug";
+import { useQuery } from "convex/react";
 import { Filter } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import React from "react";
-import { collectionsAPI } from "@/app/api";
 
 export default function BrowsePage() {
   const { storeSlug } = useStoreSlug();
+
   const { category: categoryId } = useParams<{
     domain: string;
     category: Id<"categories">;
   }>();
-
-  const [properties, setProperties] = React.useState<any>(null);
-  const [category, setCategory] = React.useState<any>(null);
-  const [products, setProducts] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-
+  const properties = useQuery(
+    api.collections.getFilters,
+    !storeSlug ? "skip" : { storeSlug }
+  );
   const { handleTogglePropertyFilter, isChecked, filterByPropertyId } =
     useFilter(properties);
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      if (!storeSlug || !categoryId) return;
-
-      setIsLoading(true);
-      try {
-        const [propertiesData, categoryData] = await Promise.all([
-          collectionsAPI.getFilters(storeSlug),
-          collectionsAPI.getCategoryByIdAndStoreSlug(storeSlug, categoryId),
-        ]);
-
-        setProperties(propertiesData);
-        setCategory(categoryData);
-      } catch (error) {
-        console.error("Failed to fetch category data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [storeSlug, categoryId]);
-
-  React.useEffect(() => {
-    const fetchProducts = async () => {
-      if (!storeSlug || !categoryId) return;
-
-      const getProperties = () => {
-        const filterByPropertyIdEntries = Object.entries(filterByPropertyId);
-        const shouldCall = filterByPropertyIdEntries.some(
-          (p) => p[1].length > 0
-        );
-        if (!shouldCall) return;
-        return filterByPropertyIdEntries.map(([key, value]) => ({
-          key: key as Id<"properties">,
-          value,
-        }));
-      };
-
-      try {
-        const data = await collectionsAPI.getProductsByCategoryIdAndStoreSlug(
+  const category = useQuery(
+    api.collections.getCategoryByIdAndStoreSlug,
+    !storeSlug
+      ? "skip"
+      : {
           storeSlug,
           categoryId,
-          getProperties()
-        );
-        setProducts(data as any[]);
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      }
-    };
+        }
+  );
+  // const {
+  //   results: products,
+  //   status,
+  //   loadMore,
+  // } = usePaginatedQuery(
+  //   api.collections.getProductsByCategoryIdAndStoreSlug,
+  //   {
+  //     categoryId,
+  //     storeSlug,
+  //   },
+  //   { initialNumItems: 20 }
+  // );
 
-    fetchProducts();
-  }, [storeSlug, categoryId, filterByPropertyId]);
+  const getProperties = () => {
+    const filterByPropertyIdEntries = Object.entries(filterByPropertyId);
+    const shouldCall = filterByPropertyIdEntries.some((p) => p[1].length > 0);
+    if (!shouldCall) return;
+    return filterByPropertyIdEntries.map(([key, value]) => ({
+      key: key as Id<"properties">,
+      value,
+    }));
+  };
+  const products = useQuery(
+    api.collections.getProductsByCategoryIdAndStoreSlug,
+    !storeSlug
+      ? "skip"
+      : {
+          categoryId,
+          storeSlug,
+          properties: getProperties(),
+        }
+  );
 
-  const isPending = isLoading;
+  // const isPending = status === "LoadingFirstPage";
+  const isPending = products === undefined;
 
   const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  // React.useEffect(() => {
+  //   const options = {
+  //     root: null,
+  //     rootMargin: "0px",
+  //     threshold: 1.0,
+  //   };
+
+  //   const observer = new IntersectionObserver((entries) => {
+  //     console.log("intersecting");
+  //     if (!entries[0].isIntersecting) return;
+  //     if (status !== "CanLoadMore") return;
+  //     loadMore(20);
+  //   }, options);
+
+  //   if (bottomRef.current) observer.observe(bottomRef.current);
+
+  //   return () => {
+  //     if (bottomRef.current) observer.unobserve(bottomRef.current);
+  //     observer.disconnect();
+  //   };
+  // }, [loadMore, status]);
 
   return (
     <div className="min-h-screen bg-white">
       <div className="md:mx-8 py-4">
         {/* Page Title */}
         <div className="mb-4">
-          {isPending ? (
+          {category === undefined ? (
             <Skeleton className="w-[200px] h-9" />
           ) : (
             <h1 className="text-2xl font-medium">{category?.name}</h1>
           )}
+          {/* TODO: add collection size */}
+          {/* <p className="text-sm text-gray-600">{dresses.length} items</p> */}
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">

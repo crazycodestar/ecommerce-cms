@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { API_ENDPOINTS } from "./endpoints";
 import {
   getFiltersResponseSchema,
@@ -23,7 +22,7 @@ export async function fetchAPI<T>(
   options?: {
     method?: "GET" | "POST";
     params?: Record<string, string>;
-    body?: any;
+    body?: Record<string, unknown>;
   }
 ): Promise<T> {
   const { method = "GET", params, body } = options || {};
@@ -70,7 +69,7 @@ export const collectionsAPI = {
   getProductsByCollectionSlugAndStoreSlug: (
     storeSlug: string,
     collectionSlug: string,
-    properties?: any
+    properties?: Record<string, unknown>
   ) =>
     fetchAPI(
       API_ENDPOINTS.collections.getProductsByCollectionSlugAndStoreSlug,
@@ -127,46 +126,36 @@ export const productsAPI = {
     }).then((data) => getProductsByStoreSlugResponseSchema.parse(data)),
 };
 
-const shippingFormSchema = z.object({
-  callbackUrl: z.string().min(1, "Callback URL is required"),
-  storeSlug: z.string().min(1, "Store slug is required"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Phone number is required"),
-  line1: z.string().min(1, "Address line 1 is required"),
-  line2: z.string().optional(),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  country: z.string().min(1, "Country is required"),
-  zip: z.string().min(1, "ZIP code is required"),
-  items: z.array(
-    z.object({
-      productId: z.string().min(1, "Product ID is required"),
-      quantity: z.number().min(1, "Quantity is required"),
-      metadatas: z
-        .array(
-          z.object({
-            name: z.string().min(1, "Metadata name is required"),
-            value: z.union([z.string(), z.number()]),
-          })
-        )
-        .optional(),
-      variants: z
-        .array(
-          z.object({
-            name: z.string().min(1, "Variant name is required"),
-            value: z.string().min(1, "Variant value is required"),
-          })
-        )
-        .optional(),
-    })
-  ),
-  shipping: z.number().min(1, "Shipping is required"),
-  rateId: z.string().min(1, "Rate ID is required"),
-  terminalAddressId: z.string().optional(),
-  terminalParcelId: z.string().optional(),
-});
+type ShippingForm = {
+  callbackUrl: string;
+  storeSlug: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  country: string;
+  zip: string;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    metadatas?: Array<{
+      name: string;
+      value: string | number;
+    }>;
+    variants?: Array<{
+      name: string;
+      value: string;
+    }>;
+  }>;
+  shipping: number;
+  rateId: string;
+  terminalAddressId?: string;
+  terminalParcelId?: string;
+};
 
 // Order API functions
 export const ordersAPI = {
@@ -175,7 +164,7 @@ export const ordersAPI = {
       params: reference ? { reference } : slug ? { slug } : undefined,
     }).then((data) => getOrderByReferenceOrSlugResponseSchema.parse(data)),
 
-  initialize: (data: z.infer<typeof shippingFormSchema>) =>
+  initialize: (data: ShippingForm) =>
     fetchAPI(API_ENDPOINTS.orders.initialize, {
       method: "POST",
       body: data,
