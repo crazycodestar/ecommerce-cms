@@ -1,15 +1,14 @@
 "use client";
 
 import type React from "react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { OrderDetails } from "./order-details";
 import { OrderSkeleton } from "./order-skeleton";
+import { ordersAPI } from "@/app/api";
+import { useEffect, useState } from "react";
 
 export function OrderLookup() {
   const router = useRouter();
@@ -17,21 +16,33 @@ export function OrderLookup() {
   const slug = searchParams.get("slug");
   const reference = searchParams.get("reference");
 
-  const canLoad = !(!reference && !slug);
-  const order = useQuery(
-    api.orders.getOrderByReferenceOrSlug,
-    !canLoad
-      ? "skip"
-      : {
-          option: reference ? { reference } : { slug: slug! },
-        }
-  );
+  const [order, setOrder] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isPending = canLoad && order === undefined;
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (!reference && !slug) return;
+
+      setIsLoading(true);
+      try {
+        const data = await ordersAPI.getOrderByReferenceOrSlug(
+          reference || undefined,
+          slug || undefined
+        );
+        setOrder(data);
+      } catch (error) {
+        console.error("Failed to fetch order:", error);
+        setOrder(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [reference, slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const slug = (e.target as HTMLFormElement).slug.value;
     router.push(`?slug=${slug}`, { scroll: false });
   };
@@ -45,26 +56,24 @@ export function OrderLookup() {
             <Input
               id="slug"
               placeholder="Enter your order ID (e.g., ORD-12345)"
-              // value={orderSlug}
-              // onChange={(e) => setOrderId(e.target.value)}
               className="flex-1"
               required
             />
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Searching..." : "Track Order"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Searching..." : "Track Order"}
             </Button>
           </div>
         </div>
       </form>
 
-      {!isPending && order === null && (
+      {!isLoading && order === null && (
         <div className="bg-destructive/10 text-destructive p-4 rounded-md">
           Order not found. Please ensure you entered in the order number
           correctly.
         </div>
       )}
 
-      {isPending ? (
+      {isLoading ? (
         <OrderSkeleton />
       ) : (
         order && (
