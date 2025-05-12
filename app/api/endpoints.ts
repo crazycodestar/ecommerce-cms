@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
   },
   products: {
     getProductById: "/api/products/get-product-by-id",
+    getProductsByStoreSlug: "/api/products/get-products-by-store-slug",
   },
   orders: {
     getOrderByReferenceOrSlug: "/api/orders/get-order-by-reference-or-slug",

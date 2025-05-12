@@ -543,3 +543,57 @@ export const apiGetProductsByIds = internalQuery({
     return Promise.all(ids.map((id) => getRichProduct(ctx, id)));
   },
 });
+
+export const apiGetProductsByStoreSlug = internalQuery({
+  args: {
+    slug: v.string(),
+  },
+  handler: async (ctx, { slug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .filter((q) => q.eq(q.field("slug"), slug))
+      .unique();
+    if (!store)
+      throw new ConvexError({
+        title: "Not Found",
+        body: "No store was found with this name",
+      });
+
+    const products = await ctx.db
+      .query("products")
+      .filter((q) => q.eq(q.field("storeId"), store._id))
+      .collect();
+
+    return Promise.all(
+      products.map(async (product) => {
+        const store = await ctx.db.get(product.storeId);
+        if (!store) return;
+
+        const owner = await ctx.db
+          .query("users")
+          .withIndex("by_tokenIdentifier", (q) => q.eq("id", store.owner))
+          .unique();
+        if (!owner) return;
+
+        const collectionsOnProduct = await ctx.db
+          .query("collectionsOnProducts")
+          .withIndex("by_productId", (q) => q.eq("productId", product._id))
+          .collect();
+        const collections = await Promise.all(
+          collectionsOnProduct.map(async (c) => {
+            const collection = await ctx.db.get(c.collectionId);
+            return collection;
+          })
+        );
+
+        return {
+          ...product,
+          imageUrls: await Promise.all(
+            product.images.map((image) => ctx.storage.getUrl(image))
+          ),
+          collections,
+        };
+      })
+    );
+  },
+});

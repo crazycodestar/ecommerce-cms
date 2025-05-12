@@ -349,6 +349,27 @@ export const getRatesResponseSchema = z.array(terminalRateSchema);
 
 export const getContentsByStoreSlugResponseSchema = z.array(contentSchema);
 
+export const getProductsByStoreSlugResponseSchema = z.array(
+  z.object({
+    _id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    price: z.number(),
+    images: z.array(z.string()),
+    imageUrls: z.array(z.string()),
+    storeId: z.string(),
+    categoryId: z.string(),
+    collections: z.array(
+      z.object({
+        _id: z.string(),
+        name: z.string(),
+        slug: z.string(),
+        storeId: z.string(),
+      })
+    ),
+  })
+);
+
 // Type exports
 export type GetFiltersResponse = z.infer<typeof getFiltersResponseSchema>;
 export type GetCollectionBySlugAndStoreSlugResponse = z.infer<
@@ -383,4 +404,7 @@ export type GetCitiesResponse = z.infer<typeof getCitiesResponseSchema>;
 export type GetRatesResponse = z.infer<typeof getRatesResponseSchema>;
 export type GetContentsByStoreSlugResponse = z.infer<
   typeof getContentsByStoreSlugResponseSchema
+>;
+export type GetProductsByStoreSlugResponse = z.infer<
+  typeof getProductsByStoreSlugResponseSchema
 >;

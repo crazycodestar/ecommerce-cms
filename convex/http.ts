@@ -859,4 +859,44 @@ http.route({
   handler: httpAction(async (_, request) => handleCORS(request)),
 });
 
+http.route({
+  path: "/api/products/get-products-by-store-slug",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const storeSlug = searchParams.get("storeSlug");
+
+    if (!storeSlug) {
+      return new Response("Store slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    }
+
+    const result = await ctx.runQuery(
+      internal.products.apiGetProductsByStoreSlug,
+      {
+        slug: storeSlug,
+      }
+    );
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
+  }),
+});
+
+http.route({
+  path: "/api/products/get-products-by-store-slug",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
+});
+
 export default http;

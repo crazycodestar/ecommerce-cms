@@ -15,6 +15,7 @@ import {
   getCitiesResponseSchema,
   getRatesResponseSchema,
   getContentsByStoreSlugResponseSchema,
+  getProductsByStoreSlugResponseSchema,
 } from "./returnTypes";
 
 export async function fetchAPI<T>(
@@ -118,8 +119,12 @@ export const productsAPI = {
   getProductById: (id: string) =>
     fetchAPI(API_ENDPOINTS.products.getProductById, {
       params: { id },
-      // }),
     }).then((data) => getProductByIdResponseSchema.parse(data)),
+
+  getProductsByStoreSlug: (storeSlug: string) =>
+    fetchAPI(API_ENDPOINTS.products.getProductsByStoreSlug, {
+      params: { storeSlug },
+    }).then((data) => getProductsByStoreSlugResponseSchema.parse(data)),
 };
 
 const shippingFormSchema = z.object({
