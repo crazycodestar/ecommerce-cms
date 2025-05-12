@@ -1,5 +1,10 @@
 import { pick } from "convex-helpers";
-import { mutation, query } from "./_generated/server";
+import {
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
 import { Stores } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
@@ -79,3 +84,36 @@ export const getCollectionSlugs = query({
     return collections.filter(Boolean);
   },
 });
+
+// http routes
+
+export const apiGetContentsByStoreSlug = internalQuery({
+  args: {
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+
+    if (!store) {
+      return null;
+    }
+
+    return store.contents;
+  },
+});
+
+export const apiGetImageUrl = internalQuery({
+  args: {
+    imageId: v.id("_storage"),
+  },
+  handler: async (ctx, { imageId }) => {
+    return ctx.storage.getUrl(imageId);
+  },
+});
+
+export const apiGenerateUploadUrl = internalMutation(async (ctx) =>
+  ctx.storage.generateUploadUrl()
+);

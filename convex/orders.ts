@@ -1,6 +1,13 @@
 import { omit } from "convex-helpers";
 import { v } from "convex/values";
-import { action, internalMutation, query, QueryCtx } from "./_generated/server";
+import {
+  action,
+  internalMutation,
+  query,
+  QueryCtx,
+  internalQuery,
+  internalAction,
+} from "./_generated/server";
 import { InternalServerError, NotFoundError } from "./error";
 import { Orders } from "./schema";
 import { pick } from "convex-helpers";
@@ -287,4 +294,73 @@ export const getMyStoreOrders = query(async (ctx) => {
 
   if (!orders) return null;
   return Promise.all(orders.map((order) => getOrderDetails(ctx, order)));
+});
+
+export const apiGetOrderByReferenceOrSlug = internalQuery({
+  args: {
+    option: v.union(
+      v.object({
+        slug: v.string(),
+      }),
+      v.object({
+        reference: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx: QueryCtx, { option }) => {
+    if ("reference" in option) {
+      const order = await ctx.db
+        .query("orders")
+        .withIndex("by_reference", (q) => q.eq("reference", option.reference))
+        .unique();
+
+      if (!order) return null;
+      return getOrderDetails(ctx, order);
+    }
+
+    if ("slug" in option) {
+      const order = await ctx.db
+        .query("orders")
+        .withIndex("by_slug", (q) => q.eq("slug", option.slug))
+        .unique();
+
+      if (!order) return null;
+      return getOrderDetails(ctx, order);
+    }
+
+    return null;
+  },
+});
+
+export const apiInitializeOrder = internalAction({
+  args: {
+    ...omit(Orders.withoutSystemFields, [
+      "storeId",
+      "amount",
+      "url",
+      "accessCode",
+      "reference",
+      "status",
+      "slug",
+    ]),
+    storeSlug: v.string(),
+    callbackUrl: v.string(),
+  },
+  handler: async (
+    ctx,
+    { storeSlug, callbackUrl, ...args }
+  ): Promise<{
+    accessCode: string;
+    url: string;
+    slug: string;
+  }> => {
+    const orderId = await ctx.runMutation(internal.orders.createOrder, {
+      storeSlug,
+      ...args,
+    });
+    return ctx.runAction(api.paystack.initializeTransaction, {
+      orderId: orderId,
+      callbackUrl,
+    });
+  },
 });

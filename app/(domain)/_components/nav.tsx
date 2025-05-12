@@ -1,5 +1,6 @@
 "use client";
 
+import { collectionsAPI } from "@/app/api";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,30 +12,44 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import useCartStore from "@/lib/hooks/use-cart-store";
 import { useStoreSlug } from "@/lib/hooks/use-store-slug";
 import { cn } from "@/lib/utils";
-import { useQuery } from "convex/react";
 import { Menu, Package, Plus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
+type Category = {
+  _id: string;
+  name: string;
+};
+
 export function Nav() {
-  const [activeId, setActiveId] = React.useState<Id<"categories"> | null>(null);
+  const [activeId, setActiveId] = React.useState<string | null>(null);
   const items = useCartStore((state) => state.items);
   const { storeSlug } = useStoreSlug();
-  const categories = useQuery(
-    api.collections.getCategoriesByStoreSlug,
-    !storeSlug
-      ? "skip"
-      : {
-          storeSlug,
-        }
-  );
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  const isPending = categories === undefined;
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      if (!storeSlug) return;
+
+      try {
+        const data = await collectionsAPI.getCategoriesByStoreSlug(storeSlug);
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [storeSlug]);
+
+  const isPending = isLoading;
+
   return (
     <header>
       <div className="mx-4 md:mx-8 py-2">
@@ -93,16 +108,6 @@ export function Nav() {
             </Link>
           </div>
 
-          {/* Search */}
-          {/* <div className="hidden md:flex items-center border border-black px-4 py-3 flex-1 max-w-1/2 mx-4 mr-auto">
-            <Search className="size-6 text-foreground/80" />
-            <input
-              type="text"
-              placeholder="Search for products or brands"
-              className="w-full outline-none px-2 text-sm"
-            />
-          </div> */}
-
           {/* Navigation Icons */}
           <div className="flex items-center gap-4 relative ml-4">
             <Link
@@ -126,7 +131,6 @@ export function Nav() {
 
         {/* Main Navigation */}
         <nav className="hidden md:flex items-center justify-around text-sm py-5 px-8">
-          {/* <pre>{JSON.stringify(categories)}</pre> */}
           {isPending && (
             <>
               {Array.from({ length: 8 }).map((_, i) => (
@@ -165,17 +169,28 @@ export function Nav() {
   );
 }
 
-const SubCategoryMenu = ({ parentId }: { parentId: Id<"categories"> }) => {
+const SubCategoryMenu = ({ parentId }: { parentId: string }) => {
   const { storeSlug } = useStoreSlug();
-  const subCategories = useQuery(
-    api.collections.getSubCategoriesByParentIdAndStoreSlug,
-    !storeSlug
-      ? "skip"
-      : {
-          storeSlug,
-          parentId,
-        }
-  );
+  const [subCategories, setSubCategories] = React.useState<Category[]>([]);
+
+  React.useEffect(() => {
+    const fetchSubCategories = async () => {
+      if (!storeSlug) return;
+
+      try {
+        const data =
+          await collectionsAPI.getSubCategoriesByParentIdAndStoreSlug(
+            storeSlug,
+            parentId
+          );
+        setSubCategories(data as Category[]);
+      } catch (error) {
+        console.error("Failed to fetch subcategories:", error);
+      }
+    };
+
+    fetchSubCategories();
+  }, [storeSlug, parentId]);
 
   return (
     <div className="flex flex-col gap-2 px-1">
@@ -192,21 +207,29 @@ const SubCategoryMenu = ({ parentId }: { parentId: Id<"categories"> }) => {
   );
 };
 
-const SubCategoryMenuMobile = ({
-  parentId,
-}: {
-  parentId: Id<"categories">;
-}) => {
+const SubCategoryMenuMobile = ({ parentId }: { parentId: string }) => {
   const { storeSlug } = useStoreSlug();
-  const subCategories = useQuery(
-    api.collections.getSubCategoriesByParentIdAndStoreSlug,
-    !storeSlug
-      ? "skip"
-      : {
-          storeSlug,
-          parentId,
-        }
-  );
+  const [subCategories, setSubCategories] = React.useState<Category[]>([]);
+
+  React.useEffect(() => {
+    const fetchSubCategories = async () => {
+      if (!storeSlug) return;
+
+      try {
+        const data =
+          await collectionsAPI.getSubCategoriesByParentIdAndStoreSlug(
+            storeSlug,
+            parentId
+          );
+        setSubCategories(data as Category[]);
+      } catch (error) {
+        console.error("Failed to fetch subcategories:", error);
+      }
+    };
+
+    fetchSubCategories();
+  }, [storeSlug, parentId]);
+
   return (
     <div className="flex flex-col gap-4 pl-8">
       {subCategories?.map(({ name, _id }, index) => (
