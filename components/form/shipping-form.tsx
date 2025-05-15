@@ -310,9 +310,16 @@ function PackageSelectForm({
                     <FormLabel>Width (cm)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/^\d*$/.test(value)) {
+                            field.onChange(value);
+                          }
+                        }}
+                        value={field.value}
                       />
                     </FormControl>
                   </FormItem>

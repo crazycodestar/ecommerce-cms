@@ -65,8 +65,8 @@ import * as RPNInput from "react-phone-number-input";
 const customDeliveryInfoSchema = z.object({
   offerings: z.array(
     z.object({
-      name: z.string(),
-      price: z.number(),
+      name: z.string().min(1, { message: "Name is required" }),
+      price: z.number().min(1, { message: "Price must be greater than 0" }),
     })
   ),
 });
@@ -151,22 +151,10 @@ export function CreateStore() {
       name: "",
       description: "",
       slug: "",
-      // shipping
       deliveryInfo: {
         deliveryType: "custom",
-        offerings: [],
-        // city: "",
-        // country: "",
-        // email: "",
-        // firstName: "",
-        // lastName: "",
-        // line1: "",
-        // line2: "",
-        // zip: "",
-        // phone: "",
-        // terminalSecretKey: "",
+        offerings: [{ name: "", price: 0 }],
       },
-      // payment
       publicKey: "",
       secretKey: "",
     },
@@ -190,28 +178,37 @@ export function CreateStore() {
   const handleNext = async () => {
     const currentSchema = getCurrentSchema();
 
-    // Extract only the fields for the current step
+    // Touch only the fields for the current step
     const currentFields = Object.keys(currentSchema.shape);
-    const currentValues = Object.fromEntries(
-      Object.entries(form.getValues()).filter(([key]) =>
-        currentFields.includes(key)
-      )
-    );
+
+    console.log(currentFields)
+
+    // Get only the values for the current step
+    const currentValues = currentFields.reduce((acc, key) => {
+      const value = form.getValues(key as any);
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, unknown>);
 
     // Validate only the current step fields
     const result = await currentSchema.safeParseAsync(currentValues);
 
     if (result.success) {
       setStep(step + 1);
-      // Scroll to top when changing steps
       window.scrollTo(0, 0);
     } else {
-      // Trigger validation errors
+      // Only set errors for the current step's fields
       result.error.errors.forEach((error) => {
-        form.setError(error.path[0] as keyof CreateStoreSchema, {
-          type: "manual",
-          message: error.message,
-        });
+        const path = error.path.join(".") as any;
+        // Only set error if the field is part of the current step
+        if (currentFields.some(field => path.startsWith(field))) {
+          form.setError(path, {
+            type: "manual",
+            message: error.message,
+          });
+        }
       });
     }
   };
@@ -539,7 +536,7 @@ export default function CopyInput({
   );
 }
 
-const useStates = () => {
+const useStates = (deliveryType: string) => {
   const [states, setStates] = React.useState<
     { name: string; countryCode: string; isoCode: string }[]
   >([]);
@@ -547,13 +544,14 @@ const useStates = () => {
 
   React.useEffect(() => {
     const fetchStates = async () => {
-      const { data, error } = await tryCatch(getStates());
-      if (error) return toast.error("Failed to fetch states");
-      setStates(data);
+      if (deliveryType == "terminal") {
+        const { data, error } = await tryCatch(getStates());
+        if (error) return toast.error("Failed to fetch states");
+        setStates(data);
+      }
     };
-
     fetchStates();
-  }, []);
+  }, [deliveryType]);
 
   return states;
 };
@@ -584,7 +582,8 @@ const ShippingAddressForm = ({
 }: {
   form: UseFormReturn<CreateStoreSchema>;
 }) => {
-  const states = useStates();
+  const deliveryType = form.watch("deliveryInfo.deliveryType");
+  const states = useStates(deliveryType);
   const getStateCode = (state: string) =>
     states.find((s) => s.name === state)?.isoCode;
   const cities = useCities(
@@ -600,7 +599,40 @@ const ShippingAddressForm = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Delivery Method</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select
+              onValueChange={(value) => {
+                field.onChange(value);
+                // Reset form values based on selected delivery type
+                if (value === "terminal") {
+                  form.reset({
+                    ...form.getValues(),
+                    deliveryInfo: {
+                      deliveryType: "terminal",
+                      terminalSecretKey: "",
+                      firstName: "",
+                      lastName: "",
+                      email: "",
+                      phone: "",
+                      line1: "",
+                      line2: "",
+                      city: "",
+                      state: "",
+                      zip: "",
+                      country: "",
+                    },
+                  });
+                } else {
+                  form.reset({
+                    ...form.getValues(),
+                    deliveryInfo: {
+                      deliveryType: "custom",
+                      offerings: [{ name: "", price: 0 }],
+                    },
+                  });
+                }
+              }}
+              defaultValue={field.value}
+            >
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select delivery method" />
@@ -845,43 +877,54 @@ const ShippingAddressForm = ({
                 <FormLabel>Delivery Offerings</FormLabel>
                 <FormControl>
                   <div className="space-y-2">
-                    {field.value?.map((offering, index) => (
+                    {field.value?.map((_, index) => (
                       <div key={index} className="flex gap-2">
-                        <Input
-                          placeholder="Offering name (e.g. Standard Delivery)"
-                          value={offering.name}
-                          onChange={(e) => {
-                            const newOfferings = [...field.value];
-                            newOfferings[index] = {
-                              ...newOfferings[index],
-                              name: e.target.value,
-                            };
-                            field.onChange(newOfferings);
-                          }}
+                        <FormField
+                          control={form.control}
+                          name={`deliveryInfo.offerings.${index}.name`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input
+                                  placeholder="Offering name (e.g. Standard Delivery)"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                        <Input
-                          type="number"
-                          placeholder="Price (₦)"
-                          value={offering.price}
-                          onChange={(e) => {
-                            const newOfferings = [...field.value];
-                            newOfferings[index] = {
-                              ...newOfferings[index],
-                              price: Number(e.target.value),
-                            };
-                            field.onChange(newOfferings);
-                          }}
+                        <FormField
+                          control={form.control}
+                          name={`deliveryInfo.offerings.${index}.price`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder="Price (₦)"
+                                  {...field}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (/^\d*$/.test(value)) {
+                                      field.onChange(Number(value));
+                                    }
+                                  }}
+                                  value={field.value}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                         <button
                           type="button"
-                          className={
-                            "text-destructive hover:text-destructive bg-none"
-                          }
+                          className="text-destructive hover:text-destructive/90"
                           onClick={() => {
-                            const newOfferings = field.value.filter(
-                              (_, i) => i !== index
-                            );
-                            field.onChange(newOfferings);
+                            const newOfferings = field.value.filter((_, i) => i !== index);
+                            form.setValue("deliveryInfo.offerings", newOfferings);
                           }}
                         >
                           <Trash2 className="size-4 cursor-pointer" />
@@ -892,9 +935,10 @@ const ShippingAddressForm = ({
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        field.onChange([
-                          ...(field.value || []),
-                          { offering: "", price: 0 },
+                        const currentOfferings = form.getValues("deliveryInfo.offerings") || [];
+                        form.setValue("deliveryInfo.offerings", [
+                          ...currentOfferings,
+                          { name: "", price: 0 }
                         ]);
                       }}
                     >
