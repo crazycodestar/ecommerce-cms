@@ -209,18 +209,32 @@ export const Stores = Table("stores", {
   owner: v.string(),
   slug: v.string(),
   contents: v.array(contentTypes),
+  deliveryInfo: v.union(
+    v.object({
+      deliveryType: v.literal("terminal"),
+      terminalSecretKey: v.string(),
+      firstName: v.string(),
+      lastName: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      line1: v.string(),
+      line2: v.optional(v.string()),
+      city: v.string(),
+      state: v.string(),
+      country: v.string(),
+      zip: v.string(),
+    }),
+    v.object({
+      deliveryType: v.literal("custom"),
+      offerings: v.array(
+        v.object({
+          name: v.string(),
+          price: v.number(),
+        })
+      ),
+    })
+  ),
   // Shipping Information with terminal
-  terminalSecretKey: v.string(),
-  firstName: v.string(),
-  lastName: v.string(),
-  email: v.string(),
-  phone: v.string(),
-  line1: v.string(),
-  line2: v.optional(v.string()),
-  city: v.string(),
-  state: v.string(),
-  country: v.string(),
-  zip: v.string(),
   terminalStoreAddressId: v.optional(v.string()),
   // Payment Information with Paystack
   publicKey: v.string(),

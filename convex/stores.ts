@@ -1,4 +1,4 @@
-import { v, VString } from "convex/values";
+import { v } from "convex/values";
 import {
   internalAction,
   internalMutation,
@@ -7,6 +7,7 @@ import {
   query,
 } from "./_generated/server";
 import {
+  BadRequestError,
   ConflictError,
   InternalServerError,
   NotFoundError,
@@ -90,9 +91,13 @@ export const createTerminalStoreAddressId = internalAction({
     const store = await ctx.runQuery(internal.stores.getStoreById, { storeId });
     if (!store) throw new InternalServerError();
 
+    if (store.deliveryInfo.deliveryType != "terminal") {
+      throw new BadRequestError("Store is not using terminal");
+    }
+
     const address = await ctx.runAction(
       api.terminal.createAddress,
-      pick(store, [
+      pick(store.deliveryInfo, [
         "city",
         "country",
         "state",
@@ -256,8 +261,11 @@ export const getStoreTerminalSecretKey = internalQuery({
       .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
       .unique();
     if (!store) return null;
+    if (store.deliveryInfo.deliveryType != "terminal") {
+      throw new BadRequestError("Store is not using terminal");
+    }
 
-    return store.terminalSecretKey;
+    return store.deliveryInfo.terminalSecretKey;
   },
 });
 
