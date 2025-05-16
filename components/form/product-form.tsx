@@ -24,6 +24,9 @@ import { RichTextFormInput, Tiptap } from "../tiptap";
 import { UnitTypeform } from "./unit-type-form";
 import { DataModel } from "@/convex/_generated/dataModel";
 import { ShippingForm } from "./shipping-form";
+import { useQuery } from "convex/react";
+import { useParams } from "next/navigation";
+import { api } from "@/convex/_generated/api";
 
 interface ProductFormProps {
   onSubmit: (values: ProductSchema) => void;
@@ -52,6 +55,15 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
     control: form.control,
     name: "metadatas",
   });
+
+  const { slug } = useParams<{ slug: Id<"stores"> }>();
+  const store = useQuery(api.stores.getStore, { slug });
+
+  React.useEffect(() => {
+    if (form.getValues("terminal")) {
+      console.log("terminal", form.getValues("terminal"));
+    }
+  }, [form]);
 
   return (
     <Form {...form}>
@@ -285,26 +297,31 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
                 )}
               />
             </div>
-            <div className="py-4">
-              <div className="mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold">Shipping Information</h1>
-                  <p className="text-muted-foreground">
-                    Fill in shipping information for this product
-                  </p>
+            {store?.deliveryInfo.deliveryType === "terminal" && (
+              <div className="py-4">
+                <div className="mb-4">
+                  <div>
+                    <h1 className="text-2xl font-bold">
+                      Terminal Shipping Information
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Fill in shipping information for this product to be for
+                      terminal shipping
+                    </p>
+                  </div>
                 </div>
+                <FormField
+                  control={form.control}
+                  name="variants"
+                  render={() => (
+                    <FormItem>
+                      <ShippingForm form={form} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <FormField
-                control={form.control}
-                name="variants"
-                render={() => (
-                  <FormItem>
-                    <ShippingForm form={form} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            )}
           </div>
         </div>
         {/* <pre>{JSON.stringify(values, null, 2)}</pre> */}
@@ -345,6 +362,8 @@ export const formatProductFromForm = (
     })),
   })),
   metadataIds: values.metadatas.map((m) => m._id as Id<"metadatas">),
-  weight: values.weight,
-  packageId: values.packageId as Id<"packages">,
+  terminal: values.terminal && {
+    weight: values.terminal.weight,
+    packageId: values.terminal.packageId as Id<"packages">,
+  },
 });

@@ -106,8 +106,19 @@ const deliveryInfoSchema = z.object({
 });
 
 const storeInfoSchema = z.object({
-  name: z.string().min(3).max(50),
-  description: z.string().min(20).max(400),
+  name: z
+    .string({ message: "Name is required" })
+    .min(3, { message: "Name should be at least 3 characters" })
+    .max(50),
+  email: z
+    .string({ message: "Email is required" })
+    .email({ message: "Please enter a valid email address" }),
+  description: z
+    .string({
+      message: "Description is required",
+    })
+    .min(20, { message: "Description should be at least 20 characters" })
+    .max(400, { message: "Description should be at most 400 characters" }),
   slug: z.string().optional(),
 });
 
@@ -149,6 +160,7 @@ export function CreateStore() {
     resolver: zodResolver(createStoreSchema),
     defaultValues: {
       name: "",
+      email: "",
       description: "",
       slug: "",
       deliveryInfo: {
@@ -181,16 +193,19 @@ export function CreateStore() {
     // Touch only the fields for the current step
     const currentFields = Object.keys(currentSchema.shape);
 
-    console.log(currentFields)
+    console.log(currentFields);
 
     // Get only the values for the current step
-    const currentValues = currentFields.reduce((acc, key) => {
-      const value = form.getValues(key as any);
-      if (value !== undefined) {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as Record<string, unknown>);
+    const currentValues = currentFields.reduce(
+      (acc, key) => {
+        const value = form.getValues(key as keyof CreateStoreSchema);
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {} as Record<string, unknown>
+    );
 
     // Validate only the current step fields
     const result = await currentSchema.safeParseAsync(currentValues);
@@ -201,9 +216,9 @@ export function CreateStore() {
     } else {
       // Only set errors for the current step's fields
       result.error.errors.forEach((error) => {
-        const path = error.path.join(".") as any;
+        const path = error.path.join(".") as keyof CreateStoreSchema;
         // Only set error if the field is part of the current step
-        if (currentFields.some(field => path.startsWith(field))) {
+        if (currentFields.some((field) => path.startsWith(field))) {
           form.setError(path, {
             type: "manual",
             message: error.message,
@@ -372,6 +387,24 @@ export function CreateStoreForm({
                   <FormControl>
                     <Input
                       placeholder="Type store name here."
+                      autoFocus
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Type store email here."
                       autoFocus
                       {...field}
                     />
@@ -900,7 +933,6 @@ const ShippingAddressForm = ({
                           render={({ field }) => (
                             <FormItem className="flex-1">
                               <FormControl>
-
                                 <Input
                                   type="text"
                                   inputMode="numeric"
@@ -923,8 +955,13 @@ const ShippingAddressForm = ({
                           type="button"
                           className="text-destructive hover:text-destructive/90"
                           onClick={() => {
-                            const newOfferings = field.value.filter((_, i) => i !== index);
-                            form.setValue("deliveryInfo.offerings", newOfferings);
+                            const newOfferings = field.value.filter(
+                              (_, i) => i !== index
+                            );
+                            form.setValue(
+                              "deliveryInfo.offerings",
+                              newOfferings
+                            );
                           }}
                         >
                           <Trash2 className="size-4 cursor-pointer" />
@@ -935,10 +972,11 @@ const ShippingAddressForm = ({
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        const currentOfferings = form.getValues("deliveryInfo.offerings") || [];
+                        const currentOfferings =
+                          form.getValues("deliveryInfo.offerings") || [];
                         form.setValue("deliveryInfo.offerings", [
                           ...currentOfferings,
-                          { name: "", price: 0 }
+                          { name: "", price: 0 },
                         ]);
                       }}
                     >

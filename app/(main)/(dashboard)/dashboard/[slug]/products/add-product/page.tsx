@@ -33,8 +33,10 @@ export default function ProductsPage() {
       stock: 0,
       isUnspecified: false,
       categoryId: "",
-      weight: 0,
-      packageId: "",
+      terminal: store?.deliveryInfo.deliveryType === "terminal" ? {
+        weight: 0,
+        packageId: "",
+      } : undefined,
     },
   });
 
@@ -42,6 +44,7 @@ export default function ProductsPage() {
     startTransition(async () => {
       try {
         if (!store) throw new Error("No store");
+        console.log("this store executes");
         await createProduct({
           storeId: store._id,
           ...formatProductFromForm(values),

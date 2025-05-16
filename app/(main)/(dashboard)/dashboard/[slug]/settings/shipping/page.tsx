@@ -21,7 +21,9 @@ export default async function SettingsGeneralPage({
         </p>
       </div>
       <Separator />
-      <ShippingForm defaultValues={store} slug={slug} />
+      {store.deliveryInfo.deliveryType === "terminal" && (
+        <ShippingForm defaultValues={store.deliveryInfo} slug={slug} />
+      )}
     </div>
   );
 }

@@ -205,6 +205,7 @@ export const contentTypes = v.union(
 // Store schema
 export const Stores = Table("stores", {
   name: v.string(),
+  email: v.string(),
   description: v.string(),
   owner: v.string(),
   slug: v.string(),
@@ -276,8 +277,12 @@ export const Products = Table("products", {
   ),
   metadataIds: v.optional(v.array(v.id("metadatas"))),
   // FIXME: migration
-  weight: v.number(),
-  packageId: v.id("packages"),
+  terminal: v.optional(
+    v.object({
+      weight: v.number(),
+      packageId: v.id("packages"),
+    })
+  ),
 });
 
 // UnitType schema

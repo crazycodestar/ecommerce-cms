@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { DataModel, Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query, QueryCtx } from "./_generated/server";
-import { NotFoundError, UnauthorizedError } from "./error";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "./error";
 import { Categories, Metadatas, Products, UnitTypes } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
@@ -511,7 +511,10 @@ export const getProductsPackages = internalQuery({
         const product = await ctx.db.get(productId);
         if (!product) return;
 
-        return ctx.db.get(product.packageId);
+        if (!product.terminal)
+          throw new BadRequestError("store is not using terminal");
+
+        return ctx.db.get(product.terminal.packageId);
       })
     );
   },
