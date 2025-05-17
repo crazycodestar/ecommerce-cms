@@ -192,6 +192,10 @@ export const updateStore = mutation({
     description: v.optional(v.string()),
     owner: v.optional(v.string()),
     // Shipping Information with terminal
+
+    deliveryInfo: v.optional(
+    v.union(v.object({
+    deliveryType: v.literal("terminal"),
     terminalSecretKey: v.optional(v.string()),
     firstName: v.optional(v.string()),
     lastName: v.optional(v.string()),
@@ -203,6 +207,17 @@ export const updateStore = mutation({
     city: v.optional(v.string()),
     state: v.optional(v.string()),
     country: v.optional(v.string()),
+    }),
+
+    v.object({
+      deliveryType: v.literal("custom"),
+      offerings: v.array(v.object({
+        name: v.string(),
+        price: v.number(),
+      })),
+    })
+  ),
+  ),
     // Payment Information with Paystack
     publicKey: v.optional(v.string()),
     secretKey: v.optional(v.string()),
@@ -219,7 +234,8 @@ export const updateStore = mutation({
       throw new UnauthorizedError("Unauthorized to access store");
 
     // compare addresses
-    const shippingInfo = pick(args, [
+    if (args.deliveryInfo && args.deliveryInfo.deliveryType == "terminal") {
+    const shippingInfo = pick(args.deliveryInfo, [
       "firstName",
       "lastName",
       "email",
@@ -230,7 +246,9 @@ export const updateStore = mutation({
       "city",
       "state",
       "country",
-    ]);
+    ])
+
+
     const hasShippingInfoBeenUpdated = !Object.entries(shippingInfo).every(
       ([key, value]) => {
         if (!value) return true;
@@ -239,14 +257,34 @@ export const updateStore = mutation({
         return store[key as keyof typeof store] === value;
       }
     );
+
+
     if (hasShippingInfoBeenUpdated)
       await ctx.scheduler.runAfter(
         0,
         internal.stores.createTerminalStoreAddressId,
         { storeId: store._id }
       );
+  };
 
-    return ctx.db.patch(store._id, args);
+    const filterUpdated = (obj: any): any => {
+      const result: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value === undefined) continue;
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const nested = filterUpdated(value);
+          if (Object.keys(nested).length > 0) {
+            result[key] = nested;
+          }
+        } else {
+          result[key] = value;
+        }
+      }
+      return result;
+    };
+
+
+    return ctx.db.patch(store._id, filterUpdated(args));
   },
 });
 
