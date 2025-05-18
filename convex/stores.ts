@@ -1,15 +1,12 @@
 import { v } from "convex/values";
 import {
-  internalAction,
   internalMutation,
   internalQuery,
   mutation,
   query,
 } from "./_generated/server";
 import {
-  BadRequestError,
   ConflictError,
-  InternalServerError,
   NotFoundError,
   UnauthorizedError,
 } from "./error";
@@ -84,55 +81,11 @@ export const getStoreCategories = query({
   },
 });
 
-export const createTerminalStoreAddressId = internalAction({
-  args: {
-    storeId: v.id("stores"),
-  },
-  handler: async (ctx, { storeId }) => {
-    const store = await ctx.runQuery(internal.stores.getStoreById, { storeId });
-    if (!store) throw new InternalServerError();
 
-    if (store.deliveryInfo.deliveryType != "terminal") {
-      throw new BadRequestError("Store is not using terminal");
-    }
-
-    const address = await ctx.runAction(
-      api.terminal.createAddress,
-      pick(store.deliveryInfo, [
-        "city",
-        "country",
-        "state",
-        "email",
-        "line1",
-        "line2",
-        "firstName",
-        "lastName",
-        "phone",
-        "zip",
-        "terminalSecretKey",
-      ])
-    );
-
-    await ctx.runMutation(internal.stores.updateStoreTerminalAddressId, {
-      storeId: store._id,
-      terminalStoreAddressId: address.address_id,
-    });
-  },
-});
-
-export const updateStoreTerminalAddressId = internalMutation({
-  args: {
-    storeId: v.id("stores"),
-    terminalStoreAddressId: v.string(),
-  },
-  handler: (ctx, { storeId, terminalStoreAddressId }) =>
-    ctx.db.patch(storeId, { terminalStoreAddressId }),
-});
 
 export const createStoreArgs = omit(Stores.withoutSystemFields, [
   "owner",
   "contents",
-  "terminalStoreAddressId",
 ]);
 
 export const createStore = mutation({
@@ -162,11 +115,6 @@ export const createStore = mutation({
       contents: [],
     });
 
-    await ctx.scheduler.runAfter(
-      0,
-      internal.stores.createTerminalStoreAddressId,
-      { storeId }
-    );
 
     // Add "unit" unit type for store
     await ctx.db.insert("unitTypes", {
@@ -192,33 +140,11 @@ export const updateStore = mutation({
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     owner: v.optional(v.string()),
+    deliveryOptions: v.optional(v.array(v.object({
+      name: v.string(),
+      price: v.number(),
+    }))),
     // Shipping Information with terminal
-
-    deliveryInfo: v.optional(
-    v.union(v.object({
-    deliveryType: v.literal("terminal"),
-    terminalSecretKey: v.optional(v.string()),
-    firstName: v.optional(v.string()),
-    lastName: v.optional(v.string()),
-    email: v.optional(v.string()),
-    phone: v.optional(v.string()),
-    line1: v.optional(v.string()),
-    line2: v.optional(v.string()),
-    zip: v.optional(v.string()),
-    city: v.optional(v.string()),
-    state: v.optional(v.string()),
-    country: v.optional(v.string()),
-    }),
-
-    v.object({
-      deliveryType: v.literal("custom"),
-      offerings: v.array(v.object({
-        name: v.string(),
-        price: v.number(),
-      })),
-    })
-  ),
-  ),
     // Payment Information with Paystack
     publicKey: v.optional(v.string()),
     secretKey: v.optional(v.string()),
@@ -234,63 +160,12 @@ export const updateStore = mutation({
     if (store.slug !== slug)
       throw new UnauthorizedError("Unauthorized to access store");
 
-    // compare addresses
-    if (args.deliveryInfo && args.deliveryInfo.deliveryType == "terminal") {
-    const shippingInfo = pick(args.deliveryInfo, [
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "line1",
-      "line2",
-      "zip",
-      "city",
-      "state",
-      "country",
-    ])
 
-
-    const hasShippingInfoBeenUpdated = !Object.entries(shippingInfo).every(
-      ([key, value]) => {
-        if (!value) return true;
-        if (!(key in store)) return true;
-
-        return store[key as keyof typeof store] === value;
-      }
-    );
-
-
-    if (hasShippingInfoBeenUpdated)
-      await ctx.scheduler.runAfter(
-        0,
-        internal.stores.createTerminalStoreAddressId,
-        { storeId: store._id }
-      );
-  };
-
-
-    return ctx.db.patch(store._id, filterUpdated(args));
+    return ctx.db.patch(store._id, args);
   },
 });
 
 // internal functions
-export const getStoreTerminalSecretKey = internalQuery({
-  args: {
-    storeSlug: v.string(),
-  },
-  handler: async (ctx, { storeSlug }) => {
-    const store = await ctx.db
-      .query("stores")
-      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
-      .unique();
-    if (!store) return null;
-    if (store.deliveryInfo.deliveryType != "terminal") {
-      throw new BadRequestError("Store is not using terminal");
-    }
-
-    return store.deliveryInfo.terminalSecretKey;
-  },
-});
 
 export const getStoreById = internalQuery({
   args: {

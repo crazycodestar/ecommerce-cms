@@ -585,57 +585,6 @@ http.route({
 });
 
 http.route({
-  path: "/api/terminal/rates",
-  method: "POST",
-  handler: httpAction(async (ctx, request) => {
-    const body = await request.json();
-    const { deliveryAddress, storeSlug, items } = body;
-
-    if (!deliveryAddress || !storeSlug || !items) {
-      return new Response("Missing required fields", {
-        status: 400,
-        headers: new Headers({
-          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-          Vary: "origin",
-        }),
-      });
-    }
-
-    try {
-      const result = await ctx.runAction(
-        internal.terminal.apiGetRatesForShipment,
-        {
-          deliveryAddress,
-          items,
-          storeSlug,
-        }
-      );
-      return new Response(JSON.stringify(result), {
-        status: 200,
-        headers: new Headers({
-          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-          Vary: "origin",
-        }),
-      });
-    } catch {
-      return new Response(JSON.stringify({ error: "Failed to get rates" }), {
-        status: 500,
-        headers: new Headers({
-          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-          Vary: "origin",
-        }),
-      });
-    }
-  }),
-});
-
-http.route({
-  path: "/api/terminal/rates",
-  method: "OPTIONS",
-  handler: httpAction(async (_, request) => handleCORS(request)),
-});
-
-http.route({
   path: "/api/delivery/info",
   method: "OPTIONS",
   handler: httpAction(async (_, request) => handleCORS(request)),
@@ -670,7 +619,7 @@ http.route({
       });
     }
 
-    return new Response(JSON.stringify(store.deliveryInfo), {
+    return new Response(JSON.stringify(store.deliveryOptions), {
       status: 200,
       headers: new Headers({
         "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",

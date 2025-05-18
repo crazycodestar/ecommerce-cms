@@ -33,10 +33,6 @@ export default function ProductsPage() {
       stock: 0,
       isUnspecified: false,
       categoryId: "",
-      terminal: store?.deliveryInfo.deliveryType === "terminal" ? {
-        weight: 0,
-        packageId: "",
-      } : undefined,
     },
   });
 

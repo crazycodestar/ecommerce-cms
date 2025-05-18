@@ -57,7 +57,6 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
   });
 
   const { slug } = useParams<{ slug: Id<"stores"> }>();
-  const store = useQuery(api.stores.getStore, { slug });
 
   React.useEffect(() => {
     if (form.getValues("terminal")) {
@@ -297,31 +296,6 @@ export function ProductForm({ onSubmit, form, children }: ProductFormProps) {
                 )}
               />
             </div>
-            {store?.deliveryInfo.deliveryType === "terminal" && (
-              <div className="py-4">
-                <div className="mb-4">
-                  <div>
-                    <h1 className="text-2xl font-bold">
-                      Terminal Shipping Information
-                    </h1>
-                    <p className="text-muted-foreground">
-                      Fill in shipping information for this product to be for
-                      terminal shipping
-                    </p>
-                  </div>
-                </div>
-                <FormField
-                  control={form.control}
-                  name="variants"
-                  render={() => (
-                    <FormItem>
-                      <ShippingForm form={form} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
           </div>
         </div>
         {/* <pre>{JSON.stringify(values, null, 2)}</pre> */}
@@ -362,8 +336,4 @@ export const formatProductFromForm = (
     })),
   })),
   metadataIds: values.metadatas.map((m) => m._id as Id<"metadatas">),
-  terminal: values.terminal && {
-    weight: values.terminal.weight,
-    packageId: values.terminal.packageId as Id<"packages">,
-  },
 });
