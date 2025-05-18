@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -10,26 +11,23 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Id } from "@/convex/_generated/dataModel";
-import React from "react";
-import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
-import { CategoryPicker } from "./category-picker";
-import { Checkbox } from "@/components/ui/checkbox";
+import { api } from "@/convex/_generated/api";
+import { DataModel, Id } from "@/convex/_generated/dataModel";
 import { ProductSchema } from "@/lib/validations/product";
-import { ProductImagePicker } from "./image-picker";
-import { PropertyFieldArray } from "./property-form";
-import { VariantForm } from "./variant-form";
-import { MetadataForm } from "./metadata-form";
-import { RichTextFormInput, Tiptap } from "../tiptap";
-import { UnitTypeform } from "./unit-type-form";
-import { DataModel } from "@/convex/_generated/dataModel";
-import { ShippingForm } from "./shipping-form";
 import { useQuery } from "convex/react";
 import { useParams } from "next/navigation";
-import { api } from "@/convex/_generated/api";
+import React from "react";
+import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
+import { RichTextFormInput, Tiptap } from "../tiptap";
 import { Button } from "../ui/button";
-import { Loader } from "lucide-react";
 import { Separator } from "../ui/separator";
+import { CategoryPicker } from "./category-picker";
+import { ProductImagePicker } from "./image-picker";
+import { MetadataForm } from "./metadata-form";
+import { PropertyFieldArray } from "./property-form";
+import { ShippingForm } from "./shipping-form";
+import { UnitTypeform } from "./unit-type-form";
+import { VariantForm } from "./variant-form";
 
 interface ProductFormProps {
   onSubmit: (values: ProductSchema) => void;
