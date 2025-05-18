@@ -6,6 +6,7 @@ import React from "react";
 import { useForm, useWatch, type UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { tryCatch } from "@/lib/try-catch";
 
 import { Button } from "@/components/ui/button";
 
@@ -53,7 +54,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
-import { tryCatch } from "@/convex/utils";
 import { showErrorToast } from "@/lib/handle-error";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/clerk-react";
@@ -238,16 +238,21 @@ export function CreateStore() {
   async function onSubmit(values: CreateStoreSchema) {
     startCreateTransaction(async () => {
       try {
-        const res = await submitOnboarding({
+        const { data: slug, error } = await tryCatch(submitOnboarding({
           ...omit(values, ["slug", "hasAddedWebhookAndCallbackURL"]),
           slug: values.slug!,
-        });
-        if (res.message) {
-          await user?.reload();
-          form.reset();
-          toast.success("store created successfully");
-          router.push("/dashboard");
+        }));
+
+        if (error) {
+          console.error(error);
+          showErrorToast(error);
+          return;
         }
+
+        await user?.reload();
+        form.reset();
+        toast.success("store created successfully");
+        return router.push(`/dashboard/${slug}/editor_?from=onboarding`);
       } catch (err) {
         toast.error(showErrorToast(err));
       }

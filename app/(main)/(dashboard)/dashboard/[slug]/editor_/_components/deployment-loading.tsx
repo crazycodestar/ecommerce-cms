@@ -58,7 +58,7 @@ export const DeploymentLoading = ({ isSuccess }: DeploymentLoadingProps) => {
         {isFromOnboarding ? (
           <div className="flex gap-3">
             {store?.siteUrl ? (
-              <Button asChild>
+              <Button asChild variant="outline">
                 <Link href={store?.siteUrl ?? ""}>View Site</Link>
               </Button>
             ) : (

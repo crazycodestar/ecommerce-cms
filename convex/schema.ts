@@ -210,6 +210,8 @@ export const Stores = Table("stores", {
   owner: v.string(),
   slug: v.string(),
   contents: v.array(contentTypes),
+  contentJson: v.optional(v.string()),
+  siteUrl: v.optional(v.string()),
   deliveryInfo: v.union(
     v.object({
       deliveryType: v.literal("terminal"),

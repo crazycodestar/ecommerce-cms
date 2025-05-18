@@ -130,6 +130,8 @@ export const createStoreArgs = omit(Stores.withoutSystemFields, [
   "owner",
   "contents",
   "terminalStoreAddressId",
+  "contentJson",
+  "siteUrl",
 ]);
 
 export const createStore = mutation({
@@ -192,30 +194,33 @@ export const updateStore = mutation({
     // Shipping Information with terminal
 
     deliveryInfo: v.optional(
-    v.union(v.object({
-    deliveryType: v.literal("terminal"),
-    terminalSecretKey: v.optional(v.string()),
-    firstName: v.optional(v.string()),
-    lastName: v.optional(v.string()),
-    email: v.optional(v.string()),
-    phone: v.optional(v.string()),
-    line1: v.optional(v.string()),
-    line2: v.optional(v.string()),
-    zip: v.optional(v.string()),
-    city: v.optional(v.string()),
-    state: v.optional(v.string()),
-    country: v.optional(v.string()),
-    }),
+      v.union(
+        v.object({
+          deliveryType: v.literal("terminal"),
+          terminalSecretKey: v.optional(v.string()),
+          firstName: v.optional(v.string()),
+          lastName: v.optional(v.string()),
+          email: v.optional(v.string()),
+          phone: v.optional(v.string()),
+          line1: v.optional(v.string()),
+          line2: v.optional(v.string()),
+          zip: v.optional(v.string()),
+          city: v.optional(v.string()),
+          state: v.optional(v.string()),
+          country: v.optional(v.string()),
+        }),
 
-    v.object({
-      deliveryType: v.literal("custom"),
-      offerings: v.array(v.object({
-        name: v.string(),
-        price: v.number(),
-      })),
-    })
-  ),
-  ),
+        v.object({
+          deliveryType: v.literal("custom"),
+          offerings: v.array(
+            v.object({
+              name: v.string(),
+              price: v.number(),
+            })
+          ),
+        })
+      )
+    ),
     // Payment Information with Paystack
     publicKey: v.optional(v.string()),
     secretKey: v.optional(v.string()),
@@ -233,38 +238,35 @@ export const updateStore = mutation({
 
     // compare addresses
     if (args.deliveryInfo && args.deliveryInfo.deliveryType == "terminal") {
-    const shippingInfo = pick(args.deliveryInfo, [
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "line1",
-      "line2",
-      "zip",
-      "city",
-      "state",
-      "country",
-    ])
+      const shippingInfo = pick(args.deliveryInfo, [
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "line1",
+        "line2",
+        "zip",
+        "city",
+        "state",
+        "country",
+      ]);
 
+      const hasShippingInfoBeenUpdated = !Object.entries(shippingInfo).every(
+        ([key, value]) => {
+          if (!value) return true;
+          if (!(key in store)) return true;
 
-    const hasShippingInfoBeenUpdated = !Object.entries(shippingInfo).every(
-      ([key, value]) => {
-        if (!value) return true;
-        if (!(key in store)) return true;
-
-        return store[key as keyof typeof store] === value;
-      }
-    );
-
-
-    if (hasShippingInfoBeenUpdated)
-      await ctx.scheduler.runAfter(
-        0,
-        internal.stores.createTerminalStoreAddressId,
-        { storeId: store._id }
+          return store[key as keyof typeof store] === value;
+        }
       );
-  };
 
+      if (hasShippingInfoBeenUpdated)
+        await ctx.scheduler.runAfter(
+          0,
+          internal.stores.createTerminalStoreAddressId,
+          { storeId: store._id }
+        );
+    }
 
     return ctx.db.patch(store._id, filterUpdated(args));
   },

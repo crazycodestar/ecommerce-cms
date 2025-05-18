@@ -153,11 +153,6 @@ type ShippingForm = {
     }>;
   }>;
   shipping: number;
-<<<<<<< HEAD
-  rateId: string;
-  terminalAddressId?: string;
-  terminalParcelId?: string;
-=======
   terminalInfo?: {
     rateId: string;
     terminalAddressId?: string;
@@ -166,7 +161,6 @@ type ShippingForm = {
   customDeliveryInfo?: {
     selectedOffering: string;
   };
->>>>>>> origin/main
 };
 
 // Order API functions

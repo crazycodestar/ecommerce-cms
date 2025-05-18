@@ -213,11 +213,7 @@ export default function CheckoutPage() {
             name: p.name,
             description: p.additionalInformation?.slice(0, 100) ?? "",
             value: p.price,
-<<<<<<< HEAD
-            weight: p.weight,
-=======
             weight: p.terminal!.weight, //FIX: better error handling here
->>>>>>> origin/main
           })),
         storeSlug,
       })
