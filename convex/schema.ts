@@ -210,33 +210,13 @@ export const Stores = Table("stores", {
   owner: v.string(),
   slug: v.string(),
   contents: v.array(contentTypes),
-  deliveryInfo: v.union(
+  deliveryOptions: v.array(
     v.object({
-      deliveryType: v.literal("terminal"),
-      terminalSecretKey: v.string(),
-      firstName: v.string(),
-      lastName: v.string(),
-      email: v.string(),
-      phone: v.string(),
-      line1: v.string(),
-      line2: v.optional(v.string()),
-      city: v.string(),
-      state: v.string(),
-      country: v.string(),
-      zip: v.string(),
-    }),
-    v.object({
-      deliveryType: v.literal("custom"),
-      offerings: v.array(
-        v.object({
-          name: v.string(),
-          price: v.number(),
-        })
-      ),
+      name: v.string(),
+      price: v.number(),
     })
   ),
   // Shipping Information with terminal
-  terminalStoreAddressId: v.optional(v.string()),
   // Payment Information with Paystack
   publicKey: v.string(),
   secretKey: v.string(),
@@ -276,13 +256,6 @@ export const Products = Table("products", {
     })
   ),
   metadataIds: v.optional(v.array(v.id("metadatas"))),
-  // FIXME: migration
-  terminal: v.optional(
-    v.object({
-      weight: v.number(),
-      packageId: v.id("packages"),
-    })
-  ),
 });
 
 // UnitType schema
@@ -364,16 +337,7 @@ export const Orders = Table("orders", {
   email: v.string(),
   // terminalFields
 
-  terminalInfo: v.optional(
-    v.object({
-      rateId: v.string(),
-      terminalAddressId: v.string(),
-      terminalParcelId: v.string(),
-      terminalTrackingNumber: v.optional(v.string()),
-      terminalTrackingUrl: v.optional(v.string()),
-    })
-  ),
-  customDeliveryInfo: v.optional(
+  deliveryInfo: v.optional(
     v.object({
       selectedOffering: v.string(),
     })

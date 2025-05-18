@@ -30,6 +30,13 @@ const productVariantSchema = z.object({
   options: z.array(productVariantOptionSchema),
 });
 
+export const getDeliveryInfoResponseSchema = z.array(
+  z.object({
+    name: z.string(),
+    price: z.number(),
+  }),
+);
+
 const productSchema = z.object({
   _id: idSchema,
   storeId: idSchema,
@@ -44,8 +51,12 @@ const productSchema = z.object({
   variants: z.array(productVariantSchema).optional(),
   properties: z.array(productPropertySchema),
   metadataIds: z.array(idSchema).optional(),
-  weight: z.number(),
-  packageId: idSchema,
+  terminal: z.optional(
+    z.object({
+      weight: z.number(),
+      packageId: idSchema,
+    }),
+  ),
   mainImage: z.string().optional(), // Added for API responses that include mainImage
 });
 
@@ -74,7 +85,7 @@ export const richProductSchema = productSchema.extend({
       propertyId: idSchema,
       value: z.union([z.string(), z.number(), z.array(z.string())]),
       property: propertySchema,
-    })
+    }),
   ),
   unit: z.string().optional(),
   variants: z
@@ -83,9 +94,9 @@ export const richProductSchema = productSchema.extend({
         options: z.array(
           productVariantOptionSchema.extend({
             image: z.string().optional(),
-          })
+          }),
         ),
-      })
+      }),
     )
     .optional(),
   metadatas: z
@@ -104,7 +115,7 @@ export const richProductSchema = productSchema.extend({
             z.literal("image"),
           ]),
         }),
-      })
+      }),
     )
     .optional(),
   comment: z.null(),
@@ -119,7 +130,7 @@ const orderItemSchema = z.object({
       z.object({
         name: z.string(),
         value: z.string(),
-      })
+      }),
     )
     .optional(),
   metadatas: z
@@ -127,7 +138,7 @@ const orderItemSchema = z.object({
       z.object({
         name: z.string(),
         value: z.union([z.string(), z.number()]),
-      })
+      }),
     )
     .optional(),
   name: z.string(),
@@ -231,7 +242,7 @@ const carouselSchema = z.object({
         z.object({
           imageId: z.string(),
           collectionId: z.string(),
-        })
+        }),
       )
       .min(1, { message: "Atleast one image is required" }),
   }),
@@ -260,7 +271,7 @@ const collectionCarouselSchema = z.object({
           collectionId: z
             .string()
             .min(1, { message: "Please select a collection" }),
-        })
+        }),
       )
       .min(1, { message: "Atleast one collection is required" }),
   }),
@@ -285,7 +296,7 @@ const categories = z.object({
           categoryId: z
             .string()
             .min(1, { message: "Please select a category" }),
-        })
+        }),
       )
       .min(1, { message: "Atleast one category is required" }),
   }),
@@ -334,7 +345,7 @@ export const getStatesResponseSchema = z.array(
     name: z.string(),
     countryCode: z.string(),
     isoCode: z.string(),
-  })
+  }),
 );
 
 export const getCitiesResponseSchema = z.array(
@@ -342,18 +353,14 @@ export const getCitiesResponseSchema = z.array(
     name: z.string(),
     stateCode: z.string(),
     countryCode: z.string(),
-  })
+  }),
 );
-
-export const getRatesResponseSchema = z.array(terminalRateSchema);
-
-export const getContentsByStoreSlugResponseSchema = z.array(contentSchema);
 
 export const getProductsByStoreSlugResponseSchema = z.array(
   z.object({
     _id: z.string(),
     name: z.string(),
-    description: z.string(),
+    additionalInformation: z.string().optional(),
     price: z.number(),
     images: z.array(z.string()),
     imageUrls: z.array(z.string()),
@@ -365,10 +372,24 @@ export const getProductsByStoreSlugResponseSchema = z.array(
         name: z.string(),
         slug: z.string(),
         storeId: z.string(),
-      })
+      }),
     ),
-  })
+  }),
 );
+
+export const getImageUrlResponseSchema = z.string();
+
+export const generateUploadUrlResponseSchema = z.string();
+
+export const getProductsByIdsResponseSchema = z.array(richProductSchema);
+
+export type GetProductsByIdsResponse = z.infer<
+  typeof getProductsByIdsResponseSchema
+>;
+
+export const getRatesResponseSchema = z.array(terminalRateSchema);
+
+export const getContentsByStoreSlugResponseSchema = z.array(contentSchema);
 
 // Type exports
 export type GetFiltersResponse = z.infer<typeof getFiltersResponseSchema>;
@@ -405,6 +426,14 @@ export type GetRatesResponse = z.infer<typeof getRatesResponseSchema>;
 export type GetContentsByStoreSlugResponse = z.infer<
   typeof getContentsByStoreSlugResponseSchema
 >;
+export type GetImageUrlResponse = z.infer<typeof getImageUrlResponseSchema>;
+export type GenerateUploadUrlResponse = z.infer<
+  typeof generateUploadUrlResponseSchema
+>;
 export type GetProductsByStoreSlugResponse = z.infer<
   typeof getProductsByStoreSlugResponseSchema
+>;
+
+export type GetDeliveryInfoResponse = z.infer<
+  typeof getDeliveryInfoResponseSchema
 >;

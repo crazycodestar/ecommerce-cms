@@ -62,47 +62,14 @@ import { omit } from "es-toolkit";
 import Link from "next/link";
 import * as RPNInput from "react-phone-number-input";
 
-const customDeliveryInfoSchema = z.object({
-  offerings: z.array(
+
+const deliveryInfoSchema = z.object({
+  deliveryOptions: z.array(
     z.object({
       name: z.string().min(1, { message: "Name is required" }),
       price: z.number().min(1, { message: "Price must be greater than 0" }),
     })
   ),
-});
-
-const terminalInfoSchema = z.object({
-  terminalSecretKey: z
-    .string()
-    .min(2, { message: "Terminal Secret Key is Required" }),
-  firstName: z
-    .string()
-    .min(2, { message: "First name must be at least 2 characters." }),
-  lastName: z
-    .string()
-    .min(2, { message: "Last name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  phone: z.string().min(10, { message: "Please enter a valid phone number." }),
-  line1: z.string().min(5, { message: "Address line 1 is required." }),
-  line2: z.string().optional(),
-  city: z.string().min(2, { message: "City is required." }),
-  state: z.string().min(2, { message: "State is required." }),
-  zip: z.string().min(2, { message: "Zip is required" }),
-  country: z.string().min(2, { message: "Country is required." }),
-});
-
-const deliveryInfoSchema = z.object({
-  deliveryInfo: z.discriminatedUnion("deliveryType", [
-    z.object({
-      deliveryType: z.literal("terminal"),
-      ...terminalInfoSchema.shape,
-    }),
-
-    z.object({
-      deliveryType: z.literal("custom"),
-      ...customDeliveryInfoSchema.shape,
-    }),
-  ]),
 });
 
 const storeInfoSchema = z.object({
@@ -163,10 +130,7 @@ export function CreateStore() {
       email: "",
       description: "",
       slug: "",
-      deliveryInfo: {
-        deliveryType: "custom",
-        offerings: [{ name: "", price: 0 }],
-      },
+      deliveryOptions: [{ name: "", price: 0 }],
       publicKey: "",
       secretKey: "",
     },
@@ -589,407 +553,111 @@ const useStates = (deliveryType: string) => {
   return states;
 };
 
-const useCities = (stateCode?: string) => {
-  const [cities, setCities] = React.useState<
-    { name: string; stateCode: string; countryCode: string }[]
-  >([]);
-  const getCities = useAction(api.terminal.getCities);
-
-  React.useEffect(() => {
-    if (!stateCode) return;
-
-    const fetchCities = async () => {
-      const { data, error } = await tryCatch(getCities({ stateCode }));
-      if (error) return toast.error("Failed to fetch cities");
-      setCities(data);
-    };
-
-    fetchCities();
-  }, [stateCode]);
-
-  return cities;
-};
 
 const ShippingAddressForm = ({
   form,
 }: {
   form: UseFormReturn<CreateStoreSchema>;
 }) => {
-  const deliveryType = form.watch("deliveryInfo.deliveryType");
-  const states = useStates(deliveryType);
-  const getStateCode = (state: string) =>
-    states.find((s) => s.name === state)?.isoCode;
-  const cities = useCities(
-    getStateCode(form.watch("deliveryInfo.state")) || undefined
-  );
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Choose A Delivery Method</h2>
+      <h2 className="text-xl font-semibold"> Delivery Information</h2>
 
-      <FormField
-        control={form.control}
-        name="deliveryInfo.deliveryType"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Delivery Method</FormLabel>
-            <Select
-              onValueChange={(value) => {
-                field.onChange(value);
-                // Reset form values based on selected delivery type
-                if (value === "terminal") {
-                  form.reset({
-                    ...form.getValues(),
-                    deliveryInfo: {
-                      deliveryType: "terminal",
-                      terminalSecretKey: "",
-                      firstName: "",
-                      lastName: "",
-                      email: "",
-                      phone: "",
-                      line1: "",
-                      line2: "",
-                      city: "",
-                      state: "",
-                      zip: "",
-                      country: "",
-                    },
-                  });
-                } else {
-                  form.reset({
-                    ...form.getValues(),
-                    deliveryInfo: {
-                      deliveryType: "custom",
-                      offerings: [{ name: "", price: 0 }],
-                    },
-                  });
-                }
-              }}
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select delivery method" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="terminal">Terminal Africa</SelectItem>
-                <SelectItem value="custom">Custom Delivery</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
 
-      {form.watch("deliveryInfo.deliveryType") === "terminal" && (
-        <>
-          <div>
-            <p className="text-sm">
-              Manage shipping, and delivery using terminal Africa.{" "}
-              <Link
-                className="text-blue-500 hover:underline inline-flex gap-1 items-center"
-                href="https://www.terminal.africa/"
-                target="_blank"
-              >
-                Sign Up
-                <SquareArrowOutUpRight className="size-3" />
-              </Link>
-            </p>
-          </div>
-
-          <FormField
-            control={form.control}
-            name="deliveryInfo.terminalSecretKey"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Terminal Secret Key</FormLabel>
-                <FormControl>
-                  <Input placeholder="sk_live_b21d..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <h2 className="text-xl font-semibold">Shipping Address</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="deliveryInfo.firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="deliveryInfo.lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="deliveryInfo.email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email Address</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="john.doe@example.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="deliveryInfo.phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <RPNInput.default
-                    className="flex rounded-md shadow-xs"
-                    international
-                    flagComponent={FlagComponent}
-                    countrySelectComponent={CountrySelect}
-                    inputComponent={PhoneInput}
-                    placeholder="Enter phone number"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="deliveryInfo.line1"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 1</FormLabel>
-                <FormControl>
-                  <Input placeholder="123 Main St" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="deliveryInfo.line2"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 2</FormLabel>
-                <FormControl>
-                  <Input placeholder="Apt 4B" {...field} />
-                </FormControl>
-                <FormDescription>Optional</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="deliveryInfo.zip"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Zip code</FormLabel>
-                <FormControl>
-                  <Input placeholder="100001" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <FormSelect
-              control={form.control}
-              name="deliveryInfo.country"
-              label="Country"
-            >
-              <FormSelectTrigger className="w-full">
-                <FormSelectValue placeholder="Select country" />
-              </FormSelectTrigger>
-              <FormSelectContent>
-                <FormSelectItem value="NG">Nigeria</FormSelectItem>
-              </FormSelectContent>
-            </FormSelect>
-
-            <FormField
-              control={form.control}
-              name={"deliveryInfo.state"}
-              render={({ field }) => (
-                <FormItem className="grid w-full">
-                  <FormLabel>State</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      form.setValue("deliveryInfo.city", "");
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger
-                        disabled={!form.watch("deliveryInfo.country")}
-                        className="w-full"
-                      >
-                        <SelectValue placeholder="State" />
-                      </SelectTrigger>
-                    </FormControl>
-
-                    <SelectContent>
-                      {states.map((state) => (
-                        <SelectItem key={state.isoCode} value={state.name}>
-                          {state.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormSelect
-              control={form.control}
-              name="deliveryInfo.city"
-              label="City"
-            >
-              <FormSelectTrigger
-                disabled={!form.watch("deliveryInfo.state")}
-                className="w-full"
-              >
-                <FormSelectValue placeholder="Select city" />
-              </FormSelectTrigger>
-              <FormSelectContent>
-                {cities.map((city) => (
-                  <FormSelectItem key={city.name} value={city.name}>
-                    {city.name}
-                  </FormSelectItem>
-                ))}
-              </FormSelectContent>
-            </FormSelect>
-          </div>
-        </>
-      )}
-      {form.watch("deliveryInfo.deliveryType") === "custom" && (
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm">
-              Add your own delivery offerings and their prices
-            </p>
-          </div>
-
-          <FormField
-            control={form.control}
-            name="deliveryInfo.offerings"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Delivery Offerings</FormLabel>
-                <FormControl>
-                  <div className="space-y-2">
-                    {field.value?.map((_, index) => (
-                      <div key={index} className="flex gap-2">
-                        <FormField
-                          control={form.control}
-                          name={`deliveryInfo.offerings.${index}.name`}
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormControl>
-                                <Input
-                                  placeholder="Offering name (e.g. Standard Delivery)"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`deliveryInfo.offerings.${index}.price`}
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormControl>
-                                <Input
-                                  type="text"
-                                  inputMode="numeric"
-                                  placeholder="Price (₦)"
-                                  {...field}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (/^\d*$/.test(value)) {
-                                      field.onChange(Number(value));
-                                    }
-                                  }}
-                                  value={field.value}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <button
-                          type="button"
-                          className="text-destructive hover:text-destructive/90"
-                          onClick={() => {
-                            const newOfferings = field.value.filter(
-                              (_, i) => i !== index
-                            );
-                            form.setValue(
-                              "deliveryInfo.offerings",
-                              newOfferings
-                            );
-                          }}
-                        >
-                          <Trash2 className="size-4 cursor-pointer" />
-                        </button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const currentOfferings =
-                          form.getValues("deliveryInfo.offerings") || [];
-                        form.setValue("deliveryInfo.offerings", [
-                          ...currentOfferings,
-                          { name: "", price: 0 },
-                        ]);
-                      }}
-                    >
-                      Add Offering
-                    </Button>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm">
+            Set up your delivery options and pricing
+          </p>
         </div>
-      )}
+
+        <FormField
+          control={form.control}
+          name="deliveryOptions"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Delivery Offerings</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  {field.value?.map((_, index) => (
+                    <div key={index} className="flex gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`deliveryOptions.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input
+                                placeholder="Within Lagos"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`deliveryOptions.${index}.price`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="Price (₦)"
+                                {...field}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (/^\d*$/.test(value)) {
+                                    field.onChange(Number(value));
+                                  }
+                                }}
+                                value={field.value}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <button
+                        type="button"
+                        className="text-destructive hover:text-destructive/90"
+                        onClick={() => {
+                          const newOfferings = field.value.filter(
+                            (_, i) => i !== index
+                          );
+                          form.setValue(
+                            "deliveryOptions",
+                            newOfferings
+                          );
+                        }}
+                      >
+                        <Trash2 className="size-4 cursor-pointer" />
+                      </button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const currentOfferings =
+                        form.getValues("deliveryOptions") || [];
+                      form.setValue("deliveryOptions", [
+                        ...currentOfferings,
+                        { name: "", price: 0 },
+                      ]);
+                    }}
+                  >
+                    Add Delivery Option
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </div>
   );
 };
