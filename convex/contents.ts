@@ -11,6 +11,7 @@ import {
   getTokenIdentifierWithAuthError,
 } from "./utils";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const updateContents = mutation({
   args: {
@@ -117,3 +118,39 @@ export const apiGetImageUrl = internalQuery({
 export const apiGenerateUploadUrl = internalMutation(async (ctx) =>
   ctx.storage.generateUploadUrl()
 );
+
+// v2 content json
+export const updateContentJson = mutation({
+  args: {
+    contentJson: v.string(),
+  },
+  handler: async (ctx, { contentJson }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    if (!store.siteUrl) {
+      await ctx.scheduler.runAfter(0, internal.actions.generateSite, {
+        storeId: store._id,
+      });
+    }
+
+    return ctx.db.patch(store._id, {
+      contentJson,
+    });
+  },
+});
+
+export const getContentJson = query({
+  handler: async (ctx) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    return store.contentJson;
+  },
+});

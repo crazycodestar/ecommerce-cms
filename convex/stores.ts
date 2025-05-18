@@ -30,10 +30,7 @@ export const getMyStore = query({
       .query("stores")
       .withIndex("by_owner", (q) => q.eq("owner", tokenIdentifier))
       .unique();
-    if (!store) return null;
-    return {
-      slug: store.slug,
-    };
+    return store;
   },
 });
 
@@ -281,4 +278,31 @@ export const getStoreBySlug = internalQuery({
 
     return store;
   },
+});
+
+export const updateStoreByStoreId = internalMutation({
+  args: {
+    storeId: v.id("stores"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    owner: v.optional(v.string()),
+    // Shipping Information with terminal
+    terminalSecretKey: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    line1: v.optional(v.string()),
+    line2: v.optional(v.string()),
+    zip: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    country: v.optional(v.string()),
+    // Payment Information with Paystack
+    publicKey: v.optional(v.string()),
+    secretKey: v.optional(v.string()),
+    // actions
+    siteUrl: v.optional(v.string()),
+  },
+  handler: (ctx, { storeId, ...args }) => ctx.db.patch(storeId, args),
 });

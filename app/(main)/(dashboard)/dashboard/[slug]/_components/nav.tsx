@@ -14,7 +14,7 @@ export function Nav() {
     },
     {
       label: "Editor",
-      route: `/dashboard/${slug}/editor`,
+      route: `/dashboard/${slug}/editor_`,
     },
     {
       label: "Products",
@@ -29,11 +29,16 @@ export function Nav() {
       route: `/dashboard/${slug}/settings`,
     },
   ];
+
+  if (pathname?.includes("/editor_")) return null;
+
   return (
-    <MenuNav
-      active={pathname}
-      onClick={(route) => router.push(route)}
-      tabs={tabs}
-    />
+    <header className="flex bg-background shrink-0 items-center border-b px-2 pt-2 justify-between">
+      <MenuNav
+        active={pathname}
+        onClick={(route) => router.push(route)}
+        tabs={tabs}
+      />
+    </header>
   );
 }

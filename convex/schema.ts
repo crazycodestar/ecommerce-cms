@@ -209,6 +209,8 @@ export const Stores = Table("stores", {
   owner: v.string(),
   slug: v.string(),
   contents: v.array(contentTypes),
+  contentJson: v.optional(v.string()), // make compulsory
+  siteUrl: v.optional(v.string()),
   // Shipping Information with terminal
   terminalSecretKey: v.string(),
   firstName: v.string(),
