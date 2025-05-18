@@ -29,4 +29,7 @@ export const API_ENDPOINTS = {
   contents: {
     getContentsByStoreSlug: "/api/contents/get-contents-by-store-slug",
   },
+  delivery: {
+    getInfo: "/api/delivery/info",
+  },
 } as const;

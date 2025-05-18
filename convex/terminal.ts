@@ -598,8 +598,8 @@ export const createShipment = action({
         },
         body: JSON.stringify({
           address_from: store.terminalStoreAddressId,
-          address_to: order.terminalAddressId,
-          parcels: [order.terminalParcelId],
+          address_to: order.terminalInfo?.terminalAddressId,
+          parcels: [order.terminalInfo?.terminalParcelId],
         }),
       },
       store.deliveryInfo.terminalSecretKey
@@ -613,15 +613,15 @@ export const createShipment = action({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          rate_id: order.rateId,
+          rate_id: order.terminalInfo?.rateId,
           shipment_id: shipmentResponse.shipment_id,
-          parcels: [order.terminalParcelId],
+          parcels: [order.terminalInfo?.terminalParcelId],
         }),
       },
       store.deliveryInfo.terminalSecretKey
     );
 
-    await ctx.runMutation(internal.orders.updateOrderTrackingInformation, {
+    await ctx.runMutation(internal.orders.updateTerminalOrderTrackingInformation, {
       orderId,
       terminalTrackingNumber: res.extras.tracking_number,
       terminalTrackingUrl: res.extras.tracking_url,

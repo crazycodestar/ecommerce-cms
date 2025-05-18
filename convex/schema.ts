@@ -360,14 +360,24 @@ export const Orders = Table("orders", {
   city: v.string(),
   zip: v.string(),
   country: v.string(),
-  rateId: v.string(),
   phone: v.string(),
   email: v.string(),
   // terminalFields
-  terminalAddressId: v.string(),
-  terminalParcelId: v.string(),
-  terminalTrackingNumber: v.optional(v.string()),
-  terminalTrackingUrl: v.optional(v.string()),
+
+  terminalInfo: v.optional(
+    v.object({
+      rateId: v.string(),
+      terminalAddressId: v.string(),
+      terminalParcelId: v.string(),
+      terminalTrackingNumber: v.optional(v.string()),
+      terminalTrackingUrl: v.optional(v.string()),
+    })
+  ),
+  customDeliveryInfo: v.optional(
+    v.object({
+      selectedOffering: v.string(),
+    })
+  ),
   // Additional Information
   storeId: v.id("stores"),
   amount: v.number(),

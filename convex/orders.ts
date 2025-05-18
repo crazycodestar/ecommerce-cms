@@ -16,21 +16,30 @@ import { DataModel, Id } from "./_generated/dataModel";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifierWithAuthError,
+  filterUpdated,
 } from "./utils";
 
-export const updateOrderTrackingInformation = internalMutation({
+export const updateTerminalOrderTrackingInformation = internalMutation({
   args: {
-    ...pick(Orders.withoutSystemFields, [
-      "terminalTrackingNumber",
-      "terminalTrackingUrl",
-    ]),
+    terminalTrackingNumber: v.optional(v.string()),
+    terminalTrackingUrl: v.optional(v.string()),
+    terminalAddressId: v.optional(v.string()),
+    terminalParcelId: v.optional(v.string()),
+    rateId: v.optional(v.string()),
     orderId: v.id("orders"),
   },
   handler: async (ctx, { orderId, ...args }) => {
     const order = await ctx.db.get(orderId);
     if (!order) throw new NotFoundError("order not found");
 
-    return ctx.db.patch(order._id, args);
+    const updated = filterUpdated({
+      ...order.terminalInfo,
+      ...args,
+    });
+
+    return ctx.db.patch(order._id, {
+      terminalInfo: updated,
+    });
   },
 });
 

@@ -80,6 +80,24 @@ export async function tryCatch<T, E = Error>(
   }
 }
 
+
+export const filterUpdated = (obj: any): any => {
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) continue;
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const nested = filterUpdated(value);
+          if (Object.keys(nested).length > 0) {
+            result[key] = nested;
+          }
+        } else {
+          result[key] = value;
+        }
+      }
+      return result;
+    };
+
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",

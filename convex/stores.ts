@@ -21,6 +21,7 @@ import {
 } from "./utils";
 import { omit, pick } from "es-toolkit";
 import { api, internal } from "./_generated/api";
+import { filterUpdated } from "./utils";
 
 export const getMyStore = query({
   handler: async (ctx) => {
@@ -266,22 +267,6 @@ export const updateStore = mutation({
         { storeId: store._id }
       );
   };
-
-    const filterUpdated = (obj: any): any => {
-      const result: any = {};
-      for (const [key, value] of Object.entries(obj)) {
-        if (value === undefined) continue;
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-          const nested = filterUpdated(value);
-          if (Object.keys(nested).length > 0) {
-            result[key] = nested;
-          }
-        } else {
-          result[key] = value;
-        }
-      }
-      return result;
-    };
 
 
     return ctx.db.patch(store._id, filterUpdated(args));
