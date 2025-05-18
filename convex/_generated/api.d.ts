@@ -31,7 +31,6 @@ import type * as paystack from "../paystack.js";
 import type * as products from "../products.js";
 import type * as shipping from "../shipping.js";
 import type * as stores from "../stores.js";
-import type * as terminal from "../terminal.js";
 import type * as users from "../users.js";
 import type * as utils from "../utils.js";
 
@@ -62,7 +61,6 @@ declare const fullApi: ApiFromModules<{
   products: typeof products;
   shipping: typeof shipping;
   stores: typeof stores;
-  terminal: typeof terminal;
   users: typeof users;
   utils: typeof utils;
 }>;

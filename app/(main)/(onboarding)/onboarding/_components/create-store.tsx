@@ -20,19 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import {
-  FormSelect,
-  FormSelectContent,
-  FormSelectItem,
-  FormSelectTrigger,
-  FormSelectValue,
-} from "@/components/form/form-select";
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
-import {
-  CountrySelect,
-  FlagComponent,
-  PhoneInput,
-} from "@/components/phone-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
@@ -45,13 +33,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import { showErrorToast } from "@/lib/handle-error";
@@ -60,7 +41,6 @@ import { useUser } from "@clerk/clerk-react";
 import { useAction } from "convex/react";
 import { omit } from "es-toolkit";
 import Link from "next/link";
-import * as RPNInput from "react-phone-number-input";
 
 
 const deliveryInfoSchema = z.object({
@@ -537,27 +517,6 @@ export default function CopyInput({
     </div>
   );
 }
-
-const useStates = (deliveryType: string) => {
-  const [states, setStates] = React.useState<
-    { name: string; countryCode: string; isoCode: string }[]
-  >([]);
-  const getStates = useAction(api.terminal.getStates);
-
-  React.useEffect(() => {
-    const fetchStates = async () => {
-      if (deliveryType == "terminal") {
-        const { data, error } = await tryCatch(getStates());
-        if (error) return toast.error("Failed to fetch states");
-        setStates(data);
-      }
-    };
-    fetchStates();
-  }, [deliveryType, getStates]);
-
-  return states;
-};
-
 
 const ShippingAddressForm = ({
   form,

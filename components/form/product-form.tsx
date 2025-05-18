@@ -11,11 +11,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { api } from "@/convex/_generated/api";
 import { DataModel, Id } from "@/convex/_generated/dataModel";
 import { ProductSchema } from "@/lib/validations/product";
-import { useQuery } from "convex/react";
-import { useParams } from "next/navigation";
 import React from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { RichTextFormInput, Tiptap } from "../tiptap";
@@ -25,7 +22,6 @@ import { CategoryPicker } from "./category-picker";
 import { ProductImagePicker } from "./image-picker";
 import { MetadataForm } from "./metadata-form";
 import { PropertyFieldArray } from "./property-form";
-import { ShippingForm } from "./shipping-form";
 import { UnitTypeform } from "./unit-type-form";
 import { VariantForm } from "./variant-form";
 
@@ -58,8 +54,6 @@ export function ProductForm({ onSubmit, form, children, disabled }: ProductFormP
     control: form.control,
     name: "metadatas",
   });
-
-  const { slug } = useParams<{ slug: Id<"stores"> }>();
 
   const handleBasicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

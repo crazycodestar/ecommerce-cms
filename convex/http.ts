@@ -528,63 +528,6 @@ http.route({
 });
 
 http.route({
-  path: "/api/terminal/states",
-  method: "GET",
-  handler: httpAction(async (ctx) => {
-    const result = await ctx.runAction(internal.terminal.apiGetStates);
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: new Headers({
-        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-        Vary: "origin",
-      }),
-    });
-  }),
-});
-
-http.route({
-  path: "/api/terminal/states",
-  method: "OPTIONS",
-  handler: httpAction(async (_, request) => handleCORS(request)),
-});
-
-http.route({
-  path: "/api/terminal/cities",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    const { searchParams } = new URL(request.url);
-    const stateCode = searchParams.get("stateCode");
-
-    if (!stateCode) {
-      return new Response("State code is required", {
-        status: 400,
-        headers: new Headers({
-          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-          Vary: "origin",
-        }),
-      });
-    }
-
-    const result = await ctx.runAction(internal.terminal.apiGetCities, {
-      stateCode,
-    });
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: new Headers({
-        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-        Vary: "origin",
-      }),
-    });
-  }),
-});
-
-http.route({
-  path: "/api/terminal/cities",
-  method: "OPTIONS",
-  handler: httpAction(async (_, request) => handleCORS(request)),
-});
-
-http.route({
   path: "/api/delivery/info",
   method: "OPTIONS",
   handler: httpAction(async (_, request) => handleCORS(request)),

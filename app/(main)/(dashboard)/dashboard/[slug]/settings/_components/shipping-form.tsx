@@ -1,19 +1,17 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, UseFormReturn } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader, Trash2 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { tryCatch } from "@/convex/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "convex/react";
+import { Loader, Trash2 } from "lucide-react";
 import React from "react";
-
-
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const shippingInfoSchema = z.object({
     deliveryOptions: z.array(
@@ -24,20 +22,23 @@ const shippingInfoSchema = z.object({
     ),
 });
 
-
 type ShippingInfoValues = z.infer<typeof shippingInfoSchema>;
 
-export function ShippingForm({ defaultValues, slug }: { defaultValues: Partial<ShippingInfoValues>, slug: string }) {
+export function ShippingForm({
+    defaultValues,
+    slug,
+}: {
+    defaultValues: Partial<ShippingInfoValues>;
+    slug: string;
+}) {
     const [isPending, startTransition] = React.useTransition();
     const updateStore = useMutation(api.stores.updateStore);
 
     const form = useForm<ShippingInfoValues>({
         resolver: zodResolver(shippingInfoSchema),
         defaultValues: defaultValues,
-        mode: "onChange"
+        mode: "onChange",
     });
-
-
 
     async function onSubmit(data: ShippingInfoValues) {
         startTransition(async () => {
@@ -55,15 +56,12 @@ export function ShippingForm({ defaultValues, slug }: { defaultValues: Partial<S
 
     return (
         <div className="space-y-6">
-
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <>
                         <div className="space-y-4">
                             <div>
-                                <p className="text-sm">
-                                    Manage delivery offerings and pricing
-                                </p>
+                                <p className="text-sm">Manage delivery offerings and pricing</p>
                             </div>
 
                             {form.watch("deliveryOptions")?.map((_, index) => (
@@ -83,9 +81,9 @@ export function ShippingForm({ defaultValues, slug }: { defaultValues: Partial<S
                                         type="button"
                                         className="text-destructive hover:text-destructive/90"
                                         onClick={() => {
-                                            const newOfferings = form.getValues("deliveryOptions").filter(
-                                                (_, i) => i !== index
-                                            );
+                                            const newOfferings = form
+                                                .getValues("deliveryOptions")
+                                                .filter((_, i) => i !== index);
                                             form.setValue("deliveryOptions", newOfferings);
                                         }}
                                     >
@@ -98,7 +96,8 @@ export function ShippingForm({ defaultValues, slug }: { defaultValues: Partial<S
                                 type="button"
                                 variant="outline"
                                 onClick={() => {
-                                    const currentOfferings = form.getValues("deliveryOptions") || [];
+                                    const currentOfferings =
+                                        form.getValues("deliveryOptions") || [];
                                     form.setValue("deliveryOptions", [
                                         ...currentOfferings,
                                         { name: "", price: 0 },
