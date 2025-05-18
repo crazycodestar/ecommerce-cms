@@ -132,16 +132,16 @@ export function Footer() {
 
         {/* Payment Methods */}
         <div className="flex justify-center gap-4 mb-8">
-          <Image
-            width={24}
-            height={24}
+          <img
+            // width={24}
+            // height={24}
             src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
             alt="Mastercard"
             className="h-6"
           />
-          <Image
-            width={24}
-            height={24}
+          <img
+            // width={24}
+            // height={24}
             src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
             alt="Visa"
             className="h-6"

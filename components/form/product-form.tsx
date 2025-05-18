@@ -60,7 +60,6 @@ export function ProductForm({ onSubmit, form, children, disabled }: ProductFormP
   });
 
   const { slug } = useParams<{ slug: Id<"stores"> }>();
-  const store = useQuery(api.stores.getStore, { slug });
 
   const handleBasicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -325,31 +324,6 @@ export function ProductForm({ onSubmit, form, children, disabled }: ProductFormP
                     )}
                   />
                 </div>
-                {store?.deliveryInfo.deliveryType === "terminal" && (
-                  <div className="py-4">
-                    <div className="mb-4">
-                      <div>
-                        <h1 className="text-2xl font-bold">
-                          Terminal Shipping Information
-                        </h1>
-                        <p className="text-muted-foreground">
-                          Fill in shipping information for this product to be for
-                          terminal shipping
-                        </p>
-                      </div>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="variants"
-                      render={() => (
-                        <FormItem>
-                          <ShippingForm form={form} />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
               </div>
             </div>
             <div className="flex justify-end gap-2">
@@ -400,8 +374,4 @@ export const formatProductFromForm = (
     })),
   })),
   metadataIds: values.metadatas.map((m) => m._id as Id<"metadatas">),
-  terminal: values.terminal && {
-    weight: values.terminal.weight,
-    packageId: values.terminal.packageId as Id<"packages">,
-  },
 });

@@ -20,7 +20,12 @@ export default function SettingsGeneralPage() {
         </p>
       </div>
       <Separator />
-      <ShippingForm defaultValues={store.deliveryInfo} slug={slug} />
+      <ShippingForm
+        defaultValues={{
+          deliveryOptions: store.deliveryOptions,
+        }}
+        slug={slug}
+      />
     </div>
   );
 }

@@ -33,10 +33,6 @@ export default function ProductsPage() {
       price: 0,
       stock: 10,
       isUnspecified: false,
-      terminal: store?.deliveryInfo.deliveryType === "terminal" ? {
-        weight: 0,
-        packageId: "",
-      } : undefined,
     },
   });
 
@@ -57,7 +53,7 @@ export default function ProductsPage() {
         });
 
         toast.success("Product Created Successfully");
-        router.back();
+        router.push(`/dashboard/${slug}/products`);
       } catch (err) {
         showErrorToast(err);
       } finally {
