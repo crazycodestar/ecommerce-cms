@@ -11,6 +11,7 @@ import { type Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ConvexClientProvider } from "../ConvexClientProvider";
+import { Footer } from "./_components/footer";
 
 export const metadata: Metadata = {
   title: "Convertly CMS",
@@ -61,6 +62,7 @@ export default function RootLayout({
           </nav>
         </header>
         <article className="flex-1 flex flex-col">{children}</article>
+        <Footer />
       </div>
     </ConvexClientProvider>
   );

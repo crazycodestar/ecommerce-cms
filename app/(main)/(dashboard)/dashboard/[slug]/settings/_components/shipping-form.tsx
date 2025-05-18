@@ -81,7 +81,7 @@ const useStates = () => {
         };
 
         fetchStates();
-    }, []);
+    }, [getStates]);
 
     return states;
 };
@@ -102,7 +102,7 @@ const useCities = (stateCode?: string) => {
         };
 
         fetchCities();
-    }, [stateCode]);
+    }, [stateCode, getCities]);
 
     return cities;
 };

@@ -589,7 +589,7 @@ const useStates = (deliveryType: string) => {
       }
     };
     fetchStates();
-  }, [deliveryType]);
+  }, [deliveryType, getStates]);
 
   return states;
 };
@@ -610,7 +610,7 @@ const useCities = (stateCode?: string) => {
     };
 
     fetchCities();
-  }, [stateCode]);
+  }, [stateCode, getCities]);
 
   return cities;
 };

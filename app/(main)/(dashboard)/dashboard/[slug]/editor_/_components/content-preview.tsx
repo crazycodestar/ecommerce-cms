@@ -15,6 +15,7 @@ import {
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import Image from "next/image";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,15 +106,16 @@ function HeroSection({ formValues }: HeroSectionProps) {
     api.contents.getImageUrl,
     imageId
       ? {
-          imageId,
-        }
+        imageId,
+      }
       : "skip"
   );
   return (
     <div className="relative h-[50vh] w-full">
-      <img
+      <Image
         src={imageUrl ?? "/placeholder.svg"}
         alt="Hero"
+        fill
         className="w-full h-full object-cover absolute top-0 left-0"
       />
       <div className="absolute top-0 left-0 w-full h-full bg-black/30"></div>
@@ -146,13 +148,17 @@ const MyProducts = () => {
       {products?.map((product) => (
         <Link key={product._id} href="#" className="flex flex-col gap-2">
           <div className="relative w-full h-full overflow-hidden group">
-            <img
+            <Image
               src={product.imageUrls[0]}
               alt={product.name}
+              width={300}
+              height={400}
               className="w-full aspect-[3/4] object-cover transition-transform duration-250 group-hover:scale-105"
             />
             {product.imageUrls[1] && (
-              <img
+              <Image
+                width={300}
+                height={400}
                 src={product.imageUrls[1]}
                 alt={product.name}
                 className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-250 group-hover:opacity-100"

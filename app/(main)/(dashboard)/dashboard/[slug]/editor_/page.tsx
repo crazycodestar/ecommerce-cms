@@ -4,7 +4,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
-import { Loader, Loader2 } from "lucide-react";
+import React from "react";
 import { Browser } from "./_components/browser";
 import {
   ContentForm,
@@ -12,9 +12,8 @@ import {
   useContentForm,
 } from "./_components/content-form";
 import { ContentPreview } from "./_components/content-preview";
-import { EditorSidebar } from "./_components/editor-sidebar";
-import React from "react";
 import { DeploymentLoading } from "./_components/deployment-loading";
+import { EditorSidebar } from "./_components/editor-sidebar";
 
 const deploymentStages = [
   "Setting up project",
@@ -31,16 +30,6 @@ export default function ContentPage() {
     isPending: isPendingForm,
     isGeneratingSite,
   } = useContentForm(contentJson ?? undefined);
-
-  const [currentStage, setCurrentStage] = React.useState(0);
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentStage((prev) => (prev + 1) % deploymentStages.length);
-    }, 3000); // Change stage every 3 seconds
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <SidebarProvider

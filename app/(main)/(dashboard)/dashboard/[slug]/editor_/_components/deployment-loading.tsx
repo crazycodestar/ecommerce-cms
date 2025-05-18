@@ -1,13 +1,11 @@
-import { CircleAlert, Loader } from "lucide-react";
-import Link from "next/link";
-import React from "react";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { useParams, useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
-import { toast } from "sonner";
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2, CircleAlert, Loader } from "lucide-react";
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
+import React from "react";
 
 const deploymentStages = [
   "Setting up project",
@@ -102,8 +100,8 @@ export const DeploymentLoading = ({ isSuccess }: DeploymentLoadingProps) => {
           <h2 className="font-semibold">Deployment Failed</h2>
         </div>
         <p className="text-sm text-muted-foreground text-center max-w-sm">
-          We couldn't complete the deployment process. This might be due to a
-          temporary issue or network problem.
+          We couldn&apos;t complete the deployment process. This might be due to
+          a temporary issue or network problem.
         </p>
         <Button asChild variant="default">
           <Link href="/dashboard">Return to Dashboard</Link>

@@ -1,10 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { ArrowRight, AtSign, ScrollText, Trello } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ComponentProps } from "react";
+import { FeatureCard } from "./_components/feature-card";
 
 const features = [
   {
@@ -23,7 +22,7 @@ const features = [
 
 export default async function Home() {
   return (
-    <div>
+    <>
       <main className="md:ml-8 lg:ml-34 max-w-[1385px] grid grid-cols-1 gap-10 md:gap-4 md:grid-cols-[1fr_2fr] py-16">
         <div className="flex flex-col gap-6 justify-center ml-6 mr-6 sm:ml-16 sm:mr-16 md:ml-0 md:mr-0">
           <Badge asChild className="group font-semibold py-1 rounded-full">
@@ -82,33 +81,33 @@ export default async function Home() {
         <div className="flex flex-col mt-16 gap-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard
-              image={{
-                src: "/socials.png",
-                alt: "socials",
-                width: 338,
-                height: 157,
-              }}
+              image={<Image
+                src="/socials.png"
+                alt="socials"
+                width={338}
+                height={157}
+              />}
               imageContainerClassName="pt-8 md:pt-0 md:px-4 lg:px-8 xl:px-0"
               title="Integrates with socials"
               description="Manage campaigns across socials"
             />
             <FeatureCard
-              image={{
-                src: "/products.png",
-                alt: "products",
-                width: 434,
-                height: 305,
-              }}
+              image={<Image
+                src="/products.png"
+                alt="products"
+                width={434}
+                height={305}
+              />}
               title="Manage product inventory"
               description="Manage inventory in physical and online store"
             />
             <FeatureCard
-              image={{
-                src: "/logistics.png",
-                alt: "logistics",
-                width: 266,
-                height: 122,
-              }}
+              image={<Image
+                src="/logistics.png"
+                alt="logistics"
+                width={266}
+                height={122}
+              />}
               imageContainerClassName="pt-8 md:pt-0 md:px-4"
               title="Logistics and shipping"
               description="Integrates with 20+ local and internal providers"
@@ -116,24 +115,24 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-8">
             <FeatureCard
-              image={{
-                src: "/scheduling.png",
-                alt: "scheduling",
-                width: 741,
-                height: 246,
-                className: "w-full pl-7",
-              }}
+              image={<Image
+                src="/scheduling.png"
+                alt="scheduling"
+                width={741}
+                height={246}
+                className="w-full pl-7"
+              />}
               imageContainerClassName="pt-10 items-end"
               title="Coordinate campaigns"
               description="Schedule campaigns and posts across all platforms"
             />
             <FeatureCard
-              image={{
-                src: "/site-builder.png",
-                alt: "site-builder",
-                width: 384,
-                height: 362,
-              }}
+              image={<Image
+                src="/site-builder.png"
+                alt="site-builder"
+                width={384}
+                height={362}
+              />}
               title="Build your site"
               description="Build your site with our easy to use site builder"
             />
@@ -166,83 +165,6 @@ export default async function Home() {
           <Link href="/dashboard">Get started for free</Link>
         </Button>
       </div>
-      <Footer />
-    </div>
+    </>
   );
 }
-
-const FeatureCard = ({
-  image,
-  title,
-  description,
-  imageContainerClassName,
-}: {
-  image: ComponentProps<typeof Image>;
-  title: string;
-  description: string;
-  imageContainerClassName?: string;
-}) => {
-  return (
-    <div className="flex flex-col gap-4 bg-muted/60 rounded-lg pb-8">
-      <div
-        className={cn(
-          "w-full h-full flex flex-col justify-center items-center",
-          imageContainerClassName
-        )}
-      >
-        <Image {...image} />
-      </div>
-      <div className="px-8">
-        <h3 className="text-xl">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
-      </div>
-    </div>
-  );
-};
-
-const Footer = () => {
-  return (
-    <footer className="border-t px-4 md:px-8">
-      <div className="container mx-auto py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <Image src="/logo.svg" alt="logo" width={50} height={50} />
-              <span className="font-semibold text-primary">ConvertlyKit</span>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              <p>convertlybusinesses@gmail.com</p>
-              <p>Nigeria, Lagos Ikoyi</p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h3 className="font-semibold">Socials</h3>
-            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-              <a href="#">X</a>
-              <a href="#">LinkedIn</a>
-              <a href="#">Instagram</a>
-            </div>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h3 className="font-semibold">About</h3>
-            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-              <a href="#">Contact us</a>
-              <a href="#">Terms of Service</a>
-              <a href="#">Privacy Policy</a>
-            </div>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h3 className="font-semibold">Get Started</h3>
-            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-              <a href="#">Sign in</a>
-              <a href="#">Log in</a>
-              <a href="#">Pricing</a>
-              <a href="#">Blog</a>
-              <a href="#">Case Studies</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-};

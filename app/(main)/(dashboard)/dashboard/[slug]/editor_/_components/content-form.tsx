@@ -1,8 +1,13 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, UseFormReturn } from "react-hook-form";
-import { z } from "zod";
+import {
+  FormSelect,
+  FormSelectContent,
+  FormSelectItem,
+  FormSelectTrigger,
+  FormSelectValue,
+} from "@/components/form/form-select";
+import { ImageUploader } from "@/components/form/image-uploader";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,30 +19,23 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageUploader } from "@/components/form/image-uploader";
-import { CollectionListForm } from "./collection-list-form";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Hexagon, Sparkles, Star, Layers, Loader } from "lucide-react";
-import {
-  FormSelect,
-  FormSelectItem,
-  FormSelectContent,
-  FormSelectValue,
-  FormSelectTrigger,
-} from "@/components/form/form-select";
-import React, { useEffect, useState, useTransition } from "react";
-import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { tryCatch } from "@/lib/try-catch";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "convex/react";
+import { Loader } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useState, useTransition } from "react";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
-import { useSearchParams, useRouter } from "next/navigation";
+import { z } from "zod";
 
 // Define the schema for the collection list item
-const collectionListItemSchema = z.object({
-  imageId: z.string().min(1, { message: "Image is required" }),
-  title: z.string().min(1, { message: "Title is required" }),
-  collectionId: z.string().min(1, { message: "Collection ID is required" }),
-});
+// const collectionListItemSchema = z.object({
+//   imageId: z.string().min(1, { message: "Image is required" }),
+//   title: z.string().min(1, { message: "Title is required" }),
+//   collectionId: z.string().min(1, { message: "Collection ID is required" }),
+// });
 
 // Define the main form schema
 const contentFormSchema = z.object({
@@ -73,10 +71,6 @@ const contentFormSchema = z.object({
 });
 
 export type ContentFormValues = z.infer<typeof contentFormSchema>;
-
-interface ContentFormProps {
-  onValuesChange?: (values: ContentFormValues) => void;
-}
 
 export const useContentForm = (contentJson?: string) => {
   const content = contentJson ? JSON.parse(contentJson) : undefined;
@@ -115,7 +109,7 @@ export const useContentForm = (contentJson?: string) => {
     if (store?.siteUrl) {
       setIsGeneratingSite(false);
     }
-  }, [store?.siteUrl, isFromOnboarding, router, searchParams]);
+  }, [store?.siteUrl, isFromOnboarding, router, searchParams, isGeneratingSite]);
 
   async function onSubmit(data: ContentFormValues) {
     startTransition(async () => {
@@ -154,60 +148,6 @@ export function ContentForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-12">
-        {/* Theme Selection */}
-        {/* <FormField
-          control={form.control}
-          name="theme"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="block mb-2 text-base font-semibold">
-                Theme
-              </FormLabel>
-              <FormControl>
-                <ToggleGroup
-                  type="single"
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="flex flex-wrap"
-                >
-                  <ThemeToggleItem
-                    value="simple"
-                    label="Simple"
-                    icon={Hexagon}
-                    selected={field.value === "simple"}
-                    index={0}
-                    total={4}
-                  />
-                  <ThemeToggleItem
-                    value="playful"
-                    label="Playful"
-                    icon={Sparkles}
-                    selected={field.value === "playful"}
-                    index={1}
-                    total={4}
-                  />
-                  <ThemeToggleItem
-                    value="elegant"
-                    label="Elegant"
-                    icon={Star}
-                    selected={field.value === "elegant"}
-                    index={2}
-                    total={4}
-                  />
-                  <ThemeToggleItem
-                    value="brutalist"
-                    label="Brutalist"
-                    icon={Layers}
-                    selected={field.value === "brutalist"}
-                    index={3}
-                    total={4}
-                  />
-                </ToggleGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> */}
         {/* Brand Color Picker */}
         <FormField
           control={form.control}
@@ -254,7 +194,7 @@ export function ContentForm({
                       </button> */}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      Pick your brand's primary color
+                      Pick your brand&apos;s primary color
                     </span>
                   </div>
                 </div>
@@ -360,43 +300,5 @@ export function ContentForm({
         </div>
       </form>
     </Form>
-  );
-}
-
-// Reusable ThemeToggleItem component
-function ThemeToggleItem({
-  value,
-  label,
-  icon: Icon,
-  selected,
-  index,
-  total,
-}: {
-  value: string;
-  label: string;
-  icon: React.ElementType;
-  selected: boolean;
-  index: number;
-  total: number;
-}) {
-  let rounding = "";
-  if (index === 0) rounding = "rounded-l-lg";
-  else if (index === total - 1) rounding = "rounded-r-lg";
-  else rounding = "rounded-none";
-
-  let border = "border";
-  if (index !== 0) border += " -ml-px";
-
-  return (
-    <ToggleGroupItem
-      value={value}
-      aria-label={label}
-      className={`w-fit shrink-0 flex items-center gap-2 px-3 py-2 ${rounding} ${border} transition-colors duration-150 "
-        ${selected ? "bg-pink-50 border-pink-500 text-pink-600" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}
-      `}
-    >
-      <Icon className="w-4 h-4" />
-      <span>{label}</span>
-    </ToggleGroupItem>
   );
 }

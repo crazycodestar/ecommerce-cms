@@ -1,10 +1,8 @@
 "use client";
 
-import { ArrowLeftIcon, PlusIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +16,6 @@ import Link from "next/link";
 import { useState } from "react";
 import ChatInput from "./chat-input";
 import ChatMessage from "./chat-message";
-import { ContentForm } from "./content-form";
 // Define message types
 type MessageRole = "user" | "assistant";
 

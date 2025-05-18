@@ -7,8 +7,7 @@ import {
   ArrowRight,
   Copy,
   Maximize2,
-  RefreshCw,
-  X,
+  RefreshCw
 } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";

@@ -43,7 +43,7 @@ const collectionListItemSchema = z.object({
 });
 
 // Define the main form schema
-const contentFormSchema = z.object({
+export const contentFormSchema = z.object({
   collectionList: z.object({
     items: z
       .array(collectionListItemSchema)

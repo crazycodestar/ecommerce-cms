@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function Footer() {
@@ -131,12 +132,16 @@ export function Footer() {
 
         {/* Payment Methods */}
         <div className="flex justify-center gap-4 mb-8">
-          <img
+          <Image
+            width={24}
+            height={24}
             src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
             alt="Mastercard"
             className="h-6"
           />
-          <img
+          <Image
+            width={24}
+            height={24}
             src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png"
             alt="Visa"
             className="h-6"
