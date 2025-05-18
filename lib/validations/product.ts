@@ -50,25 +50,21 @@ export const variants = z.array(
   })
 );
 
-export const properties = z
-  .array(
-    z
-      .object({
-        property,
-        value: z.union([
-          z.string().min(1),
-          z.coerce.number(),
-          z.array(z.string()),
-        ]),
-      })
-      .refine((val) => typeof val.value === val.property.type, {
-        message: "Required",
-        path: ["value"],
-      })
-  )
-  .min(1, {
-    message: "Atleast 1 properties are required",
-  });
+export const properties = z.array(
+  z
+    .object({
+      property,
+      value: z.union([
+        z.string().min(1),
+        z.coerce.number(),
+        z.array(z.string()),
+      ]),
+    })
+    .refine((val) => typeof val.value === val.property.type, {
+      message: "Required",
+      path: ["value"],
+    })
+);
 
 export const productSchema = z
   .object({
@@ -92,9 +88,8 @@ export const productSchema = z
     stock: z.coerce.number(),
     unitType: z.string().min(1, { message: "Unit Type is Required" }),
     isUnspecified: z.boolean(),
-    categoryId: z.string().min(1, { message: "Category is Required" }),
-    // FIXME: Change to just properties -> we are allowing them put and remove properties so "requiredProperties" doesn't really work for this field
-    properties: properties,
+    categoryId: z.string().optional(),
+    properties: properties.optional(),
     variants,
     metadatas: z.array(
       z.object({

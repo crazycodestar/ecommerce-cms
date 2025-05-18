@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Loader } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -24,21 +24,28 @@ export default function ProductsPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const createProduct = useMutation(api.products.createProduct);
+  const defaultUnitType = useQuery(api.products.getDefaultUnitType);
 
   const form = useForm<ProductSchema>({
     resolver: zodResolver(productSchema),
     defaultValues: {
+      images: [{ imageId: "kg2fs2pk4je4q2nvx4jhpx25cn7g5r84" }],
       name: "",
       price: 0,
-      stock: 0,
+      stock: 10,
       isUnspecified: false,
-      categoryId: "",
       terminal: store?.deliveryInfo.deliveryType === "terminal" ? {
         weight: 0,
         packageId: "",
       } : undefined,
     },
   });
+
+  useEffect(() => {
+    if (defaultUnitType) {
+      form.setValue("unitType", defaultUnitType._id);
+    }
+  }, [defaultUnitType, form]);
 
   function handleSubmit(values: z.infer<typeof productSchema>) {
     startTransition(async () => {
@@ -62,11 +69,11 @@ export default function ProductsPage() {
 
   return (
     <>
-      <div className="mx-auto max-w-2xl w-full py-10">
-        <ProductForm form={form} onSubmit={handleSubmit}>
-          <Button type="submit" disabled={isPending}>
+      <div className="mx-auto max-w-2xl w-full py-6">
+        <ProductForm disabled={isPending} form={form} onSubmit={handleSubmit}>
+          <Button disabled={isPending}>
             {isPending && <Loader className="mr-2 size-4 animate-spin" />}
-            Upload Product
+            Create Product
           </Button>
         </ProductForm>
       </div>
