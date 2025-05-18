@@ -29,7 +29,6 @@ export default function ProductsPage() {
   const form = useForm<ProductSchema>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      images: [{ imageId: "kg2fs2pk4je4q2nvx4jhpx25cn7g5r84" }],
       name: "",
       price: 0,
       stock: 10,
