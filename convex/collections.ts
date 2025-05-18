@@ -398,7 +398,7 @@ export const getProductsByCollectionSlugAndStoreSlug = query({
       return !!properties.every((p) => {
         if (p.value.length === 0) return true;
         // console.log("cop: ", cop);
-        const prop = cop?.properties.find((pp) => pp.propertyId === p.key);
+        const prop = cop?.properties?.find((pp) => pp.propertyId === p.key);
         // console.log("prop: ", prop);
         if (!prop) return false;
         // console.log("typeof", typeof prop?.value);
@@ -522,7 +522,7 @@ export const getProductsByCategoryIdAndStoreSlug = query({
         return !!properties.every((p) => {
           if (p.value.length === 0) return true;
           // console.log("cop: ", cop);
-          const prop = cop?.properties.find((pp) => pp.propertyId === p.key);
+          const prop = cop?.properties?.find((pp) => pp.propertyId === p.key);
           // console.log("prop: ", prop);
           if (!prop) return false;
           // console.log("typeof", typeof prop?.value);
@@ -573,7 +573,7 @@ export const getProductsByCategoryIdAndStoreSlug = query({
       return !!properties.every((p) => {
         if (p.value.length === 0) return true;
         // console.log("cop: ", cop);
-        const prop = cop?.properties.find((pp) => pp.propertyId === p.key);
+        const prop = cop?.properties?.find((pp) => pp.propertyId === p.key);
         // console.log("prop: ", prop);
         if (!prop) return false;
         // console.log("typeof", typeof prop?.value);
@@ -769,7 +769,7 @@ export const apiGetProductsByCollectionSlugAndStoreSlug = internalQuery({
       return !!properties.every((p) => {
         if (p.value.length === 0) return true;
         // console.log("cop: ", cop);
-        const prop = cop?.properties.find((pp) => pp.propertyId === p.key);
+        const prop = cop?.properties?.find((pp) => pp.propertyId === p.key);
         // console.log("prop: ", prop);
         if (!prop) return false;
         // console.log("typeof", typeof prop?.value);
@@ -854,7 +854,7 @@ export const apiGetProductsByCategoryIdAndStoreSlug = internalQuery({
         return !!properties.every((p) => {
           if (p.value.length === 0) return true;
           // console.log("cop: ", cop);
-          const prop = cop?.properties.find((pp) => pp.propertyId === p.key);
+          const prop = cop?.properties?.find((pp) => pp.propertyId === p.key);
           // console.log("prop: ", prop);
           if (!prop) return false;
           // console.log("typeof", typeof prop?.value);
@@ -905,7 +905,7 @@ export const apiGetProductsByCategoryIdAndStoreSlug = internalQuery({
       return !!properties.every((p) => {
         if (p.value.length === 0) return true;
         // console.log("cop: ", cop);
-        const prop = cop?.properties.find((pp) => pp.propertyId === p.key);
+        const prop = cop?.properties?.find((pp) => pp.propertyId === p.key);
         // console.log("prop: ", prop);
         if (!prop) return false;
         // console.log("typeof", typeof prop?.value);

@@ -1,43 +1,10 @@
-import { omit } from "convex-helpers";
-import {
-  internalMutation,
-  internalQuery,
-  mutation,
-  query,
-} from "./_generated/server";
+import { v } from "convex/values";
+import { internalMutation, internalQuery, query } from "./_generated/server";
 import { Packages } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifierWithAuthError,
 } from "./utils";
-import { api } from "./_generated/api";
-import { v } from "convex/values";
-import { BadRequestError } from "./error";
-
-export const createPackage = mutation({
-  args: omit(Packages.withoutSystemFields, ["storeId"]),
-  handler: async (ctx, args) => {
-    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
-    const store = await getStoreByTokenIdentifierWithAuthError(
-      ctx,
-      tokenIdentifier
-    );
-
-    if (store.deliveryInfo.deliveryType !== "terminal") {
-      throw new BadRequestError("store is not using terminal");
-    }
-
-    const packageId = await ctx.db.insert("packages", {
-      ...args,
-      storeId: store._id,
-    });
-    await ctx.scheduler.runAfter(0, api.terminal.createPackaging, {
-      packageId,
-      terminalSecretKey: store.deliveryInfo.terminalSecretKey,
-    });
-    return packageId;
-  },
-});
 
 export const internalGetPackageById = internalQuery({
   args: {

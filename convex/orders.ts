@@ -1,47 +1,21 @@
-import { omit } from "convex-helpers";
+import { omit, pick } from "convex-helpers";
 import { v } from "convex/values";
+import { api, internal } from "./_generated/api";
+import { DataModel } from "./_generated/dataModel";
 import {
   action,
+  internalAction,
   internalMutation,
+  internalQuery,
   query,
   QueryCtx,
-  internalQuery,
-  internalAction,
 } from "./_generated/server";
 import { InternalServerError, NotFoundError } from "./error";
 import { Orders } from "./schema";
-import { pick } from "convex-helpers";
-import { api, internal } from "./_generated/api";
-import { DataModel, Id } from "./_generated/dataModel";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifierWithAuthError,
-  filterUpdated,
 } from "./utils";
-
-export const updateTerminalOrderTrackingInformation = internalMutation({
-  args: {
-    terminalTrackingNumber: v.optional(v.string()),
-    terminalTrackingUrl: v.optional(v.string()),
-    terminalAddressId: v.optional(v.string()),
-    terminalParcelId: v.optional(v.string()),
-    rateId: v.optional(v.string()),
-    orderId: v.id("orders"),
-  },
-  handler: async (ctx, { orderId, ...args }) => {
-    const order = await ctx.db.get(orderId);
-    if (!order) throw new NotFoundError("order not found");
-
-    const updated = filterUpdated({
-      ...order.terminalInfo,
-      ...args,
-    });
-
-    return ctx.db.patch(order._id, {
-      terminalInfo: updated,
-    });
-  },
-});
 
 export const updateOrderPaymentInformation = internalMutation({
   args: {

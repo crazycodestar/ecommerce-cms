@@ -1,15 +1,16 @@
+import { omit } from "convex-helpers";
 import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
 import { DataModel, Id } from "./_generated/dataModel";
 import { internalQuery, mutation, query, QueryCtx } from "./_generated/server";
-import { BadRequestError, NotFoundError, UnauthorizedError } from "./error";
+import { defaultUnitTypeName } from "./constants";
+import { NotFoundError, UnauthorizedError } from "./error";
 import { Categories, Metadatas, Products, UnitTypes } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifier,
   getTokenIdentifierWithAuthError,
 } from "./utils";
-import { omit } from "convex-helpers";
 
 export const getProductImageUrl = query({
   args: {
@@ -41,7 +42,9 @@ async function getRichProduct(ctx: QueryCtx, id: Id<"products">) {
     return [c, ...cat];
   }
 
-  const categoryTree = await getCategoryById(product.categoryId);
+  const categoryTree = product.categoryId
+    ? await getCategoryById(product.categoryId)
+    : [];
   const richProduct = {
     ...product,
     imageUrls: await Promise.all(
@@ -49,12 +52,14 @@ async function getRichProduct(ctx: QueryCtx, id: Id<"products">) {
     ),
     price: product.price,
     categoryTree,
-    properties: await Promise.all(
-      product.properties.map(async (p) => ({
-        ...p,
-        property: await ctx.db.get(p.propertyId),
-      }))
-    ),
+    properties: product.properties
+      ? await Promise.all(
+          product.properties.map(async (p) => ({
+            ...p,
+            property: await ctx.db.get(p.propertyId),
+          }))
+        )
+      : [],
     unit: (await ctx.db.get(product.unitType))?.name,
     variants:
       product.variants &&
@@ -180,15 +185,17 @@ export const createProduct = mutation({
       throw new UnauthorizedError("Unauthorised access");
 
     // cronjob to add potential new options in each property
-    ctx.scheduler.runAfter(0, api.products.AddOptionToProperties, {
-      // FIXME: Why doesn't it filter out the types that aren't string
-      properties: product.properties
-        .filter((p) => typeof p.value === "string")
-        .map((p) => ({
-          propertyId: p.propertyId,
-          option: p.value as string,
-        })),
-    });
+    if (product.properties && product.properties.length > 0) {
+      ctx.scheduler.runAfter(0, api.products.AddOptionToProperties, {
+        // FIXME: Why doesn't it filter out the types that aren't string
+        properties: product.properties
+          .filter((p) => typeof p.value === "string")
+          .map((p) => ({
+            propertyId: p.propertyId,
+            option: p.value as string,
+          })),
+      });
+    }
 
     const variants =
       product.variants &&
@@ -487,6 +494,20 @@ export const createUnitType = mutation({
   },
 });
 
+export const getDefaultUnitType = query(async (ctx) => {
+  const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+  const store = await getStoreByTokenIdentifierWithAuthError(
+    ctx,
+    tokenIdentifier
+  );
+
+  return ctx.db
+    .query("unitTypes")
+    .filter((q) => q.eq(q.field("storeId"), store._id))
+    .filter((q) => q.eq(q.field("name"), defaultUnitTypeName))
+    .unique();
+});
+
 export const getUnitTypes = query(async (ctx) => {
   const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
   const store = await getStoreByTokenIdentifierWithAuthError(
@@ -498,26 +519,6 @@ export const getUnitTypes = query(async (ctx) => {
     .query("unitTypes")
     .filter((q) => q.eq(q.field("storeId"), store._id))
     .collect();
-});
-
-// internal functions
-export const getProductsPackages = internalQuery({
-  args: {
-    productIds: v.array(v.id("products")),
-  },
-  handler: async (ctx, { productIds }) => {
-    return Promise.all(
-      productIds.map(async (productId) => {
-        const product = await ctx.db.get(productId);
-        if (!product) return;
-
-        if (!product.terminal)
-          throw new BadRequestError("store is not using terminal");
-
-        return ctx.db.get(product.terminal.packageId);
-      })
-    );
-  },
 });
 
 export const getProductByIds = internalQuery({

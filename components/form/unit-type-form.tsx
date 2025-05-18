@@ -98,7 +98,7 @@ export const UnitTypeform = <T extends FieldValues>({
         name={name}
         render={({ field }) => (
           <FormItem>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select value={field.value} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Unit" />

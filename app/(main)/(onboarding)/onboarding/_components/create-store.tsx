@@ -6,6 +6,7 @@ import React from "react";
 import { useForm, useWatch, type UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { tryCatch } from "@/lib/try-catch";
 
 import { Button } from "@/components/ui/button";
 
@@ -19,19 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import {
-  FormSelect,
-  FormSelectContent,
-  FormSelectItem,
-  FormSelectTrigger,
-  FormSelectValue,
-} from "@/components/form/form-select";
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
-import {
-  CountrySelect,
-  FlagComponent,
-  PhoneInput,
-} from "@/components/phone-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
@@ -44,23 +33,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
-import { tryCatch } from "@/convex/utils";
 import { showErrorToast } from "@/lib/handle-error";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/clerk-react";
 import { useAction } from "convex/react";
 import { omit } from "es-toolkit";
 import Link from "next/link";
-import * as RPNInput from "react-phone-number-input";
 
 
 const deliveryInfoSchema = z.object({
@@ -202,16 +182,21 @@ export function CreateStore() {
   async function onSubmit(values: CreateStoreSchema) {
     startCreateTransaction(async () => {
       try {
-        const res = await submitOnboarding({
+        const { data: slug, error } = await tryCatch(submitOnboarding({
           ...omit(values, ["slug", "hasAddedWebhookAndCallbackURL"]),
           slug: values.slug!,
-        });
-        if (res.message) {
-          await user?.reload();
-          form.reset();
-          toast.success("store created successfully");
-          router.push("/dashboard");
+        }));
+
+        if (error) {
+          console.error(error);
+          showErrorToast(error);
+          return;
         }
+
+        await user?.reload();
+        form.reset();
+        toast.success("store created successfully");
+        return router.push(`/dashboard/${slug}/editor_?from=onboarding`);
       } catch (err) {
         toast.error(showErrorToast(err));
       }
@@ -532,27 +517,6 @@ export default function CopyInput({
     </div>
   );
 }
-
-const useStates = (deliveryType: string) => {
-  const [states, setStates] = React.useState<
-    { name: string; countryCode: string; isoCode: string }[]
-  >([]);
-  const getStates = useAction(api.terminal.getStates);
-
-  React.useEffect(() => {
-    const fetchStates = async () => {
-      if (deliveryType == "terminal") {
-        const { data, error } = await tryCatch(getStates());
-        if (error) return toast.error("Failed to fetch states");
-        setStates(data);
-      }
-    };
-    fetchStates();
-  }, [deliveryType]);
-
-  return states;
-};
-
 
 const ShippingAddressForm = ({
   form,

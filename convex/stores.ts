@@ -5,11 +5,7 @@ import {
   mutation,
   query,
 } from "./_generated/server";
-import {
-  ConflictError,
-  NotFoundError,
-  UnauthorizedError,
-} from "./error";
+import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
 import { Stores } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
@@ -29,10 +25,7 @@ export const getMyStore = query({
       .query("stores")
       .withIndex("by_owner", (q) => q.eq("owner", tokenIdentifier))
       .unique();
-    if (!store) return null;
-    return {
-      slug: store.slug,
-    };
+    return store;
   },
 });
 
@@ -81,11 +74,11 @@ export const getStoreCategories = query({
   },
 });
 
-
-
 export const createStoreArgs = omit(Stores.withoutSystemFields, [
   "owner",
   "contents",
+  "contentJson",
+  "siteUrl",
 ]);
 
 export const createStore = mutation({
@@ -115,7 +108,6 @@ export const createStore = mutation({
       contents: [],
     });
 
-
     // Add "unit" unit type for store
     await ctx.db.insert("unitTypes", {
       name: "Unit",
@@ -140,10 +132,14 @@ export const updateStore = mutation({
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     owner: v.optional(v.string()),
-    deliveryOptions: v.optional(v.array(v.object({
-      name: v.string(),
-      price: v.number(),
-    }))),
+    deliveryOptions: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          price: v.number(),
+        })
+      )
+    ),
     // Shipping Information with terminal
     // Payment Information with Paystack
     publicKey: v.optional(v.string()),
@@ -159,7 +155,6 @@ export const updateStore = mutation({
 
     if (store.slug !== slug)
       throw new UnauthorizedError("Unauthorized to access store");
-
 
     return ctx.db.patch(store._id, args);
   },
@@ -187,4 +182,31 @@ export const getStoreBySlug = internalQuery({
 
     return store;
   },
+});
+
+export const updateStoreByStoreId = internalMutation({
+  args: {
+    storeId: v.id("stores"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    owner: v.optional(v.string()),
+    // Shipping Information with terminal
+    terminalSecretKey: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    line1: v.optional(v.string()),
+    line2: v.optional(v.string()),
+    zip: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    country: v.optional(v.string()),
+    // Payment Information with Paystack
+    publicKey: v.optional(v.string()),
+    secretKey: v.optional(v.string()),
+    // actions
+    siteUrl: v.optional(v.string()),
+  },
+  handler: (ctx, { storeId, ...args }) => ctx.db.patch(storeId, args),
 });

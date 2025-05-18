@@ -133,26 +133,28 @@ export const deleteUser = internalMutation({
 
 export const processOnboarding = internalMutation({
   args: createStoreArgs,
-  handler: async (ctx, args) => {
-    await ctx.runMutation(api.stores.createStore, args);
-    return "success";
+  handler: async (ctx, args): Promise<string> => {
+    return ctx.runMutation(api.stores.createStore, args);
   },
 });
 
 export const submitOnboarding = action({
   args: createStoreArgs,
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<string> => {
     const tokenIdentifier = await getTokenIdentifier(ctx);
     if (!tokenIdentifier) throw new UnauthorizedError();
 
     try {
-      await ctx.runMutation(internal.users.processOnboarding, args);
-      const res = await clerkClient().users.updateUser(tokenIdentifier, {
+      const slug = await ctx.runMutation(
+        internal.users.processOnboarding,
+        args
+      );
+      await clerkClient().users.updateUser(tokenIdentifier, {
         publicMetadata: {
           onboardingComplete: true,
         },
       });
-      return { message: res.publicMetadata };
+      return slug;
     } catch (error) {
       console.error("Error processing onboarding: ", error);
       throw error;

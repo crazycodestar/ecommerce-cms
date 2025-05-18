@@ -210,6 +210,8 @@ export const Stores = Table("stores", {
   owner: v.string(),
   slug: v.string(),
   contents: v.array(contentTypes),
+  contentJson: v.optional(v.string()),
+  siteUrl: v.optional(v.string()),
   deliveryOptions: v.array(
     v.object({
       name: v.string(),
@@ -232,7 +234,7 @@ export const Products = Table("products", {
   stock: v.number(),
   unitType: v.id("unitTypes"),
   isUnspecified: v.boolean(),
-  categoryId: v.id("categories"),
+  categoryId: v.optional(v.id("categories")),
   variants: v.optional(
     v.array(
       v.object({
@@ -249,11 +251,13 @@ export const Products = Table("products", {
       })
     )
   ),
-  properties: v.array(
-    v.object({
-      propertyId: v.id("properties"),
-      value: v.union(v.string(), v.number(), v.array(v.string())),
-    })
+  properties: v.optional(
+    v.array(
+      v.object({
+        propertyId: v.id("properties"),
+        value: v.union(v.string(), v.number(), v.array(v.string())),
+      })
+    )
   ),
   metadataIds: v.optional(v.array(v.id("metadatas"))),
 });

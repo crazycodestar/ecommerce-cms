@@ -19,17 +19,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { showErrorToast } from "@/lib/handle-error";
 import { OrderType } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { ColumnDef, Row } from "@tanstack/react-table";
-import { useAction } from "convex/react";
 import { formatRelative } from "date-fns";
-import { Eye, MoreHorizontal, Truck } from "lucide-react";
+import { Eye, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
 // import { ModerateStore, ModerateStoreProvider } from "./moderate-store";
 
 // This type is used to define the shape of our data.
@@ -148,20 +144,6 @@ export const columns: ColumnDef<Order>[] = [
 function RowAction({ row }: { row: Row<Order> }) {
   const order = row.original;
 
-  const arrangeShipment = useAction(api.terminal.createShipment);
-  function handleArrangeShipment() {
-    toast.promise(
-      arrangeShipment({
-        orderId: order._id,
-      }),
-      {
-        success: "Shipment has been arranged",
-        loading: "Arranging shipment",
-        error: (e) => showErrorToast(e),
-      }
-    );
-  }
-
   return (
     <Dialog>
       <DropdownMenu>
@@ -178,9 +160,6 @@ function RowAction({ row }: { row: Row<Order> }) {
               <Eye /> View order details
             </DropdownMenuItem>
           </DialogTrigger>
-          <DropdownMenuItem onClick={handleArrangeShipment}>
-            <Truck /> Arrange shipment
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <DialogContent className="flex flex-col sm:max-h-[min(640px,80vh)] sm:max-w-lg p-0 gap-0">

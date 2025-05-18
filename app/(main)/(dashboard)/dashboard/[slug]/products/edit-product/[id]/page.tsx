@@ -40,27 +40,20 @@ export default function EditProductPage() {
     })),
     variants: product.variants
       ? product.variants.map((v) => ({
-          name: v.name,
-          options: v.options.map((o) => ({
-            name: o.name,
-            price: o.price,
-            imageId: o.imageId,
-            stock: o.stock,
-            isUnspecified: o.isUnspecified,
-          })),
-        }))
+        name: v.name,
+        options: v.options.map((o) => ({
+          name: o.name,
+          price: o.price,
+          imageId: o.imageId,
+          stock: o.stock,
+          isUnspecified: o.isUnspecified,
+        })),
+      }))
       : [],
     metadatas:
       product.metadataIds?.map((m) => ({
         _id: m,
       })) ?? [],
-
-    terminal: product.terminal && {
-      weight: product.terminal.weight,
-      packageId: product.terminal.packageId,
-    },
-    // weight: product.terminal.weight ?? 0,
-    // packageId: product.packageId ?? "",
   };
   return (
     <>
@@ -112,7 +105,7 @@ function EditProduct({
   }
 
   return (
-    <ProductForm form={form} onSubmit={handleSubmit}>
+    <ProductForm disabled={isPending} form={form} onSubmit={handleSubmit}>
       <Button type="submit" disabled={isPending}>
         {isPending && <Loader className="mr-2 size-4 animate-spin" />}
         Update Product
