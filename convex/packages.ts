@@ -12,6 +12,7 @@ import {
 } from "./utils";
 import { api } from "./_generated/api";
 import { v } from "convex/values";
+import { BadRequestError } from "./error";
 
 export const createPackage = mutation({
   args: omit(Packages.withoutSystemFields, ["storeId"]),
@@ -22,13 +23,17 @@ export const createPackage = mutation({
       tokenIdentifier
     );
 
+    if (store.deliveryInfo.deliveryType !== "terminal") {
+      throw new BadRequestError("store is not using terminal");
+    }
+
     const packageId = await ctx.db.insert("packages", {
       ...args,
       storeId: store._id,
     });
     await ctx.scheduler.runAfter(0, api.terminal.createPackaging, {
       packageId,
-      terminalSecretKey: store.terminalSecretKey,
+      terminalSecretKey: store.deliveryInfo.terminalSecretKey,
     });
     return packageId;
   },

@@ -76,13 +76,13 @@ export function ShippingForm({ form }: { form: UseFormReturn<ProductSchema> }) {
       const { data: packageId, error } = await tryCatch(createPackage(values));
       if (error)
         return void toast.error("Failed to create package, Try again later.");
-      form.setValue("packageId", packageId);
+      form.setValue("terminal.packageId", packageId);
       setIsDialogOpen(false);
     });
   };
 
   const handleSelectPreset = (packageId: string) => {
-    form.setValue("packageId", packageId);
+    form.setValue("terminal.packageId", packageId);
     setIsDialogOpen(false);
   };
 
@@ -92,13 +92,13 @@ export function ShippingForm({ form }: { form: UseFormReturn<ProductSchema> }) {
         label="Weight"
         type="number"
         control={form.control}
-        name="weight"
+        name="terminal.weight"
         placeholder="weight"
         description="Weight is in kg"
       />
       <FormField
         control={form.control}
-        name="packageId"
+        name="terminal.packageId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Package</FormLabel>
@@ -310,9 +310,16 @@ function PackageSelectForm({
                     <FormLabel>Width (cm)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/^\d*$/.test(value)) {
+                            field.onChange(value);
+                          }
+                        }}
+                        value={field.value}
                       />
                     </FormControl>
                   </FormItem>
