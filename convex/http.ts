@@ -6,7 +6,6 @@ import { WebhookEvent } from "@clerk/backend";
 import { userSchema } from "./schema";
 import { z, ZodError } from "zod";
 import { Id } from "./_generated/dataModel";
-import * as terminal from "./terminal";
 
 const http = httpRouter();
 
@@ -48,13 +47,22 @@ const initializeOrderSchema = z.object({
   city: z.string(),
   zip: z.string(),
   country: z.string(),
-  rateId: z.string(),
   phone: z.string(),
   email: z.string().email(),
-  terminalAddressId: z.string(),
-  terminalParcelId: z.string(),
-  terminalTrackingNumber: z.string().optional(),
-  terminalTrackingUrl: z.string().optional(),
+  terminalInfo: z.optional(
+    z.object({
+      rateId: z.string(),
+      terminalAddressId: z.string(),
+      terminalParcelId: z.string(),
+      terminalTrackingNumber: z.string().optional(),
+      terminalTrackingUrl: z.string().optional(),
+    })
+  ),
+  customDeliveryInfo: z.optional(
+    z.object({
+      selectedOffering: z.string(),
+    })
+  ),
   shipping: z.number(),
 });
 
@@ -609,7 +617,7 @@ http.route({
           Vary: "origin",
         }),
       });
-    } catch (error) {
+    } catch {
       return new Response(JSON.stringify({ error: "Failed to get rates" }), {
         status: 500,
         headers: new Headers({
@@ -625,6 +633,51 @@ http.route({
   path: "/api/terminal/rates",
   method: "OPTIONS",
   handler: httpAction(async (_, request) => handleCORS(request)),
+});
+
+http.route({
+  path: "/api/delivery/info",
+  method: "OPTIONS",
+  handler: httpAction(async (_, request) => handleCORS(request)),
+});
+
+http.route({
+  path: "/api/delivery/info",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const { searchParams } = new URL(request.url);
+    const slug = searchParams.get("storeSlug");
+    if (!slug)
+      return new Response("Slug is required", {
+        status: 400,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+
+    const store = await ctx.runQuery(internal.stores.getStoreBySlug, {
+      storeSlug: slug,
+    });
+
+    if (!store) {
+      return new Response("Store not found", {
+        status: 404,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+          Vary: "origin",
+        }),
+      });
+    }
+
+    return new Response(JSON.stringify(store.deliveryInfo), {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
+        Vary: "origin",
+      }),
+    });
+  }),
 });
 
 http.route({

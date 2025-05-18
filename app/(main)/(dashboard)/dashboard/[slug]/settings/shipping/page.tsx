@@ -1,17 +1,16 @@
-import { Separator } from "@/components/ui/separator";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
-import { getAuthToken } from "@/lib/auth";
-import { ShippingForm } from "../_components/shipping-form";
+"use client";
 
-export default async function SettingsGeneralPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const token = await getAuthToken();
-  const store = await fetchQuery(api.stores.getStore, { slug }, { token });
+import { Separator } from "@/components/ui/separator";
+import { api } from "@/convex/_generated/api";
+import { ShippingForm } from "../_components/shipping-form";
+import { useQuery } from "convex/react";
+import { useParams } from "next/navigation";
+export default function SettingsGeneralPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const store = useQuery(api.stores.getStore, { slug });
+
+  if (!store) return null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -21,7 +20,7 @@ export default async function SettingsGeneralPage({
         </p>
       </div>
       <Separator />
-      <ShippingForm defaultValues={store} slug={slug} />
+      <ShippingForm defaultValues={store.deliveryInfo} slug={slug} />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   getRatesResponseSchema,
   getContentsByStoreSlugResponseSchema,
   getProductsByStoreSlugResponseSchema,
+  getDeliveryInfoResponseSchema,
 } from "./returnTypes";
 
 export async function fetchAPI<T>(
@@ -152,9 +153,20 @@ type ShippingForm = {
     }>;
   }>;
   shipping: number;
+<<<<<<< HEAD
   rateId: string;
   terminalAddressId?: string;
   terminalParcelId?: string;
+=======
+  terminalInfo?: {
+    rateId: string;
+    terminalAddressId?: string;
+    terminalParcelId?: string;
+  };
+  customDeliveryInfo?: {
+    selectedOffering: string;
+  };
+>>>>>>> origin/main
 };
 
 // Order API functions
@@ -218,4 +230,12 @@ export const contentsAPI = {
     fetchAPI(API_ENDPOINTS.contents.getContentsByStoreSlug, {
       params: { storeSlug },
     }).then((data) => getContentsByStoreSlugResponseSchema.parse(data)),
+};
+
+// Delivery API functions
+export const deliveryAPI = {
+  getInfo: (storeSlug: string) =>
+    fetchAPI(API_ENDPOINTS.delivery.getInfo, {
+      params: { storeSlug },
+    }).then((data) => getDeliveryInfoResponseSchema.parse(data)),
 };

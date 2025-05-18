@@ -213,7 +213,11 @@ export default function CheckoutPage() {
             name: p.name,
             description: p.additionalInformation?.slice(0, 100) ?? "",
             value: p.price,
+<<<<<<< HEAD
             weight: p.weight,
+=======
+            weight: p.terminal!.weight, //FIX: better error handling here
+>>>>>>> origin/main
           })),
         storeSlug,
       })
@@ -335,7 +339,7 @@ export default function CheckoutPage() {
                     {...register("country")}
                     id="country"
                     className="w-full border rounded p-2"
-                    // disabled
+                  // disabled
                   >
                     <option value="NG">Nigeria</option>
                   </select>
@@ -541,11 +545,10 @@ export default function CheckoutPage() {
                             canGetShipmentRates ? getShipmentRates : undefined
                           }
                           className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-4 text-center
-                                ${
-                                  canGetShipmentRates
-                                    ? "hover:border-blue-500 cursor-pointer"
-                                    : "opacity-50 cursor-not-allowed"
-                                }`}
+                                ${canGetShipmentRates
+                              ? "hover:border-blue-500 cursor-pointer"
+                              : "opacity-50 cursor-not-allowed"
+                            }`}
                         >
                           <div className="bg-blue-100 p-4 rounded-md">
                             <TruckIcon className="h-4 w-4 text-blue-600" />
@@ -773,9 +776,9 @@ export default function CheckoutPage() {
                       <span>
                         {selectedRate
                           ? selectedRate.amount.toLocaleString("en-NG", {
-                              currency: "NGN",
-                              style: "currency",
-                            })
+                            currency: "NGN",
+                            style: "currency",
+                          })
                           : "Select Delivery option"}
                       </span>
                     </div>

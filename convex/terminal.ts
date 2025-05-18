@@ -9,9 +9,8 @@ import {
   UnauthorizedError,
 } from "./error";
 import { api, internal } from "./_generated/api";
-import { getTokenIdentifierWithAuthError, tryCatch } from "./utils";
+import { getTokenIdentifierWithAuthError } from "./utils";
 import { omit, pick } from "es-toolkit";
-import { Unauthenticated } from "convex/react";
 
 const TERMINAL_URL =
   process.env.NODE_ENV == "production"
@@ -246,7 +245,7 @@ const handleCreatePackageFromPackages = ({
   }[];
   terminalSecretKey: string;
 }) => {
-  let package_ = {
+  const package_ = {
     name: Math.random().toString(36).substring(7), // generates random string
     width: 0,
     height: 0,
@@ -302,8 +301,17 @@ export const getRatesForShipment = action({
 
   handler: async (ctx, { storeSlug, items, ...args }) => {
     // get store terminal Id
-    const { terminalSecretKey, terminalStoreAddressId: pickupAddress } =
-      await ctx.runQuery(internal.stores.getStoreBySlug, { storeSlug });
+    const store = await ctx.runQuery(internal.stores.getStoreBySlug, {
+      storeSlug,
+    });
+
+    const { terminalStoreAddressId: pickupAddress } = store;
+
+    if (store.deliveryInfo.deliveryType != "terminal") {
+      throw new BadRequestError("store is not using terminal");
+    }
+
+    const terminalSecretKey = store.deliveryInfo.terminalSecretKey;
 
     // calculate package size and create new package Id
     let packagingId: string | undefined;
@@ -569,6 +577,10 @@ export const createShipment = action({
       { tokenIdentifier }
     );
 
+    if (store.deliveryInfo.deliveryType != "terminal") {
+      throw new BadRequestError("store is not using terminal");
+    }
+
     const order = await ctx.runQuery(api.orders.getOrder, { orderId });
     if (!order) throw new NotFoundError("order not found");
 
@@ -586,11 +598,11 @@ export const createShipment = action({
         },
         body: JSON.stringify({
           address_from: store.terminalStoreAddressId,
-          address_to: order.terminalAddressId,
-          parcels: [order.terminalParcelId],
+          address_to: order.terminalInfo?.terminalAddressId,
+          parcels: [order.terminalInfo?.terminalParcelId],
         }),
       },
-      store.terminalSecretKey
+      store.deliveryInfo.terminalSecretKey
     );
 
     const res = await terminalFetch<z.infer<typeof arrangedShipmentSchema>>(
@@ -601,15 +613,15 @@ export const createShipment = action({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          rate_id: order.rateId,
+          rate_id: order.terminalInfo?.rateId,
           shipment_id: shipmentResponse.shipment_id,
-          parcels: [order.terminalParcelId],
+          parcels: [order.terminalInfo?.terminalParcelId],
         }),
       },
-      store.terminalSecretKey
+      store.deliveryInfo.terminalSecretKey
     );
 
-    await ctx.runMutation(internal.orders.updateOrderTrackingInformation, {
+    await ctx.runMutation(internal.orders.updateTerminalOrderTrackingInformation, {
       orderId,
       terminalTrackingNumber: res.extras.tracking_number,
       terminalTrackingUrl: res.extras.tracking_url,
@@ -705,8 +717,14 @@ export const apiGetRatesForShipment = internalAction({
 
   handler: async (ctx, { storeSlug, items, ...args }) => {
     // get store terminal Id
-    const { terminalSecretKey, terminalStoreAddressId: pickupAddress } =
+    const { deliveryInfo, terminalStoreAddressId: pickupAddress } =
       await ctx.runQuery(internal.stores.getStoreBySlug, { storeSlug });
+
+    if (deliveryInfo.deliveryType != "terminal") {
+      throw new BadRequestError("store is not using terminal");
+    }
+
+    const terminalSecretKey = deliveryInfo.terminalSecretKey;
 
     // calculate package size and create new package Id
     let packagingId: string | undefined;
