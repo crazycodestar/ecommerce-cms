@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { tryCatch } from "@/lib/try-catch";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Id } from "@packages/backend/convex/_generated/dataModel";
 import { api } from "@packages/backend/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { Loader } from "lucide-react";
@@ -37,6 +38,9 @@ const contentFormSchema = z.object({
     description: z.string().min(1, { message: "Description is required" }),
     imageId: z.string().min(1, { message: "Image is required" }),
   }),
+  logo: z.object({
+    imageId: z.string().min(1, { message: "Logo is required" }),
+  }),
   //   collectionList: z.object({
   //     items: z
   //       .array(collectionListItemSchema)
@@ -55,6 +59,9 @@ export const useContentForm = (contentJson?: string) => {
       hero: {
         title: "",
         description: "",
+        imageId: "",
+      },
+      logo: {
         imageId: "",
       },
       //   collectionList: {
@@ -92,6 +99,7 @@ export const useContentForm = (contentJson?: string) => {
     startTransition(async () => {
       const { error } = await tryCatch(
         updateContentJson({
+          logoId: data.logo as unknown as Id<"_storage">,
           contentJson: JSON.stringify(data),
         })
       );
@@ -125,6 +133,19 @@ export function ContentForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-12">
+        {/* Logo Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Brand Logo</h3>
+          <ImageUploader
+            control={form.control}
+            name="logo.imageId"
+            label="Logo (PNG only)"
+            accept={{
+              "image/png": [".png"]
+            }}
+          />
+        </div>
+
         {/* Hero Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Hero Section</h3>

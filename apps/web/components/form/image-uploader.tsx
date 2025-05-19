@@ -30,10 +30,12 @@ export function ImageUploader<T extends FieldValues>({
   control,
   name,
   label,
+  accept,
 }: {
   control: Control<T>;
   name: Path<T>;
   label?: string;
+  accept?: Record<string, string[]>;
 }) {
   const value = useWatch({ control, name });
   const preview =
@@ -84,7 +86,7 @@ export function ImageUploader<T extends FieldValues>({
 
     // Configure dropzone
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
-      accept: {
+      accept: accept ?? {
         "image/*": [".jpeg", ".jpg", ".png", ".gif"],
       },
       maxFiles: 1,
@@ -106,11 +108,10 @@ export function ImageUploader<T extends FieldValues>({
         {!preview ? (
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
-              isDragActive
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-primary/50"
-            }`}
+            className={`border-2 border-dashed rounded-lg p-6 transition-colors ${isDragActive
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-primary/50"
+              }`}
           >
             <input {...getInputProps()} />
             <div className="flex flex-col items-center justify-center gap-1 text-center">

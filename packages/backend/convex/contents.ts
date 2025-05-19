@@ -122,23 +122,26 @@ export const apiGenerateUploadUrl = internalMutation(async (ctx) =>
 // v2 content json
 export const updateContentJson = mutation({
   args: {
+    logoId: v.id("_storage"),
     contentJson: v.string(),
   },
-  handler: async (ctx, { contentJson }) => {
+  handler: async (ctx, { logoId, contentJson }) => {
     const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
     const store = await getStoreByTokenIdentifierWithAuthError(
       ctx,
       tokenIdentifier
     );
 
-    if (!store.siteUrl) {
+    if (!store.siteUrl || store.logoId !== logoId) {
       await ctx.scheduler.runAfter(0, internal.actions.generateSite, {
         storeId: store._id,
+        redeploy: store.logoId !== logoId,
       });
     }
 
     return ctx.db.patch(store._id, {
       contentJson,
+      logoId,
     });
   },
 });
