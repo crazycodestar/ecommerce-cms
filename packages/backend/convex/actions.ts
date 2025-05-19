@@ -5,8 +5,9 @@ import { internalAction } from "./_generated/server";
 export const generateSite = internalAction({
   args: {
     storeId: v.id("stores"),
+    redeploy: v.optional(v.boolean()),
   },
-  handler: async (ctx, { storeId }) => {
+  handler: async (ctx, { storeId, redeploy }) => {
     const store = await ctx.runQuery(internal.stores.getStoreById, {
       storeId,
     });
@@ -15,14 +16,21 @@ export const generateSite = internalAction({
       throw new Error("Store not found");
     }
 
-    const contentJson = store.contentJson;
-    if (!contentJson) {
-      throw new Error("Content JSON not found");
+    if (!store.logoId) {
+      throw new Error("Store logo not found");
     }
 
-    // const content = JSON.parse(contentJson);
-    // TODO: Generate site from content
-    // const site = await generateSiteFromContent(content);
+    // TODO: use imageUrl to generate site
+    // const imageUrl = await ctx.storage.getUrl(store.logoId);
+
+    if (redeploy) {
+      // TODO: redeploy site to update logo for instance
+      return;
+    }
+
+    // TODO: Generate site with logo
+    // const site = await generateSiteFromContent(logo, store.name);
+    // store unique identifier of store
 
     // simulate site generation
     await new Promise((resolve) => setTimeout(resolve, 10000));
