@@ -154,3 +154,21 @@ export const getContentJson = query({
     return store.contentJson;
   },
 });
+
+export const getContentJsonByStoreSlug = query({
+  args: {
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+
+    if (!store) {
+      return null;
+    }
+
+    return store.contentJson;
+  },
+});

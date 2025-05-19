@@ -1,4 +1,3 @@
-import { omit } from "convex-helpers";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import {
@@ -9,10 +8,9 @@ import {
 } from "./_generated/server";
 import { clerkClient } from "./context";
 import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
-import { Stores, Users } from "./schema";
-import { getTokenIdentifier } from "./utils";
-import { Id } from "./_generated/dataModel";
+import { Users } from "./schema";
 import { createStoreArgs } from "./stores";
+import { getTokenIdentifier } from "./utils";
 
 export const getCurrentUser = query(async (ctx) => {
   const identity = await ctx.auth.getUserIdentity();

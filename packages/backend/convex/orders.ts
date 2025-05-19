@@ -1,14 +1,14 @@
 import { omit, pick } from "convex-helpers";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
-import { DataModel } from "./_generated/dataModel";
+import type { DataModel } from "./_generated/dataModel";
 import {
   action,
   internalAction,
   internalMutation,
   internalQuery,
   query,
-  QueryCtx,
+  type QueryCtx,
 } from "./_generated/server";
 import { InternalServerError, NotFoundError } from "./error";
 import { Orders } from "./schema";

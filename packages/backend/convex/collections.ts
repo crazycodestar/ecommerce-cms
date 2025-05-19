@@ -1,16 +1,14 @@
+import { omit } from "convex-helpers";
 import { Table } from "convex-helpers/server";
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internalQuery, mutation, query } from "./_generated/server";
-import { omit } from "convex-helpers";
-import { Id } from "./_generated/dataModel";
+import { ConflictError, NotFoundError } from "./error";
+import { slugify } from "./lib/slugify";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifierWithAuthError,
 } from "./utils";
-import { ConflictError, NotFoundError, UnauthorizedError } from "./error";
-import { slugify } from "./lib/slugify";
-import { paginationOptsValidator } from "convex/server";
-import { api } from "./_generated/api";
 
 export const Collections = Table("collections", {
   name: v.string(),

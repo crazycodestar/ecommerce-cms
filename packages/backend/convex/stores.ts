@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { omit } from "es-toolkit";
 import {
   internalMutation,
   internalQuery,
@@ -12,9 +13,6 @@ import {
   getTokenIdentifier,
   getTokenIdentifierWithAuthError,
 } from "./utils";
-import { omit, pick } from "es-toolkit";
-import { api, internal } from "./_generated/api";
-import { filterUpdated } from "./utils";
 
 export const getMyStore = query({
   handler: async (ctx) => {
@@ -209,4 +207,19 @@ export const updateStoreByStoreId = internalMutation({
     siteUrl: v.optional(v.string()),
   },
   handler: (ctx, { storeId, ...args }) => ctx.db.patch(storeId, args),
+});
+
+export const getStoreBySlugPublic = query({
+  args: {
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+    if (!store) throw new NotFoundError("Store not found");
+
+    return store;
+  },
 });

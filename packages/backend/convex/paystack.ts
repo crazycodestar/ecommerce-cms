@@ -6,7 +6,7 @@ import { InternalServerError } from "./error";
 import { tryCatch } from "./utils";
 import { z } from "zod";
 import { api, internal } from "./_generated/api";
-import { DataModel } from "./_generated/dataModel";
+import type { DataModel } from "./_generated/dataModel";
 
 // const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
@@ -111,7 +111,7 @@ export const fulfill = internalAction({
     signature: v.string(),
     payload: v.any(),
   },
-  handler: async (ctx, { signature, payload }) => {
+  handler: async (ctx, { payload }) => {
     const { error, data } = parsePayload.safeParse(payload);
     if (error) console.error(error);
 
