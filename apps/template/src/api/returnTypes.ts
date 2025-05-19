@@ -30,35 +30,12 @@ const productVariantSchema = z.object({
   options: z.array(productVariantOptionSchema),
 });
 
-const terminalDeliveryInfoSchema = z.object({
-  deliveryType: z.literal("terminal"),
-  terminalSecretKey: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.string(),
-  phone: z.string(),
-  line1: z.string(),
-  line2: z.string().optional(),
-  city: z.string(),
-  state: z.string(),
-  country: z.string(),
-  zip: z.string(),
-});
-
-const customDeliveryInfoSchema = z.object({
-  deliveryType: z.literal("custom"),
-  offerings: z.array(
-    z.object({
-      name: z.string(),
-      price: z.number(),
-    })
-  ),
-});
-
-export const getDeliveryInfoResponseSchema = z.union([
-  terminalDeliveryInfoSchema,
-  customDeliveryInfoSchema,
-]);
+export const getDeliveryInfoResponseSchema = z.array(
+  z.object({
+    name: z.string(),
+    price: z.number(),
+  }),
+);
 
 const productSchema = z.object({
   _id: idSchema,
@@ -74,10 +51,12 @@ const productSchema = z.object({
   variants: z.array(productVariantSchema).optional(),
   properties: z.array(productPropertySchema),
   metadataIds: z.array(idSchema).optional(),
-  terminal:z.optional(z.object({
-    weight: z.number(),
-    packageId: idSchema,
-  })),
+  terminal: z.optional(
+    z.object({
+      weight: z.number(),
+      packageId: idSchema,
+    }),
+  ),
   mainImage: z.string().optional(), // Added for API responses that include mainImage
 });
 
@@ -106,7 +85,7 @@ export const richProductSchema = productSchema.extend({
       propertyId: idSchema,
       value: z.union([z.string(), z.number(), z.array(z.string())]),
       property: propertySchema,
-    })
+    }),
   ),
   unit: z.string().optional(),
   variants: z
@@ -115,9 +94,9 @@ export const richProductSchema = productSchema.extend({
         options: z.array(
           productVariantOptionSchema.extend({
             image: z.string().optional(),
-          })
+          }),
         ),
-      })
+      }),
     )
     .optional(),
   metadatas: z
@@ -136,7 +115,7 @@ export const richProductSchema = productSchema.extend({
             z.literal("image"),
           ]),
         }),
-      })
+      }),
     )
     .optional(),
   comment: z.null(),
@@ -151,7 +130,7 @@ const orderItemSchema = z.object({
       z.object({
         name: z.string(),
         value: z.string(),
-      })
+      }),
     )
     .optional(),
   metadatas: z
@@ -159,7 +138,7 @@ const orderItemSchema = z.object({
       z.object({
         name: z.string(),
         value: z.union([z.string(), z.number()]),
-      })
+      }),
     )
     .optional(),
   name: z.string(),
@@ -263,7 +242,7 @@ const carouselSchema = z.object({
         z.object({
           imageId: z.string(),
           collectionId: z.string(),
-        })
+        }),
       )
       .min(1, { message: "Atleast one image is required" }),
   }),
@@ -292,7 +271,7 @@ const collectionCarouselSchema = z.object({
           collectionId: z
             .string()
             .min(1, { message: "Please select a collection" }),
-        })
+        }),
       )
       .min(1, { message: "Atleast one collection is required" }),
   }),
@@ -366,7 +345,7 @@ export const getStatesResponseSchema = z.array(
     name: z.string(),
     countryCode: z.string(),
     isoCode: z.string(),
-  })
+  }),
 );
 
 export const getCitiesResponseSchema = z.array(
@@ -374,7 +353,7 @@ export const getCitiesResponseSchema = z.array(
     name: z.string(),
     stateCode: z.string(),
     countryCode: z.string(),
-  })
+  }),
 );
 
 export const getProductsByStoreSlugResponseSchema = z.array(
@@ -393,9 +372,9 @@ export const getProductsByStoreSlugResponseSchema = z.array(
         name: z.string(),
         slug: z.string(),
         storeId: z.string(),
-      })
+      }),
     ),
-  })
+  }),
 );
 
 export const getImageUrlResponseSchema = z.string();
@@ -455,4 +434,6 @@ export type GetProductsByStoreSlugResponse = z.infer<
   typeof getProductsByStoreSlugResponseSchema
 >;
 
-export type GetDeliveryInfoResponse = z.infer<typeof getDeliveryInfoResponseSchema>;
+export type GetDeliveryInfoResponse = z.infer<
+  typeof getDeliveryInfoResponseSchema
+>;

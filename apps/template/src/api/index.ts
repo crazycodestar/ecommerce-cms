@@ -6,7 +6,6 @@ import {
   getCitiesResponseSchema,
   getCollectionBySlugAndStoreSlugResponseSchema,
   getContentsByStoreSlugResponseSchema,
-  getDeliveryInfoResponseSchema,
   getFiltersResponseSchema,
   getImageUrlResponseSchema,
   getOrderByReferenceOrSlugResponseSchema,
@@ -15,10 +14,10 @@ import {
   getProductsByCollectionSlugAndStoreSlugResponseSchema,
   getProductsByIdsResponseSchema,
   getProductsByStoreSlugResponseSchema,
-  getRatesResponseSchema,
   getStatesResponseSchema,
   getSubCategoriesByParentIdAndStoreSlugResponseSchema,
   initializeOrderResponseSchema,
+  getDeliveryInfoResponseSchema,
 } from "./returnTypes";
 
 export async function fetchAPI<T>(
@@ -163,10 +162,8 @@ type ShippingForm = {
     }>;
   }>;
   shipping: number;
-  terminalInfo?: {
-    rateId: string;
-    terminalAddressId?: string;
-    terminalParcelId?: string;
+  deliveryInfo?: {
+    selectedOffering: string;
   };
   customDeliveryInfo?: {
     selectedOffering: string;
@@ -198,34 +195,6 @@ export const terminalAPI = {
     fetchAPI(API_ENDPOINTS.terminal.getCities, {
       params: { stateCode },
     }).then((data) => getCitiesResponseSchema.parse(data)),
-
-  getRates: (
-    storeSlug: string,
-    deliveryAddress: {
-      city: string;
-      country: string;
-      state: string;
-      email: string;
-      line1: string;
-      line2?: string;
-      firstName: string;
-      lastName: string;
-      phone: string;
-      zip: string;
-    },
-    items: Array<{
-      productId: string;
-      name: string;
-      description: string;
-      value: number;
-      weight: number;
-      quantity: number;
-    }>
-  ) =>
-    fetchAPI(API_ENDPOINTS.terminal.getRates, {
-      method: "POST",
-      body: { storeSlug, deliveryAddress, items },
-    }).then((data) => getRatesResponseSchema.parse(data)),
 };
 
 // Contents API functions

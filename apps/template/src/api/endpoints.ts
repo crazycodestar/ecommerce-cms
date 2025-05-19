@@ -25,7 +25,6 @@ export const API_ENDPOINTS = {
   terminal: {
     getStates: "/api/terminal/states",
     getCities: "/api/terminal/cities",
-    getRates: "/api/terminal/rates",
   },
   contents: {
     getContentsByStoreSlug: "/api/contents/get-contents-by-store-slug",
