@@ -31,6 +31,9 @@ export const generateSite = internalAction({
     // TODO: Generate site with logo
     // const site = await generateSiteFromContent(logo, store.name);
     // store unique identifier of store
+    // const content = JSON.parse(contentJson);
+    // TODO: Generate site from content
+    // const site = await generateSiteFromContent(content);
 
     // simulate site generation
     await new Promise((resolve) => setTimeout(resolve, 10000));
