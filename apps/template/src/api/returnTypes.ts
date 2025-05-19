@@ -7,7 +7,7 @@ const propertySchema = z.object({
   _id: idSchema,
   name: z.string(),
   storeId: idSchema,
-  categoryId: idSchema,
+  categoryId: idSchema.optional(),
   options: z.array(z.string()).optional(),
   type: z.enum(["string", "number", "array"]),
 });
@@ -70,7 +70,7 @@ const productSchema = z.object({
   stock: z.number(),
   unitType: idSchema,
   isUnspecified: z.boolean(),
-  categoryId: idSchema,
+  categoryId: idSchema.optional(),
   variants: z.array(productVariantSchema).optional(),
   properties: z.array(productPropertySchema),
   metadataIds: z.array(idSchema).optional(),
@@ -386,7 +386,7 @@ export const getProductsByStoreSlugResponseSchema = z.array(
     images: z.array(z.string()),
     imageUrls: z.array(z.string()),
     storeId: z.string(),
-    categoryId: z.string(),
+    categoryId: z.string().optional(),
     collections: z.array(
       z.object({
         _id: z.string(),

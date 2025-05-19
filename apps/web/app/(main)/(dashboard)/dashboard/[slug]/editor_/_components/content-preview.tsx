@@ -78,9 +78,6 @@ export function ContentPreview({ formValues }: ContentPreviewProps) {
   return (
     <div
       className={`${inter.variable} ${roboto.variable} ${montserrat.variable} ${lora.variable} ${poppins.variable} ${geistSans.variable} ${geistMono.variable}`}
-      style={{
-        fontFamily: getFontFamily(formValues?.bodyFont),
-      }}
     >
       <HeroSection formValues={formValues} />
 
@@ -101,17 +98,18 @@ interface HeroSectionProps {
 }
 
 function HeroSection({ formValues }: HeroSectionProps) {
+  const store = useQuery(api.stores.getMyStore);
   const imageId = formValues?.hero?.imageId as Id<"_storage"> | undefined;
   const imageUrl = useQuery(
     api.contents.getImageUrl,
     imageId
       ? {
-          imageId,
-        }
+        imageId,
+      }
       : "skip"
   );
   return (
-    <div className="relative h-[50vh] w-full">
+    <div className="relative h-[50vh] w-full text-white">
       <Image
         src={imageUrl ?? "/placeholder.svg"}
         alt="Hero"
@@ -121,16 +119,12 @@ function HeroSection({ formValues }: HeroSectionProps) {
       <div className="absolute top-0 left-0 w-full h-full bg-black/30"></div>
       <div
         className="relative w-full h-full flex flex-col gap-2 justify-center items-center"
-        style={{
-          color: formValues?.brandColor || "#ffffff",
-        }}
       >
         <p className="font-extralight text-sm uppercase tracking-wide">
-          Musicbox.ng
+          {store?.name}
         </p>
         <h1
           className="text-4xl font-light uppercase tracking-wide"
-          style={{ fontFamily: getFontFamily(formValues?.titleFont) }}
         >
           {formValues?.hero?.title || "Enter your title here"}
         </h1>

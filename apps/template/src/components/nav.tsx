@@ -1,39 +1,21 @@
 "use client";
 
 import useCartStore from "@/hooks/use-cart-store";
-import { Link, useRouter } from "@tanstack/react-router";
+import { api } from "@packages/backend/convex/_generated/api";
+import { Link } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
 import { Package, ShoppingBag } from "lucide-react";
-import { useEffect, useState } from "react";
 
 export function Nav() {
+  const store = useQuery(api.stores.getStoreBySlugPublic, {
+    storeSlug: import.meta.env.VITE_STORE_SLUG,
+  });
+
   const items = useCartStore((state) => state.items);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const router = useRouter();
-  const isRootRoute = router.state.location.pathname === "/";
-
-  useEffect(() => {
-    if (!isRootRoute) return;
-
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      setIsScrolled(scrollPosition > 0);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isRootRoute]);
 
   return (
     <header
-      className={`${
-        isRootRoute ? "fixed" : "sticky"
-      } top-0 w-full z-50 transition-colors duration-200 ${
-        isRootRoute
-          ? isScrolled
-            ? "bg-background text-foreground"
-            : "bg-transparent text-background"
-          : "bg-background text-foreground"
-      }`}
+      className={`sticky top-0 w-full z-50 transition-colors duration-200 bg-background text-foreground`}
     >
       <nav className="container mx-auto px-4 md:px-8 py-2">
         <div className="flex items-center justify-between py-6">
@@ -43,7 +25,7 @@ export function Nav() {
               to="/"
               className="font-light text-xl uppercase tracking-wider"
             >
-              Musicbox.ng
+              {store?.name}
             </Link>
           </div>
 

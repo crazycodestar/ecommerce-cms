@@ -66,7 +66,7 @@ function RouteComponent() {
                               "/placeholder.svg?height=300&width=225&text=Zella+Leggings"
                             }
                             alt={item.name}
-                            className="object-cover"
+                            className="object-cover w-full h-full"
                           />
                         </div>
                       </div>
@@ -203,13 +203,13 @@ function RouteComponent() {
                   <span className="font-normal">
                     {isEmpty
                       ? (0).toLocaleString("en-NG", {
-                          currency: "NGN",
-                          style: "currency",
-                        })
+                        currency: "NGN",
+                        style: "currency",
+                      })
                       : subTotal.toLocaleString("en-NG", {
-                          currency: "NGN",
-                          style: "currency",
-                        })}
+                        currency: "NGN",
+                        style: "currency",
+                      })}
                   </span>
                 )}
               </div>

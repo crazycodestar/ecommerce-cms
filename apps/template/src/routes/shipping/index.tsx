@@ -393,7 +393,7 @@ function RouteComponent() {
                     {...register("country")}
                     id="country"
                     className="w-full border rounded p-2"
-                    // disabled
+                  // disabled
                   >
                     <option value="NG">Nigeria</option>
                   </select>
@@ -545,7 +545,7 @@ function RouteComponent() {
                 </div>
 
                 <div>
-                  {deliveryInfo?.deliveryType === 'terminal' ? 
+                  {deliveryInfo?.deliveryType === 'terminal' ?
                     <Dialog open={isOpen} onOpenChange={setOpen}>
                       <div
                         className="w-full cursor-pointer"
@@ -600,11 +600,10 @@ function RouteComponent() {
                               canGetShipmentRates ? getShipmentRates : undefined
                             }
                             className={`border-2 border-dashed  p-6 flex flex-col items-center justify-center gap-4 text-center
-                                  ${
-                                    canGetShipmentRates
-                                      ? "hover:border-blue-500 cursor-pointer"
-                                      : "opacity-50 cursor-not-allowed"
-                                  }`}
+                                  ${canGetShipmentRates
+                                ? "hover:border-blue-500 cursor-pointer"
+                                : "opacity-50 cursor-not-allowed"
+                              }`}
                           >
                             <div className="bg-blue-100 p-4 ">
                               <TruckIcon className="h-4 w-4 text-blue-600" />
@@ -686,45 +685,44 @@ function RouteComponent() {
                           ))}
                         </div>
                       </DialogContent>
-                    </Dialog> : 
-                    
-                      <div className="space-y-4">
-                        <h3 className="font-normal text-sm">Select Delivery Option</h3>
-                        {errors.customDeliveryInfo?.selectedOffering && (
-                          <p className="text-red-500 text-xs">
-                            {errors.customDeliveryInfo.selectedOffering.message}
-                          </p>
-                        )}
-                        
-                        <div className="space-y-2">
-                          {deliveryInfo?.offerings.map((offering) => (
-                            <label
-                              key={offering.name}
-                              className={`flex items-center justify-between p-4 border rounded cursor-pointer hover:bg-gray-50 ${
-                                watch('customDeliveryInfo.selectedOffering') === offering.name
-                                  ? 'border-blue-500 bg-blue-50'
-                                  : ''
+                    </Dialog> :
+
+                    <div className="space-y-4">
+                      <h3 className="font-normal text-sm">Select Delivery Option</h3>
+                      {errors.customDeliveryInfo?.selectedOffering && (
+                        <p className="text-red-500 text-xs">
+                          {errors.customDeliveryInfo.selectedOffering.message}
+                        </p>
+                      )}
+
+                      <div className="space-y-2">
+                        {deliveryInfo?.offerings.map((offering) => (
+                          <label
+                            key={offering.name}
+                            className={`flex items-center justify-between p-4 border rounded cursor-pointer hover:bg-gray-50 ${watch('customDeliveryInfo.selectedOffering') === offering.name
+                                ? 'border-blue-500 bg-blue-50'
+                                : ''
                               }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <input
-                                  type="radio"
-                                  value={offering.name}
-                                  {...register('customDeliveryInfo.selectedOffering')}
-                                  className="size-4"
-                                />
-                                <span>{offering.name}</span>
-                              </div>
-                              <span className="font-normal">
-                                {offering.price.toLocaleString('en-NG', {
-                                  style: 'currency',
-                                  currency: 'NGN'
-                                })}
-                              </span>
-                            </label>
-                          ))}
-                        </div>
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                value={offering.name}
+                                {...register('customDeliveryInfo.selectedOffering')}
+                                className="size-4"
+                              />
+                              <span>{offering.name}</span>
+                            </div>
+                            <span className="font-normal">
+                              {offering.price.toLocaleString('en-NG', {
+                                style: 'currency',
+                                currency: 'NGN'
+                              })}
+                            </span>
+                          </label>
+                        ))}
                       </div>
+                    </div>
                   }
                 </div>
                 {/* <pre>{JSON.stringify(shipmentRates, null, 2)}</pre> */}
@@ -797,7 +795,7 @@ function RouteComponent() {
                               "/placeholder.svg?height=96&width=80&text=Zella"
                             }
                             alt={product.name}
-                            className="object-cover"
+                            className="object-cover w-full h-full"
                           />
                         </div>
                         <div className="flex-1">

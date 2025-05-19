@@ -24,7 +24,7 @@ type PropertiesData = {
   storeId: string;
   name: string;
   type: "string" | "number" | "array";
-  categoryId: string;
+  categoryId?: string;
   options?: string[] | undefined;
 };
 
@@ -59,8 +59,12 @@ function RouteComponent() {
           ),
         ]);
 
-        setProperties(propertiesData);
-        setCollection(collectionData);
+        if (propertiesData && propertiesData.length > 0) {
+          setProperties(propertiesData);
+        }
+        if (collectionData) {
+          setCollection(collectionData);
+        }
       } catch (error) {
         console.error("Failed to fetch collection data:", error);
       } finally {
@@ -135,48 +139,48 @@ function RouteComponent() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {isLoading
                 ? Array.from({ length: 20 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="h-full max-w-full flex flex-col gap-2"
-                    >
-                      <Skeleton className="w-full aspect-[3/4]" />
-                      <div className="flex flex-col gap-1">
-                        <Skeleton className="h-4 w-[70px] " />
-                        <Skeleton className="h-4 w-[140px] " />
-                      </div>
+                  <div
+                    key={index}
+                    className="h-full max-w-full flex flex-col gap-2"
+                  >
+                    <Skeleton className="w-full aspect-[3/4]" />
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-4 w-[70px] " />
+                      <Skeleton className="h-4 w-[140px] " />
                     </div>
-                  ))
+                  </div>
+                ))
                 : products?.map((product) => (
-                    <Link
-                      key={product._id}
-                      to={"/prd/$slug"}
-                      params={{
-                        slug: product._id,
-                      }}
-                      className=" h-full max-w-full flex flex-col gap-2"
-                    >
-                      <div className="aspect-[3/4] bg-gray-100 relative">
-                        <img
-                          src={
-                            product.mainImage ??
-                            "/placeholder.svg?height=600&width=450&text=Front"
-                          }
-                          alt={product.name}
-                          className="object-cover h-full aspect-[3/4]"
-                        />
-                      </div>
+                  <Link
+                    key={product._id}
+                    to={"/prd/$slug"}
+                    params={{
+                      slug: product._id,
+                    }}
+                    className=" h-full max-w-full flex flex-col gap-2"
+                  >
+                    <div className="aspect-[3/4] bg-gray-100 relative">
+                      <img
+                        src={
+                          product.mainImage ??
+                          "/placeholder.svg?height=600&width=450&text=Front"
+                        }
+                        alt={product.name}
+                        className="object-cover h-full aspect-[3/4]"
+                      />
+                    </div>
 
-                      <div>
-                        <h3>{product.name}</h3>
-                        <p className="font-normal">
-                          {product.price.toLocaleString("en-NG", {
-                            style: "currency",
-                            currency: "NGN",
-                          })}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
+                    <div>
+                      <h3>{product.name}</h3>
+                      <p className="font-normal">
+                        {product.price.toLocaleString("en-NG", {
+                          style: "currency",
+                          currency: "NGN",
+                        })}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
             </div>
           </div>
         </div>
