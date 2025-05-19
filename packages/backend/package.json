@@ -1,0 +1,26 @@
+{
+  "name": "@packages/backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "convex dev",
+    "setup": "convex dev --until-success"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@clerk/backend": "^1.32.2",
+    "@react-email/components": "^0.0.36",
+    "@react-email/tailwind": "^1.0.5",
+    "convex": "^1.20.0",
+    "convex-helpers": "^0.1.71",
+    "es-toolkit": "^1.33.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "resend": "^4.3.0",
+    "svix": "^1.61.3",
+    "zod": "^3.24.2"
+  }
+}
