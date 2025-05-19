@@ -2,10 +2,10 @@ import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { Webhook } from "svix";
-import { WebhookEvent } from "@clerk/backend";
+import type { WebhookEvent } from "@clerk/backend";
 import { userSchema } from "./schema";
 import { z, ZodError } from "zod";
-import { Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 
 const http = httpRouter();
 

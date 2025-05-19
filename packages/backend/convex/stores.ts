@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { omit } from "es-toolkit";
 import {
   internalMutation,
   internalQuery,
@@ -12,9 +13,6 @@ import {
   getTokenIdentifier,
   getTokenIdentifierWithAuthError,
 } from "./utils";
-import { omit, pick } from "es-toolkit";
-import { api, internal } from "./_generated/api";
-import { filterUpdated } from "./utils";
 
 export const getMyStore = query({
   handler: async (ctx) => {

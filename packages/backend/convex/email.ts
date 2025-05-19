@@ -81,16 +81,6 @@ const sendEmail = async ({
 };
 
 // Email component
-const React = require("react");
-
-function getResendAPIKey() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing RESEND_API_KEY environment variable");
-  }
-  return apiKey;
-}
-
 export const sendOrderConfirmation = internalAction({
   args: {
     orderId: v.id("orders"),

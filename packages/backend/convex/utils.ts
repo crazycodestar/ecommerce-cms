@@ -1,4 +1,4 @@
-import { ActionCtx, MutationCtx, QueryCtx } from "./_generated/server";
+import type { ActionCtx, MutationCtx, QueryCtx } from "./_generated/server";
 import { NotFoundError, UnauthorizedError } from "./error";
 
 export async function getTokenIdentifier(

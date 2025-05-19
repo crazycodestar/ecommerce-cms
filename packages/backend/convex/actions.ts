@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { internalAction, internalMutation } from "./_generated/server";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
+import { internalAction } from "./_generated/server";
 
 export const generateSite = internalAction({
   args: {
@@ -20,7 +20,7 @@ export const generateSite = internalAction({
       throw new Error("Content JSON not found");
     }
 
-    const content = JSON.parse(contentJson);
+    // const content = JSON.parse(contentJson);
     // TODO: Generate site from content
     // const site = await generateSiteFromContent(content);
 

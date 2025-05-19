@@ -1,8 +1,13 @@
 import { omit } from "convex-helpers";
 import { ConvexError, v } from "convex/values";
 import { api } from "./_generated/api";
-import { DataModel, Id } from "./_generated/dataModel";
-import { internalQuery, mutation, query, QueryCtx } from "./_generated/server";
+import type { DataModel, Id } from "./_generated/dataModel";
+import {
+  internalQuery,
+  mutation,
+  query,
+  type QueryCtx,
+} from "./_generated/server";
 import { defaultUnitTypeName } from "./constants";
 import { NotFoundError, UnauthorizedError } from "./error";
 import { Categories, Metadatas, Products, UnitTypes } from "./schema";

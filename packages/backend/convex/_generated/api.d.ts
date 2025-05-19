@@ -13,7 +13,9 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as actions from "../actions.js";
 import type * as collections from "../collections.js";
+import type * as constants from "../constants.js";
 import type * as contents from "../contents.js";
 import type * as context from "../context.js";
 import type * as email from "../email.js";
@@ -27,9 +29,7 @@ import type * as orders from "../orders.js";
 import type * as packages from "../packages.js";
 import type * as paystack from "../paystack.js";
 import type * as products from "../products.js";
-import type * as shipping from "../shipping.js";
 import type * as stores from "../stores.js";
-import type * as terminal from "../terminal.js";
 import type * as users from "../users.js";
 import type * as utils from "../utils.js";
 
@@ -42,7 +42,9 @@ import type * as utils from "../utils.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  actions: typeof actions;
   collections: typeof collections;
+  constants: typeof constants;
   contents: typeof contents;
   context: typeof context;
   email: typeof email;
@@ -56,9 +58,7 @@ declare const fullApi: ApiFromModules<{
   packages: typeof packages;
   paystack: typeof paystack;
   products: typeof products;
-  shipping: typeof shipping;
   stores: typeof stores;
-  terminal: typeof terminal;
   users: typeof users;
   utils: typeof utils;
 }>;
