@@ -1,21 +1,21 @@
-import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
-import { products } from "./dummy-products";
-import { Footer } from "./footer";
-import { ContentFormValues } from "./content-form";
-import {
-  Inter,
-  Roboto,
-  Montserrat,
-  Lora,
-  Poppins,
-  Geist,
-  Geist_Mono,
-} from "next/font/google";
-import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { Id } from "@packages/backend/convex/_generated/dataModel";
+import { useQuery } from "convex/react";
+import {
+  Geist,
+  Geist_Mono,
+  Inter,
+  Lora,
+  Montserrat,
+  Poppins,
+  Roboto,
+} from "next/font/google";
 import Image from "next/image";
+import Link from "next/link";
+import { ContentFormValues } from "./content-form";
+import { products } from "./dummy-products";
+import { Footer } from "./footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,23 +53,6 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
-
-const getFontFamily = (fontName?: string) => {
-  if (!fontName) return "var(--font-sans)";
-
-  const fontMap: Record<string, string> = {
-    Inter: "var(--font-inter)",
-    Roboto: "var(--font-roboto)",
-    Montserrat: "var(--font-montserrat)",
-    Lora: "var(--font-lora)",
-    Poppins: "var(--font-poppins)",
-    Geist: "var(--font-geist-sans)",
-    Geist_Mono: "var(--font-geist-mono)",
-  };
-
-  return fontMap[fontName] || "var(--font-sans)";
-};
-
 interface ContentPreviewProps {
   formValues?: ContentFormValues;
 }

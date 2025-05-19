@@ -1,12 +1,5 @@
 "use client";
 
-import {
-  FormSelect,
-  FormSelectContent,
-  FormSelectItem,
-  FormSelectTrigger,
-  FormSelectValue,
-} from "@/components/form/form-select";
 import { ImageUploader } from "@/components/form/image-uploader";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,13 +12,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@packages/backend/convex/_generated/api";
 import { tryCatch } from "@/lib/try-catch";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { api } from "@packages/backend/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { Loader } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
