@@ -97,6 +97,11 @@ export const useContentForm = (contentJson?: string) => {
 
   async function onSubmit(data: ContentFormValues) {
     startTransition(async () => {
+      if (!data.logo.imageId) {
+        toast.error("Logo is required");
+        return;
+      }
+
       const { error } = await tryCatch(
         updateContentJson({
           logoId: data.logo.imageId as unknown as Id<"_storage">,

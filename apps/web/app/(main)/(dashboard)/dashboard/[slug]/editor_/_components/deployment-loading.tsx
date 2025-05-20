@@ -31,11 +31,11 @@ export const DeploymentLoading = ({ isSuccess }: DeploymentLoadingProps) => {
 
     const stageInterval = setInterval(() => {
       setCurrentStage((prev) => (prev + 1) % deploymentStages.length);
-    }, 3000);
+    }, 60000);
 
     const timeout = setTimeout(() => {
       setHasTimedOut(true);
-    }, 30000);
+    }, 60000);
 
     return () => {
       clearInterval(stageInterval);

@@ -37,14 +37,14 @@ export async function generateSiteFromContent(
   ) => {
     const file = (await octokit.rest.repos.getContent({
       owner: "convertly-dev",
-      repo: "convertlykit-deployment",
+      repo: `${storeSlug}-deployment`,
       path: filePath,
     })) as any;
 
     await octokit.rest.repos.createOrUpdateFileContents({
       owner: "convertly-dev",
-      repo: "convertlykit-deployment",
-      message: "update logo",
+      repo: `${storeSlug}-deployment`,
+      message: "update file",
       commiter: {
         name: "convertly-dev",
         email: "convertlybusiness@gmail.com",
@@ -65,35 +65,36 @@ export async function generateSiteFromContent(
     });
   } catch (error) {
     //attempt to delete repo if it already exists
-    await octokit.rest.repos.delete({
-      repo: `${storeSlug}-deployment`,
-      owner: "convertly-dev",
-    });
+    // await octokit.rest.repos.delete({
+    //   repo: `${storeSlug}-deployment`,
+    //   owner: "convertly-dev",
+    // });
 
-    //try creating repo again
-    await octokit.rest.repos.createUsingTemplate({
-      template_repo: "ecommerce-cms",
-      template_owner: "convertly-dev",
-      name: `${storeSlug}-deployment`,
-    });
+    // //try creating repo again
+    // await octokit.rest.repos.createUsingTemplate({
+    //   template_repo: "ecommerce-cms",
+    //   template_owner: "convertly-dev",
+    //   name: `${storeSlug}-deployment`,
+    // });
   }
 
 
   //update logo
   await updateGithubFileContents(
-    "apps/template/index.html",
+    "apps/template/public/logo.png",
     await downloadImageToBase64(logoUrl),
   );
 
   //update store name
   const storeHtmlData = (await octokit.rest.repos.getContent({
     owner: "convertly-dev",
-    repo: "convertlykit-deployment",
+    repo: `${storeSlug}-deployment`,
     path: "apps/template/index.html",
   })) as any;
   const htmlContent = Buffer.from(storeHtmlData.data.content, "base64").toString(
     "utf-8",
   );
+
 
   const updatedContent = htmlContent.replace("ACME", storeName);
   await updateGithubFileContents(
@@ -111,7 +112,8 @@ export async function generateSiteFromContent(
     key: deployKey.public_key!,
   });
 
-  const site = await netlify.createSite({
+
+  const sitePayload = {
     body: {
       name: storeSlug,
       custom_domain: `${storeSlug}.convertlykit.store`,
@@ -130,7 +132,23 @@ export async function generateSiteFromContent(
         dir: "apps/template/dist",
       },
     },
-  });
+  };
+
+  console.log("Creating Netlify site with payload:", JSON.stringify(sitePayload, null, 2));
+
+  let site;
+  try {
+    site = await netlify.createSite(sitePayload);
+    console.log("Netlify site created successfully:", JSON.stringify(site, null, 2));
+  } catch (error: any) {
+    console.error("Netlify site creation failed with error:", JSON.stringify(error, null, 2));
+    if (error.response) {
+      console.error("Error response data:", JSON.stringify(error.response.data, null, 2));
+      console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", JSON.stringify(error.response.headers, null, 2));
+    }
+    throw error;
+  }
 
   await netlify.createEnvVars({
     site_id: site.id,
