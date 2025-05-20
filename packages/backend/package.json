@@ -12,6 +12,8 @@
   "description": "",
   "dependencies": {
     "@clerk/backend": "^1.32.2",
+    "@netlify/api": "^14.0.1",
+    "@octokit/rest": "^21.1.1",
     "@react-email/components": "^0.0.36",
     "@react-email/tailwind": "^1.0.5",
     "convex": "^1.20.0",
