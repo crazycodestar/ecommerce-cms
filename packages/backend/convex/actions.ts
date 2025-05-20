@@ -25,6 +25,7 @@ export async function generateSiteFromContent(
   storeSlug: string,
   logoUrl: string,
 ) {
+  // octokit
   const octokit = new Octokit({
     auth: GITHUB_ACCESS_TOKEN,
   });
