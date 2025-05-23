@@ -29,7 +29,7 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // @ts-expect-error preview branch not recognized
   const isPreviewBranch = process.env.NODE_ENV === "preview";
 
-  const enforceIncludeDomain = process.env.NODE_ENV === "production" ? !includeDomain : true;
+  const enforceIncludeDomain = process.env.NODE_ENV === "production" ? includeDomain : true;
   if (!isPreviewBranch && isCustomSubDomain && enforceIncludeDomain) {
     return NextResponse.rewrite(
       new URL(`/${customSubDomain}${pathWithSearchParams}`, req.url)
