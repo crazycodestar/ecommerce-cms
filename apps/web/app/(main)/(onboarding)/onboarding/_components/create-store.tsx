@@ -489,7 +489,7 @@ export default function CopyInput({
     }
   }
 
-  const webhookURL = cloudURL + "/paystack";
+  const webhookURL = cloudURL.replace("cloud", "site") + "/paystack";
 
   const copyToClipboard = async () => {
     if (inputRef.current) {

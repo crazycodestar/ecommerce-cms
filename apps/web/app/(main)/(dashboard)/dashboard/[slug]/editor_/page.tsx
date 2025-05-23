@@ -53,11 +53,12 @@ export default function ContentPage() {
 
       toast.success("Content updated successfully");
 
+      console.log(isFromOnboarding);
       if (isFromOnboarding) {
-        router.push(`/dashboard/${slug}/products/add-product`);
+        return router.push(`/dashboard/${slug}/products/add-product`);
       }
 
-      router.push(`/dashboard/${slug}/`);
+      return router.push(`/dashboard/${slug}/`);
     });
   }
 
