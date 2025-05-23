@@ -3,8 +3,8 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@packages/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
-import React from "react";
+import { useMutation, useQuery } from "convex/react";
+import React, { useTransition } from "react";
 import { Browser } from "./_components/browser";
 import {
   ContentForm,
@@ -12,8 +12,12 @@ import {
   useContentForm,
 } from "./_components/content-form";
 import { ContentPreview } from "./_components/content-preview";
-import { DeploymentLoading } from "./_components/deployment-loading";
 import { EditorSidebar } from "./_components/editor-sidebar";
+import { Id } from "@packages/backend/convex/_generated/dataModel";
+import { useParams, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { tryCatch } from "@/lib/try-catch";
+import { toast } from "sonner";
 
 const deploymentStages = [
   "Setting up project",
@@ -22,14 +26,44 @@ const deploymentStages = [
 ];
 
 export default function ContentPage() {
+  const { slug } = useParams<{ slug: string }>();
   const contentJson = useQuery(api.contents.getContentJson);
   const isPending = contentJson === undefined;
+
+  const updateContentJson = useMutation(api.contents.updateContentJson);
+  const [isPendingForm, startTransition] = useTransition();
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isFromOnboarding = searchParams.get("from") === "onboarding";
+
+  async function onSubmit(data: ContentFormValues) {
+    startTransition(async () => {
+      const { error } = await tryCatch(
+        updateContentJson({
+          logoId: data.logo.imageId as unknown as Id<"_storage">,
+          contentJson: JSON.stringify(data),
+        })
+      );
+      if (error) {
+        console.error(error);
+        toast.error("Failed to update content");
+        return;
+      }
+
+      toast.success("Content updated successfully");
+
+      if (isFromOnboarding) {
+        router.push(`/dashboard/${slug}/products/add-product`);
+      }
+
+      router.push(`/dashboard/${slug}/`);
+    });
+  }
+
   const {
     form,
-    onSubmit,
-    isPending: isPendingForm,
-    isGeneratingSite,
-  } = useContentForm(contentJson ?? undefined);
+  } = useContentForm(onSubmit, isPending, contentJson ?? undefined);
 
   return (
     <SidebarProvider
@@ -45,9 +79,6 @@ export default function ContentPage() {
           isPending={isPendingForm}
         />
       </EditorSidebar>
-      {isGeneratingSite !== null && (
-        <DeploymentLoading isSuccess={!isGeneratingSite} />
-      )}
       <SidebarInset className="z-10">
         <Browser>
           {isPending ? (

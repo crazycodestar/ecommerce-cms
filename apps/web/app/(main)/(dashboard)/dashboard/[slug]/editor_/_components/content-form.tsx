@@ -12,16 +12,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { tryCatch } from "@/lib/try-catch";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Id } from "@packages/backend/convex/_generated/dataModel";
-import { api } from "@packages/backend/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
 import { Loader } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 // Define the schema for the collection list item
@@ -50,7 +43,7 @@ const contentFormSchema = z.object({
 
 export type ContentFormValues = z.infer<typeof contentFormSchema>;
 
-export const useContentForm = (contentJson?: string) => {
+export const useContentForm = (onSubmit: (values: ContentFormValues) => void, isPending: boolean, contentJson?: string) => {
   const content = contentJson ? JSON.parse(contentJson) : undefined;
 
   const form = useForm<ContentFormValues>({
@@ -71,54 +64,7 @@ export const useContentForm = (contentJson?: string) => {
     values: content ?? {},
   });
 
-  const store = useQuery(api.stores.getMyStore);
-  const updateContentJson = useMutation(api.contents.updateContentJson);
-  const [isPending, startTransition] = useTransition();
-  const [isGeneratingSite, setIsGeneratingSite] = useState<boolean | null>(
-    null
-  );
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isFromOnboarding = searchParams.get("from") === "onboarding";
-  useEffect(() => {
-    if (isGeneratingSite === null) return;
-
-    if (store?.siteUrl) {
-      setIsGeneratingSite(false);
-    }
-  }, [
-    store?.siteUrl,
-    isFromOnboarding,
-    router,
-    searchParams,
-    isGeneratingSite,
-  ]);
-
-  async function onSubmit(data: ContentFormValues) {
-    startTransition(async () => {
-      const { error } = await tryCatch(
-        updateContentJson({
-          logoId: data.logo.imageId as unknown as Id<"_storage">,
-          contentJson: JSON.stringify(data),
-        })
-      );
-      if (error) {
-        console.error(error);
-        toast.error("Failed to update content");
-        return;
-      }
-
-      if (store?.siteUrl) {
-        toast.success("Content updated successfully");
-        return;
-      }
-
-      setIsGeneratingSite(true);
-    });
-  }
-
-  return { form, onSubmit, isPending, isGeneratingSite };
+  return { form, onSubmit, isPending };
 };
 
 export function ContentForm({

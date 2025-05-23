@@ -132,13 +132,6 @@ export const updateContentJson = mutation({
       tokenIdentifier
     );
 
-    if (!store.siteUrl || store.logoId !== logoId) {
-      await ctx.scheduler.runAfter(0, internal.actions.generateSite, {
-        storeId: store._id,
-        redeploy: store.logoId !== logoId,
-      });
-    }
-
     return ctx.db.patch(store._id, {
       contentJson,
       logoId,
