@@ -99,7 +99,7 @@ export const useContentForm = (contentJson?: string) => {
     startTransition(async () => {
       const { error } = await tryCatch(
         updateContentJson({
-          logoId: data.logo as unknown as Id<"_storage">,
+          logoId: data.logo.imageId as unknown as Id<"_storage">,
           contentJson: JSON.stringify(data),
         })
       );
