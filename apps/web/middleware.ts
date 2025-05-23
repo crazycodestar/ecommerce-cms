@@ -24,11 +24,13 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     process.env.VERCEL_URL)!;
 
   const includeDomain = hostname?.includes(domain);
-  const customSubDomain = hostname?.replace("." + domain, "");
+  const customSubDomain = hostname?.split(".")[0];
+  const isCustomSubDomain = customSubDomain !== domain;
   // @ts-expect-error preview branch not recognized
   const isPreviewBranch = process.env.NODE_ENV === "preview";
 
-  if (!isPreviewBranch && customSubDomain && includeDomain) {
+  const enforceIncludeDomain = process.env.NODE_ENV === "production" ? !includeDomain : true;
+  if (!isPreviewBranch && isCustomSubDomain && enforceIncludeDomain) {
     return NextResponse.rewrite(
       new URL(`/${customSubDomain}${pathWithSearchParams}`, req.url)
     );

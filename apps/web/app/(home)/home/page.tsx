@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, AtSign, ScrollText, Trello } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { FeatureCard } from "./_components/feature-card";
+import { FeatureCard } from "../_components/feature-card";
 
 const features = [
   {
