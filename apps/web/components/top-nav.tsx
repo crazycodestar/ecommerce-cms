@@ -5,6 +5,7 @@ import { api } from "@packages/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
 import Image from "next/image";
 import Link from "next/link";
+import { ThemeToggle } from "./theme-toggle";
 
 export function TopNav() {
     const myStore = useQuery(api.stores.getMyStore);
@@ -21,7 +22,7 @@ export function TopNav() {
                     <span className="font-semibold truncate flex items-center gap-2">
                         Personal Account
                     </span><span className="text-muted-foreground">/</span>
-                    <span>{myStore?.name}</span>
+                    <span className="capitalize">{myStore?.name}</span>
 
                 </div>
             </div>
@@ -31,9 +32,7 @@ export function TopNav() {
 
             {/* Right: User Info and Profile Dropdown */}
             <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-muted-foreground hidden md:block">
-                    {user.user?.fullName}
-                </span>
+                <ThemeToggle />
 
 
                 <UserButton />
