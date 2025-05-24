@@ -27,7 +27,7 @@ export function MenuNav<T extends string>({
             <button
               className={cn(
                 "relative z-10 px-3 py-2 text-muted-foreground",
-                label === hoveredTab ? " text-foreground" : "",
+                label === hoveredTab ? " text-muted-foreground" : "",
                 route === active ? " text-foreground" : ""
               )}
               onClick={() => onClick(route)}
@@ -38,7 +38,7 @@ export function MenuNav<T extends string>({
             {label === hoveredTab ? (
               <motion.div
                 layoutId="background"
-                className="w-full h-8 bg-gray-100 absolute top-1 left-0 rounded-md"
+                className="w-full h-8 bg-muted absolute top-1 left-0 rounded-md"
               />
             ) : null}
             {route === active ? (
