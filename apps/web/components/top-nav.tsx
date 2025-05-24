@@ -1,6 +1,6 @@
 "use client"
 
-import { UserButton, useUser } from "@clerk/clerk-react";
+import { UserButton } from "@clerk/clerk-react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { useQuery } from "convex/react";
 import Image from "next/image";
@@ -9,7 +9,6 @@ import { ThemeToggle } from "./theme-toggle";
 
 export function TopNav() {
     const myStore = useQuery(api.stores.getMyStore);
-    const user = useUser();
 
     return (
         <nav className="w-full border-b flex items-center justify-between px-6 h-12">
@@ -33,10 +32,7 @@ export function TopNav() {
             {/* Right: User Info and Profile Dropdown */}
             <div className="flex items-center gap-4">
                 <ThemeToggle />
-
-
                 <UserButton />
-
             </div>
         </nav>
     );
