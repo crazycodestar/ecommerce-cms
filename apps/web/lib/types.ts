@@ -27,5 +27,5 @@ export interface OrderType {
   terminalTrackingNumber?: string;
   terminalTrackingUrl?: string;
   reference: string;
-  status: "success" | "pending";
+  status: "pending" | "processing" | "shipping" | "delivered";  
 }

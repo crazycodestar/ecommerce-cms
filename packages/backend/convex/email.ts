@@ -7,6 +7,7 @@ import { internalAction } from "./_generated/server";
 import OrderConfirmationEmail from "./email_templates/order_confirmation";
 import StoreOwnerNotificationEmail from "./email_templates/store_owner_notification";
 import { NotFoundError } from "./error";
+import { OrderStatusUpdateEmail } from "./email_templates/order_status_update";
 
 const getSiteurl = () => {
   if (process.env.SITE_URL) {
@@ -132,6 +133,59 @@ export const sendOrderConfirmation = internalAction({
     }
   },
 });
+
+
+export const sendOrderStatusNotification = internalAction({
+  args: {
+    orderId: v.id("orders")
+  },
+  handler: async (ctx, { orderId }) => {
+    const siteUrl = getSiteurl();
+    const order = await ctx.runQuery(api.orders.getOrder, { orderId });
+    if (!order) throw new NotFoundError("order not found");
+    const store = await ctx.runQuery(internal.stores.getStoreById, {
+      storeId: order.storeId,
+    });
+
+    if (!store) throw new NotFoundError("store not found")
+
+    const { error } = await sendEmail({
+      from: `Convertly Tools <onboarding@resend.dev>`,
+      to: store.email,
+      subject: "Order Status Update",
+      react: OrderStatusUpdateEmail({
+        amount: order.amount,
+        phone: order.phone,
+        deliveryAmount: order.shipping,
+        email: order.email,
+        reference: order.slug,
+        status: order.status,
+        shippingInformation: {
+          address1: order.line1,
+          city: order.city,
+          firstName: order.firstName,
+          lastName: order.lastName,
+          zipCode: order.zip,
+          address2: order.line2,
+        },
+        trackingUrl: `${urlScheme}${store.slug}.${siteUrl}/order?slug=${order.slug}`,
+        order: order.items.map((item) => ({
+          ...item,
+          product: {
+            name: item.name,
+            price: item.price,
+            imageUrl: item.imageUrl,
+          },
+        })),
+      })
+    })
+
+
+    if (error) {
+      throw new Error(JSON.stringify(error));
+    }
+  }
+})
 
 export const sendOrderNotification = internalAction({
   args: {

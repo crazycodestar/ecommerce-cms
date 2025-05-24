@@ -26,6 +26,10 @@ import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatRelative } from "date-fns";
 import { Eye, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation } from "convex/react";
+import { api } from "@packages/backend/convex/_generated/api";
+import { toast } from "sonner";
 // import { ModerateStore, ModerateStoreProvider } from "./moderate-store";
 
 // This type is used to define the shape of our data.
@@ -34,6 +38,8 @@ export interface Order extends OrderType {
   _id: Id<"orders">;
   _creationTime: number;
   slug: string;
+  id: string;
+  status: "pending" | "processing" | "shipping" | "delivered";
 }
 
 export const columns: ColumnDef<Order>[] = [
@@ -136,6 +142,39 @@ export const columns: ColumnDef<Order>[] = [
     },
   },
   {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const order = row.original as Order;
+      const updateStatus = useMutation(api.orders.updateOrderStatus);
+
+      return (
+        <Select
+          defaultValue={order.status}
+          onValueChange={(value: "pending" | "processing" | "shipping" | "delivered") => {
+            updateStatus({ orderId: order.id as Id<"orders">, status: value })
+              .then(() => {
+                toast.success("Order status updated");
+              })
+              .catch((error) => {
+                toast.error("Failed to update order status");
+              });
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="processing">Processing</SelectItem>
+            <SelectItem value="shipping">Shipping</SelectItem>
+            <SelectItem value="delivered">Delivered</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+  },
+  {
     id: "actions",
     cell: ({ row }) => <RowAction row={row} />,
   },
@@ -174,13 +213,10 @@ function RowAction({ row }: { row: Row<Order> }) {
             <div className="pb-3">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <CardTitle>{order.reference}</CardTitle>
-                <Badge
-                  variant={order.status === "success" ? "default" : "outline"}
-                  className="w-fit"
-                >
-                  Payment Status{" "}
+                <Badge className="w-fit">
+                  Order Status{" "}
                   <Separator orientation="vertical" className="min-h-3" />
-                  {order.status === "success" ? "Completed" : "Pending"}
+                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                 </Badge>
               </div>
             </div>

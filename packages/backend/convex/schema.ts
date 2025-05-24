@@ -354,7 +354,12 @@ export const Orders = Table("orders", {
   url: v.optional(v.string()),
   accessCode: v.optional(v.string()),
   reference: v.optional(v.string()),
-  status: v.union(v.literal("pending"), v.literal("success"), v.string()),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("processing"),
+    v.literal("shipping"),
+    v.literal("delivered"),
+  ),
 });
 
 // Packages

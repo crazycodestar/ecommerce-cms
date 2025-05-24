@@ -7,6 +7,7 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
+  mutation,
   query,
   type QueryCtx,
 } from "./_generated/server";
@@ -46,7 +47,7 @@ export const updateOrderPaymentStatus = internalMutation({
       status,
     });
 
-    if (status === "success") {
+    if (status === "delivered") {
       ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
         orderId: order._id,
       });
@@ -54,6 +55,26 @@ export const updateOrderPaymentStatus = internalMutation({
         orderId: order._id,
       });
     }
+  },
+});
+
+export const updateOrderStatus = mutation({
+  args: {
+    orderId: v.id("orders"),
+    status: Orders.withoutSystemFields.status,
+  },
+  handler: async (ctx, { orderId, status }) => {
+    const order = await ctx.db.get(orderId);
+    if (!order) throw new NotFoundError("order not found");
+
+
+    ctx.scheduler.runAfter(0, internal.email.sendOrderStatusNotification, {
+      orderId: order._id,
+    });
+
+    return ctx.db.patch(order._id, {
+      status,
+    });
   },
 });
 
@@ -272,7 +293,6 @@ export const getMyStoreOrders = query(async (ctx) => {
   const orders = await ctx.db
     .query("orders")
     .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
-    .filter((q) => q.eq(q.field("status"), "success"))
     .collect();
 
   if (!orders) return null;
