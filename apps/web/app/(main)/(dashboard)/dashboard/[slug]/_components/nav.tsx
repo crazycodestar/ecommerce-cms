@@ -1,5 +1,6 @@
 "use client";
 import { MenuNav } from "@/components/menu-nav";
+import { TopNav } from "@/components/top-nav";
 import { useParams, usePathname, useRouter } from "next/navigation";
 
 export function Nav() {
@@ -33,12 +34,15 @@ export function Nav() {
   if (pathname?.includes("/editor_")) return null;
 
   return (
-    <header className="flex bg-background shrink-0 items-center border-b px-2 pt-2 justify-between">
-      <MenuNav
-        active={pathname}
-        onClick={(route) => router.push(route)}
-        tabs={tabs}
-      />
-    </header>
+    <>
+      <header className="sticky top-0 z-10 flex flex-col shrink-0 border-b px-2 pt-2 justify-between bg-background">
+        <TopNav />
+        <MenuNav
+          active={pathname}
+          onClick={(route) => router.push(route)}
+          tabs={tabs}
+        />
+      </header>
+    </>
   );
 }
