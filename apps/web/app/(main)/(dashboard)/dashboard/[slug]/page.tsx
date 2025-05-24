@@ -133,7 +133,7 @@ export default function DashboardPage() {
       .slice(0, 5)
   }, [orders])
 
-  // Top products (mock data for now since we don't have sales data per product)
+  // TODO: Top products (mock data for now since we don't have sales data per product)
   const topProducts = useMemo(() => {
     if (!products) return []
 
@@ -142,8 +142,8 @@ export default function DashboardPage() {
       .slice(0, 5)
       .map((product) => ({
         ...product,
-        sales: Math.floor(Math.random() * 100) + 10, // Mock sales data
-        revenue: Math.floor(Math.random() * 50000) + 10000, // Mock revenue data
+        sales: 0,
+        revenue: 0,
       }))
   }, [products])
 
