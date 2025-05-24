@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { api } from "@packages/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { columns, Order } from "./_components/order-columns";
 
 export default function ProductPage() {
@@ -24,6 +24,7 @@ export default function ProductPage() {
     .map(
       (order): Order => ({
         ...order,
+        id: order._id,
         amount: order.amount,
         deliveryAmount: order.shipping,
         email: order.email,
@@ -38,16 +39,22 @@ export default function ProductPage() {
           lastName: order.lastName,
           zipCode: order.zip,
         },
-        status: order.status as "pending" | "success",
+        status: order.status as "pending" | "processing" | "shipping" | "delivered",
       })
     );
+
 
   return (
     <div className="mx-auto container py-8">
       <div className="flex justify-between items-center">
         <Heading title="Orders" description="These are all your orders" />
       </div>
-      {data ? <DataTable columns={columns} data={data} /> : <TableLoader />}
+      {data ? (
+        <DataTable
+          columns={columns}
+          data={data}
+        />
+      ) : <TableLoader />}
     </div>
   );
 }

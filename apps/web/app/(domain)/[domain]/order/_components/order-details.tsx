@@ -16,12 +16,12 @@ export function OrderDetails({ order }: OrderDetailsProps) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <CardTitle>{order.reference}</CardTitle>
             <Badge
-              variant={order.status === "success" ? "default" : "outline"}
+              variant={order.status === "delivered" ? "default" : "outline"}
               className="w-fit"
             >
               Payment Status{" "}
               <Separator orientation="vertical" className="min-h-3" />
-              {order.status === "success" ? "Completed" : "Pending"}
+              {order.status}
             </Badge>
           </div>
         </CardHeader>

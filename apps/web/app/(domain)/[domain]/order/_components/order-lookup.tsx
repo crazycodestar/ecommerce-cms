@@ -84,7 +84,7 @@ export function OrderLookup() {
                 lastName: order.lastName,
                 zipCode: order.zip,
               },
-              status: order.status as "pending" | "success",
+              status: order.status as "pending" | "processing" | "shipping" | "delivered",
             }}
           />
         )
