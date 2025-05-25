@@ -117,7 +117,7 @@ export const fulfill = internalAction({
 
     await ctx.runMutation(internal.orders.updateOrderPaymentStatus, {
       reference: data!.data.reference,
-      status: data!.data.status,
+      status: data!.data.status as "pending" | "processing" | "shipping" | "delivered",
     });
 
     return { success: true };
