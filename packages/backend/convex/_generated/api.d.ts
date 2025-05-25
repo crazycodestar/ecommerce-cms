@@ -25,6 +25,7 @@ import type * as error from "../error.js";
 import type * as http from "../http.js";
 import type * as lib_image from "../lib/image.js";
 import type * as lib_slugify from "../lib/slugify.js";
+import type * as netlify from "../netlify.js";
 import type * as orders from "../orders.js";
 import type * as packages from "../packages.js";
 import type * as paystack from "../paystack.js";
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/image": typeof lib_image;
   "lib/slugify": typeof lib_slugify;
+  netlify: typeof netlify;
   orders: typeof orders;
   packages: typeof packages;
   paystack: typeof paystack;

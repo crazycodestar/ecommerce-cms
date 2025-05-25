@@ -152,6 +152,10 @@ export const submitOnboarding = action({
           onboardingComplete: true,
         },
       });
+
+      await ctx.scheduler.runAfter(0, api.netlify.addSubDomain, {
+        slug,
+      });
       return slug;
     } catch (error) {
       console.error("Error processing onboarding: ", error);
