@@ -12,8 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { api } from "@packages/backend/convex/_generated/api";
-import { useQuery, useMutation } from "convex/react";
-import { columns, Order } from "./_components/order-columns";
+import { useQuery } from "convex/react";
+import { Columns, Order } from "./_components/order-columns";
 
 export default function ProductPage() {
   //   const { slug } = useParams<{ slug: string }>();
@@ -51,7 +51,7 @@ export default function ProductPage() {
       </div>
       {data ? (
         <DataTable
-          columns={columns}
+          columns={Columns}
           data={data}
         />
       ) : <TableLoader />}

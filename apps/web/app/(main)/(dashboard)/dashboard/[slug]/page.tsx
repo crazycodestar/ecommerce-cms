@@ -67,7 +67,8 @@ export default function DashboardPage() {
     // Calculate order metrics
     const totalOrders = validOrders.length
     const pendingOrders = validOrders.filter((order) => order.status === "pending").length
-    const completedOrders = validOrders.filter((order) => order.status === "success").length
+    const completedOrders = validOrders.filter((order) =>
+      ["shipping", "delivered"].includes(order.status)).length
 
     // Calculate product metrics
     const totalProducts = validProducts.length
@@ -301,7 +302,7 @@ export default function DashboardPage() {
                       </TableCell>
                       <TableCell>{formatCurrency(order.amount)}</TableCell>
                       <TableCell>
-                        <Badge variant={order.status === "success" ? "default" : "secondary"}>{order.status}</Badge>
+                        <Badge>{order.status}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}

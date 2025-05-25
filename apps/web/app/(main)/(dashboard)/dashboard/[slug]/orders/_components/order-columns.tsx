@@ -42,7 +42,35 @@ export interface Order extends OrderType {
   status: "pending" | "processing" | "shipping" | "delivered";
 }
 
-export const columns: ColumnDef<Order>[] = [
+function OrderStatusSelect({ order }: { order: Order }) {
+  const updateStatus = useMutation(api.orders.updateOrderStatus);
+  return (
+    <Select
+      defaultValue={order.status}
+      onValueChange={(value: "pending" | "processing" | "shipping" | "delivered") => {
+        updateStatus({ orderId: order.id as Id<"orders">, status: value })
+          .then(() => {
+            toast.success("Order status updated");
+          })
+          .catch(() => {
+            toast.error("Failed to update order status");
+          });
+      }}
+    >
+      <SelectTrigger>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="pending">Pending</SelectItem>
+        <SelectItem value="processing">Processing</SelectItem>
+        <SelectItem value="shipping">Shipping</SelectItem>
+        <SelectItem value="delivered">Delivered</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+export const Columns: ColumnDef<Order>[] = [
   {
     id: "name",
     header: "Customer",
@@ -146,32 +174,7 @@ export const columns: ColumnDef<Order>[] = [
     header: "Status",
     cell: ({ row }) => {
       const order = row.original as Order;
-      const updateStatus = useMutation(api.orders.updateOrderStatus);
-
-      return (
-        <Select
-          defaultValue={order.status}
-          onValueChange={(value: "pending" | "processing" | "shipping" | "delivered") => {
-            updateStatus({ orderId: order.id as Id<"orders">, status: value })
-              .then(() => {
-                toast.success("Order status updated");
-              })
-              .catch((error) => {
-                toast.error("Failed to update order status");
-              });
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipping">Shipping</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-          </SelectContent>
-        </Select>
-      );
+      return <OrderStatusSelect order={order} />;
     }
   },
   {
