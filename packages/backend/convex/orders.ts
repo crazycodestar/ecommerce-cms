@@ -274,6 +274,7 @@ export const initializeOrder = action({
       "accessCode",
       "reference",
       "status",
+      "paymentStatus",
       "slug",
     ]),
     storeSlug: v.string(),
@@ -289,6 +290,7 @@ export const initializeOrder = action({
   }> => {
     const orderId = await ctx.runMutation(internal.orders.createOrder, {
       storeSlug,
+      paymentStatus: "pending",
       ...args,
     });
     return ctx.runAction(api.paystack.initializeTransaction, {
