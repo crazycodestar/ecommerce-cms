@@ -100,7 +100,7 @@ export const initializeTransaction = action({
   },
 });
 
-export const createSubAccount = action({
+export const createSubAccount = internalAction({
   args: {
     accountNumber: v.string(),
     bankCode: v.string(),

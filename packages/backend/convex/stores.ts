@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { omit } from "es-toolkit";
 import {
   action,
+  internalAction,
   internalMutation,
   internalQuery,
   mutation,
@@ -14,6 +15,7 @@ import {
   getTokenIdentifier,
   getTokenIdentifierWithAuthError,
 } from "./utils";
+import { internal } from "./_generated/api";
 
 export const getMyStore = query({
   handler: async (ctx) => {
@@ -82,7 +84,25 @@ export const createStoreArgs = omit(Stores.withoutSystemFields, [
   "logoId",
 ]);
 
-export const createStore = action({
+export const initializeStoreSubAccountCode = internalAction({
+  handler: async (ctx, args) => {
+    const tokenIdentifier = await getTokenIdentifier(ctx);
+    if (!tokenIdentifier) throw new UnauthorizedError();
+
+    const store = await ctx.runQuery(internal.stores.getStoreByTokenIdentifier, {
+      tokenIdentifier,
+    });
+    if (!store) throw new NotFoundError("Store not found");
+
+    await ctx.runAction(internal.paystack.createSubAccount, {
+      accountNumber: store.accountNumber,
+      bankCode: store.bankCode,
+      accountName: store.name,
+    });
+  }
+})  
+
+export const createStore = mutation({
   args: createStoreArgs,
 
   handler: async (ctx, args) => {
@@ -90,23 +110,11 @@ export const createStore = action({
     if (!tokenIdentifier) throw new UnauthorizedError();
 
     // Check if user already has a store
-    // const store = await ctx.db
-    //   .query("stores")
-    //   .withIndex("by_owner", (q) => q.eq("owner", tokenIdentifier))
-    //   .unique();
-    // if (store) throw new ConflictError("User already has a store");
-    
-  }
-})
-
-
-export const createStoreMutation = mutation({
-  args: createStoreArgs,
-
-  handler: async (ctx, args) => {
-    const tokenIdentifier = await getTokenIdentifier(ctx);
-    if (!tokenIdentifier) throw new UnauthorizedError();
-
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_owner", (q) => q.eq("owner", tokenIdentifier))
+      .unique();
+    if (store) throw new ConflictError("User already has a store");
 
     // Check if Slug is already taken
     const existingSlug = await ctx.db
@@ -125,6 +133,10 @@ export const createStoreMutation = mutation({
     // Add "unit" unit type for store
     await ctx.db.insert("unitTypes", {
       name: "Unit",
+      storeId,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.stores.initializeStoreSubAccountCode, {
       storeId,
     });
 

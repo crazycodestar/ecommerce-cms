@@ -221,10 +221,10 @@ export const Stores = Table("stores", {
   ),
   // Shipping Information with terminal
   // Payment Information with Paystack
-  accountNumber: v.optional(v.string()),
+  accountNumber: v.string(),
   bankName: v.string(),
   bankCode: v.string(),
-  subAccountCode: v.string(),
+  subAccountCode: v.optional(v.string()),
 });
 
 // Product Schema
