@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { omit } from "es-toolkit";
 import {
+  action,
   internalMutation,
   internalQuery,
   mutation,
@@ -77,9 +78,11 @@ export const createStoreArgs = omit(Stores.withoutSystemFields, [
   "contents",
   "contentJson",
   "siteUrl",
+  "subAccountCode",
+  "logoId",
 ]);
 
-export const createStore = mutation({
+export const createStore = action({
   args: createStoreArgs,
 
   handler: async (ctx, args) => {
@@ -87,11 +90,23 @@ export const createStore = mutation({
     if (!tokenIdentifier) throw new UnauthorizedError();
 
     // Check if user already has a store
-    const store = await ctx.db
-      .query("stores")
-      .withIndex("by_owner", (q) => q.eq("owner", tokenIdentifier))
-      .unique();
-    if (store) throw new ConflictError("User already has a store");
+    // const store = await ctx.db
+    //   .query("stores")
+    //   .withIndex("by_owner", (q) => q.eq("owner", tokenIdentifier))
+    //   .unique();
+    // if (store) throw new ConflictError("User already has a store");
+    
+  }
+})
+
+
+export const createStoreMutation = mutation({
+  args: createStoreArgs,
+
+  handler: async (ctx, args) => {
+    const tokenIdentifier = await getTokenIdentifier(ctx);
+    if (!tokenIdentifier) throw new UnauthorizedError();
+
 
     // Check if Slug is already taken
     const existingSlug = await ctx.db
@@ -99,6 +114,7 @@ export const createStore = mutation({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
     if (existingSlug) throw new ConflictError("Slug already taken");
+
 
     const storeId = await ctx.db.insert("stores", {
       ...args,
