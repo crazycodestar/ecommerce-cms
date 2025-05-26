@@ -84,20 +84,38 @@ export const createStoreArgs = omit(Stores.withoutSystemFields, [
   "logoId",
 ]);
 
-export const initializeStoreSubAccountCode = internalAction({
+export const updateStoreSubAccountCode = internalMutation({
+  args: {
+    storeId: v.id("stores"),
+    subAccountCode: v.string(),
+  },
   handler: async (ctx, args) => {
-    const tokenIdentifier = await getTokenIdentifier(ctx);
-    if (!tokenIdentifier) throw new UnauthorizedError();
-
-    const store = await ctx.runQuery(internal.stores.getStoreByTokenIdentifier, {
-      tokenIdentifier,
+    await ctx.db.patch(args.storeId, {
+      subAccountCode: args.subAccountCode,
     });
+  },
+});
+
+export const initializeStoreSubAccountCode = internalAction({
+  args:{
+    storeId: v.id("stores"),
+  },
+  handler: async (ctx, args) => {
+    const store = await ctx.runQuery(internal.stores.getStoreById, {
+      storeId: args.storeId,
+    });
+
     if (!store) throw new NotFoundError("Store not found");
 
-    await ctx.runAction(internal.paystack.createSubAccount, {
+    const subAccountCode =  await ctx.runAction(internal.paystack.createSubAccount, {
       accountNumber: store.accountNumber,
       bankCode: store.bankCode,
       accountName: store.name,
+    });
+
+    await ctx.runMutation(internal.stores.updateStoreSubAccountCode, {
+      storeId: store._id,
+      subAccountCode,
     });
   }
 })  
@@ -168,8 +186,10 @@ export const updateStore = mutation({
     ),
     // Shipping Information with terminal
     // Payment Information with Paystack
-    publicKey: v.optional(v.string()),
-    secretKey: v.optional(v.string()),
+    accountNumber: v.optional(v.string()),
+    bankCode: v.optional(v.string()),
+    bankName: v.optional(v.string()),
+
     slug: v.string(),
   },
   handler: async (ctx, { slug, ...args }) => {
@@ -182,6 +202,21 @@ export const updateStore = mutation({
     if (store.slug !== slug)
       throw new UnauthorizedError("Unauthorized to access store");
 
+    //updated Payment Fields
+
+    if(args.accountNumber && args.bankCode) {
+      if(store.subAccountCode) {
+        await ctx.scheduler.runAfter(0, internal.paystack.updateSubAccount, {
+          subaccountCode: store.subAccountCode,
+          accountNumber: args.accountNumber,
+          bankCode: args.bankCode,
+        });
+      }else {
+        await ctx.scheduler.runAfter(0, internal.stores.initializeStoreSubAccountCode, {
+          storeId: store._id,
+        });
+      }
+    }
     return ctx.db.patch(store._id, args);
   },
 });

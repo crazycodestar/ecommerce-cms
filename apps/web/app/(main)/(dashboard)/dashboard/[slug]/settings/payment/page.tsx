@@ -18,21 +18,10 @@ export default async function SettingsGeneralPage({
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Payment Information</h3>
-        <p className="text-sm text-muted-foreground">
-          Payments are processed and managed with paystack.
-          <Link
-            className="text-blue-500 hover:underline inline-flex gap-1 items-center"
-            href="https://paystack.com/"
-            target="_blank"
-          >
-            Manage Account
-            <SquareArrowOutUpRight className="size-3" />
-          </Link>
-        </p>
       </div>
       <Separator />
       <PaymentForm
-        defaultValues={{ ...store, hasAddedWebhookAndCallbackURL: true }}
+        defaultValues={{ ...store }}
         slug={slug}
       />
     </div>

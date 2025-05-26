@@ -61,6 +61,17 @@ export const initializeTransaction = action({
           email: order.email,
           amount,
           callback_url: callbackUrl,
+          split:{
+            type: "percentage",
+            bearer_type: "subaccount",
+            bearer_subaccount: store.subAccountCode,
+            subaccounts: [
+              {
+                subaccount: store.subAccountCode,
+                share: 100,
+              }
+            ]
+          }
         }),
       })
     );
@@ -100,6 +111,32 @@ export const initializeTransaction = action({
   },
 });
 
+export const updateSubAccount = internalAction({
+  args: {
+    subaccountCode: v.string(),
+    accountNumber: v.string(),
+    bankCode: v.string(),
+  },
+  handler: async (ctx, { subaccountCode, accountNumber, bankCode }) => {
+    const { data: response, error } = await tryCatch(
+      fetch(`https://api.paystack.co/subaccount/${subaccountCode}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+        body: JSON.stringify({
+          account_number: accountNumber,
+          bank_code: bankCode,
+        }),
+      })
+    );
+
+    if (error || !response.ok)
+      throw new InternalServerError(
+        `Failed to update subaccount: ${error?.message}`
+      );
+  },
+});
 export const createSubAccount = internalAction({
   args: {
     accountNumber: v.string(),
@@ -186,9 +223,7 @@ export const resolveAccountNumber = action({
     );
 
     if (error || !response.ok)
-      throw new InternalServerError(
-        `Failed to resolve account number: ${error?.message}`
-      );
+      return null;
 
     const formattedResponse = await response.json() as {
       status: boolean;
@@ -199,9 +234,7 @@ export const resolveAccountNumber = action({
     };
 
     if (!formattedResponse.status)
-      throw new InternalServerError(
-        `Failed to resolve account number: ${formattedResponse.message}`
-      );
+      return null;
 
     return formattedResponse.data.account_name;
   },

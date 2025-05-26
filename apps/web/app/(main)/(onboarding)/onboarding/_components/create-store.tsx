@@ -117,6 +117,14 @@ export function CreateStore() {
     },
   });
 
+  // React.useEffect(() => {
+  //   const subscription = form.watch((value, { name, type }) => {
+  //     console.log('Form errors:', JSON.stringify(form.formState.errors, null, 2));
+  //   });
+
+  //   return () => subscription.unsubscribe();
+  // }, [form]);
+
   // Get the current schema based on the step
   const getCurrentSchema = () => {
     switch (step) {
@@ -185,7 +193,7 @@ export function CreateStore() {
       try {
         const { data: slug, error } = await tryCatch(
           submitOnboarding({
-            ...omit(values, ["slug"]),
+            ...omit(values, ["slug", "accountName"]),
             slug: values.slug!,
           })
         );
@@ -285,7 +293,10 @@ export function CreateStore() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isCreatePending}>
+              <Button
+                type="submit"
+                disabled={isCreatePending || !form.formState.isValid}
+              >
                 {isCreatePending && (
                   <Loader className="mr-2 size-4 animate-spin" />
                 )}
@@ -558,7 +569,7 @@ const BankInformationForm = ({
 }) => {
   const [banks, setBanks] = React.useState<Array<{ name: string; code: string }>>([]);
   const [isLoadingBanks, setIsLoadingBanks] = React.useState(true);
-  const [isResolvingAccount, setIsResolvingAccount] = React.useState(false);
+  const [isAccountResolvePending, startAccountResolveTransition] = React.useTransition();
 
   const getBanks = useAction(api.paystack.getBanks);
   const resolveAccountNumber = useAction(api.paystack.resolveAccountNumber);
@@ -585,20 +596,29 @@ const BankInformationForm = ({
   React.useEffect(() => {
     const resolveAccount = async () => {
       if (bankCode && accountNumber?.length === 10) {
-        setIsResolvingAccount(true);
-        try {
-          const accountName = await resolveAccountNumber({
-            accountNumber,
-            bankCode,
-          });
-          form.setValue("accountName", accountName);
-        } catch (error) {
-          form.setValue("accountName", "");
-          toast.error("Could not verify account");
-          console.error(error);
-        } finally {
-          setIsResolvingAccount(false);
-        }
+        startAccountResolveTransition(async () => {
+          try {
+            form.setValue("accountName", "", {
+            });
+            const accountName = await resolveAccountNumber({
+              accountNumber,
+              bankCode,
+            });
+
+            if (!accountName) {
+              toast.error("Could not verify account");
+              return;
+            }
+
+            form.setValue("accountName", accountName, {
+              shouldValidate: true,
+            });
+          } catch (error) {
+            form.setValue("accountName", "");
+            toast.error("Could not verify account");
+            console.error(error);
+          }
+        });
       }
     };
 
@@ -622,19 +642,24 @@ const BankInformationForm = ({
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isLoadingBanks}
+                onBlur={field.onBlur}
                 onChange={(e) => {
                   const selectedBank = banks.find(bank => bank.code === e.target.value);
                   field.onChange(e.target.value);
-                  form.setValue('bankName', selectedBank?.name || '');
+                  form.setValue('bankName', selectedBank?.name || '', {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true
+                  });
                 }}
                 value={field.value}
               >
                 <option value="">Select a bank</option>
-                {banks.map((bank) => (
-                  <option key={bank.code} value={bank.code}>
+                {banks.map((bank, index) => (
+                  <option key={index} value={bank.code}>
                     {bank.name}
                   </option>
-                ))}
+                ))}o
               </select>
             </FormControl>
             <FormMessage />
@@ -656,6 +681,14 @@ const BankInformationForm = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
+                onBlur={(e) => {
+                  field.onBlur();
+                  form.trigger("accountNumber");
+                }}
+                onChange={(e) => {
+                  field.onChange(e);
+                  form.trigger("accountNumber");
+                }}
               />
             </FormControl>
             <FormMessage />
@@ -674,7 +707,7 @@ const BankInformationForm = ({
                 {...field}
                 readOnly
                 disabled
-                placeholder={isResolvingAccount ? "Verifying account..." : "Account name will appear here"}
+                placeholder={isAccountResolvePending ? "Verifying account..." : "Account name will appear here"}
               />
             </FormControl>
             <FormMessage />
