@@ -613,61 +613,6 @@ http.route({
 });
 
 http.route({
-  path: "/api/orders/initialize",
-  method: "POST",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const body = await request.json();
-      const validatedData = initializeOrderSchema.parse(body) as z.infer<
-        typeof initializeOrderSchema
-      > & {
-        items: {
-          productId: Id<"products">;
-          quantity: number;
-          variants?: { value: string; name: string }[];
-          metadatas?: { value: string | number; name: string }[];
-        }[];
-      };
-
-      const result = await ctx.runAction(internal.orders.apiInitializeOrder, {
-        ...validatedData,
-      });
-      return new Response(JSON.stringify(result), {
-        status: 200,
-        headers: new Headers({
-          "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-          Vary: "origin",
-        }),
-      });
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return new Response(
-          JSON.stringify({
-            error: "Invalid request data",
-            details: error.errors,
-          }),
-          {
-            status: 400,
-            headers: new Headers({
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": process.env.CLIENT_ORIGIN || "*",
-              Vary: "origin",
-            }),
-          }
-        );
-      }
-      throw error;
-    }
-  }),
-});
-
-http.route({
-  path: "/api/orders/initialize",
-  method: "OPTIONS",
-  handler: httpAction(async (_, request) => handleCORS(request)),
-});
-
-http.route({
   path: "/api/contents/get-contents-by-store-slug",
   method: "GET",
   handler: httpAction(async (ctx, request) => {
