@@ -341,6 +341,11 @@ export function CreateStoreForm({
                       {...field}
                     />
                   </FormControl>
+                  {field.value && (
+                    <p className="text-sm text-muted-foreground">
+                      Your store website will be {slugify(field.value)}.convertlykit.store
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
