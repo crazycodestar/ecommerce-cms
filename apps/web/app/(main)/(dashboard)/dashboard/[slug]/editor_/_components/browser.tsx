@@ -12,8 +12,8 @@ import {
 import React from "react";
 import { toast } from "sonner";
 
-export function Browser({ children }: React.PropsWithChildren) {
-  const url = "https://convertly.convertlykit.app";
+export function Browser({ children, storeSlug }: React.PropsWithChildren<{ storeSlug: string }>) {
+  const url = `https://${storeSlug}.convertlykit.store`;
 
   return (
     <div className="w-full h-full flex-1 flex flex-col shadow rounded-sm">

@@ -11,7 +11,7 @@ import { OrderStatusUpdateEmail } from "./email_templates/order_status_update";
 
 const getSiteurl = () => {
   if (process.env.SITE_URL) {
-    return process.env.SITE_URL;
+    return process.env.SITE_URL; 
   }
   return "localhost:3000";
 };
@@ -98,7 +98,7 @@ export const sendOrderConfirmation = internalAction({
     if (!store) throw new NotFoundError("store not found");
 
     const { error } = await sendEmail({
-      from: `${store.name} <onboarding@resend.dev>`,
+      from: `${store.name} <mail@mail.convertlykit.com>`,
       to: order.email,
       subject: "Order Confirmation",
       react: OrderConfirmationEmail({
@@ -116,7 +116,8 @@ export const sendOrderConfirmation = internalAction({
           zipCode: order.zip,
           address2: order.line2,
         },
-        trackingUrl: `${urlScheme}${store.slug}.${siteUrl}/order?slug=${order.slug}`,
+        // FIXME: correct this
+        trackingUrl: `${urlScheme}${store.slug}.convertlykit.store/order?slug=${order.slug}`,
         order: order.items.map((item) => ({
           ...item,
           product: {
@@ -150,7 +151,7 @@ export const sendOrderStatusNotification = internalAction({
     if (!store) throw new NotFoundError("store not found")
 
     const { error } = await sendEmail({
-      from: `Convertly Tools <onboarding@resend.dev>`,
+      from: `${store.name} <mail@mail.convertlykit.com>`,
       to: store.email,
       subject: "Order Status Update",
       react: OrderStatusUpdateEmail({
@@ -168,7 +169,8 @@ export const sendOrderStatusNotification = internalAction({
           zipCode: order.zip,
           address2: order.line2,
         },
-        trackingUrl: `${urlScheme}${store.slug}.${siteUrl}/order?slug=${order.slug}`,
+        // FIXME: correct this
+        trackingUrl: `${urlScheme}${store.slug}.convertlykit.store/order?slug=${order.slug}`,
         order: order.items.map((item) => ({
           ...item,
           product: {
@@ -203,7 +205,7 @@ export const sendOrderNotification = internalAction({
     if (!store) throw new NotFoundError("store not found");
 
     const { error } = await sendEmail({
-      from: `Convertly Tools <onboarding@resend.dev>`,
+      from: `ConvertlyKit <mail@mail.convertlykit.com>`,
       to: store.email,
       subject: "New Order",
       react: StoreOwnerNotificationEmail({

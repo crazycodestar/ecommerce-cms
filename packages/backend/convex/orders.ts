@@ -58,10 +58,6 @@ export const updateOrderPaymentStatus = internalMutation({
       return;
     }
 
-    await ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
-      orderId: order._id,
-    });
-
     return;
   },
 });
@@ -154,7 +150,7 @@ export const createOrder = internalMutation({
       status: "pending",
     });
 
-    await ctx.scheduler.runAfter(0, internal.email.sendOrderNotification, {
+    await ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
       orderId,
     });
 
@@ -294,7 +290,7 @@ export const initializeOrder = action({
       ...args,
     });
     return ctx.runAction(api.paystack.initializeTransaction, {
-      orderId: orderId,
+      orderId,
       callbackUrl,
     });
   },

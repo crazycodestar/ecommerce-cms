@@ -81,7 +81,7 @@ export default function ContentPage() {
         />
       </EditorSidebar>
       <SidebarInset className="z-10">
-        <Browser>
+        <Browser storeSlug={slug}>
           {isPending ? (
             <ContentPageLoading />
           ) : (
