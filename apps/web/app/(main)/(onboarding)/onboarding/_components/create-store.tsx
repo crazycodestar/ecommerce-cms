@@ -16,16 +16,13 @@ import {
   ArrowRight,
   Check,
   Loader,
-  SquareArrowOutUpRight,
   Trash2,
 } from "lucide-react";
 
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,7 +37,6 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/clerk-react";
 import { useAction } from "convex/react";
 import { omit } from "es-toolkit";
-import Link from "next/link";
 
 const deliveryInfoSchema = z.object({
   deliveryOptions: z.array(
@@ -681,7 +677,7 @@ const BankInformationForm = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                onBlur={(e) => {
+                onBlur={() => {
                   field.onBlur();
                   form.trigger("accountNumber");
                 }}

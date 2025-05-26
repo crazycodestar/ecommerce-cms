@@ -6,7 +6,6 @@ import { z } from "zod";
 
 // import {} from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -16,14 +15,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import React from "react";
 import { toast } from "sonner";
 import { useAction, useMutation } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { tryCatch } from "@/lib/try-catch";
 import { Loader } from "lucide-react";
-import { omit } from "es-toolkit";
 
 const bankInfoSchema = z.object({
   bankCode: z.string().min(1, { message: "Bank is required." }),
