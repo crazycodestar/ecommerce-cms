@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { omit } from "es-toolkit";
 import {
+  action,
+  internalAction,
   internalMutation,
   internalQuery,
   mutation,
@@ -13,6 +15,7 @@ import {
   getTokenIdentifier,
   getTokenIdentifierWithAuthError,
 } from "./utils";
+import { internal } from "./_generated/api";
 
 export const getMyStore = query({
   handler: async (ctx) => {
@@ -77,7 +80,45 @@ export const createStoreArgs = omit(Stores.withoutSystemFields, [
   "contents",
   "contentJson",
   "siteUrl",
+  "subAccountCode",
+  "logoId",
 ]);
+
+export const updateStoreSubAccountCode = internalMutation({
+  args: {
+    storeId: v.id("stores"),
+    subAccountCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.storeId, {
+      subAccountCode: args.subAccountCode,
+    });
+  },
+});
+
+export const initializeStoreSubAccountCode = internalAction({
+  args:{
+    storeId: v.id("stores"),
+  },
+  handler: async (ctx, args) => {
+    const store = await ctx.runQuery(internal.stores.getStoreById, {
+      storeId: args.storeId,
+    });
+
+    if (!store) throw new NotFoundError("Store not found");
+
+    const subAccountCode =  await ctx.runAction(internal.paystack.createSubAccount, {
+      accountNumber: store.accountNumber,
+      bankCode: store.bankCode,
+      accountName: store.name,
+    });
+
+    await ctx.runMutation(internal.stores.updateStoreSubAccountCode, {
+      storeId: store._id,
+      subAccountCode,
+    });
+  }
+})  
 
 export const createStore = mutation({
   args: createStoreArgs,
@@ -100,6 +141,7 @@ export const createStore = mutation({
       .unique();
     if (existingSlug) throw new ConflictError("Slug already taken");
 
+
     const storeId = await ctx.db.insert("stores", {
       ...args,
       owner: tokenIdentifier,
@@ -109,6 +151,10 @@ export const createStore = mutation({
     // Add "unit" unit type for store
     await ctx.db.insert("unitTypes", {
       name: "Unit",
+      storeId,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.stores.initializeStoreSubAccountCode, {
       storeId,
     });
 
@@ -140,8 +186,10 @@ export const updateStore = mutation({
     ),
     // Shipping Information with terminal
     // Payment Information with Paystack
-    publicKey: v.optional(v.string()),
-    secretKey: v.optional(v.string()),
+    accountNumber: v.optional(v.string()),
+    bankCode: v.optional(v.string()),
+    bankName: v.optional(v.string()),
+
     slug: v.string(),
   },
   handler: async (ctx, { slug, ...args }) => {
@@ -154,6 +202,21 @@ export const updateStore = mutation({
     if (store.slug !== slug)
       throw new UnauthorizedError("Unauthorized to access store");
 
+    //updated Payment Fields
+
+    if(args.accountNumber && args.bankCode) {
+      if(store.subAccountCode) {
+        await ctx.scheduler.runAfter(0, internal.paystack.updateSubAccount, {
+          subaccountCode: store.subAccountCode,
+          accountNumber: args.accountNumber,
+          bankCode: args.bankCode,
+        });
+      }else {
+        await ctx.scheduler.runAfter(0, internal.stores.initializeStoreSubAccountCode, {
+          storeId: store._id,
+        });
+      }
+    }
     return ctx.db.patch(store._id, args);
   },
 });

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { api, internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 
-// const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 // const paystackSecretKey = () => {
 //   if (!PAYSTACK_SECRET_KEY) {
@@ -16,6 +16,8 @@ import type { DataModel } from "./_generated/dataModel";
 //   }
 //   return PAYSTACK_SECRET_KEY;
 // };
+
+
 
 export const initializeTransaction = action({
   args: {
@@ -47,7 +49,7 @@ export const initializeTransaction = action({
     if (!store) throw new InternalServerError("store not found");
 
     const amount = Math.ceil((order.amount + order?.shipping) * 100); // in Kobo
-    const secretKey = store.secretKey;
+    const secretKey = PAYSTACK_SECRET_KEY;
     const { data: response, error } = await tryCatch(
       fetch("https://api.paystack.co/transaction/initialize", {
         method: "POST",
@@ -59,6 +61,17 @@ export const initializeTransaction = action({
           email: order.email,
           amount,
           callback_url: callbackUrl,
+          split:{
+            type: "percentage",
+            bearer_type: "subaccount",
+            bearer_subaccount: store.subAccountCode,
+            subaccounts: [
+              {
+                subaccount: store.subAccountCode,
+                share: 100,
+              }
+            ]
+          }
         }),
       })
     );
@@ -98,6 +111,76 @@ export const initializeTransaction = action({
   },
 });
 
+export const updateSubAccount = internalAction({
+  args: {
+    subaccountCode: v.string(),
+    accountNumber: v.string(),
+    bankCode: v.string(),
+  },
+  handler: async (ctx, { subaccountCode, accountNumber, bankCode }) => {
+    const { data: response, error } = await tryCatch(
+      fetch(`https://api.paystack.co/subaccount/${subaccountCode}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+        body: JSON.stringify({
+          account_number: accountNumber,
+          bank_code: bankCode,
+        }),
+      })
+    );
+
+    if (error || !response.ok)
+      throw new InternalServerError(
+        `Failed to update subaccount: ${error?.message}`
+      );
+  },
+});
+export const createSubAccount = internalAction({
+  args: {
+    accountNumber: v.string(),
+    bankCode: v.string(),
+    accountName: v.string(),
+  },
+  handler: async (ctx, { accountNumber, bankCode, accountName }) => {
+    const { data: response, error } = await tryCatch(
+      fetch(`https://api.paystack.co/subaccount`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+        body: JSON.stringify({
+          business_name: accountName,
+          account_number: accountNumber,
+          bank_code: bankCode,
+          percentage_charge: 100,
+        }),
+      })
+    );
+
+    if (error || !response.ok)
+      throw new InternalServerError(
+        `Failed to create subaccount: ${error?.message}`
+      );
+
+    const formattedResponse = await response.json() as {
+      status: boolean;
+      message: string;
+      data: {
+        subaccount_code: string;
+      };
+    };
+
+    if (!formattedResponse.status)
+      throw new InternalServerError(
+        `Failed to create subaccount: ${formattedResponse.message}`
+      );
+
+    return formattedResponse.data.subaccount_code;
+  },
+});
+
 const parsePayload = z.object({
   data: z.object({
     reference: z.string(),
@@ -121,5 +204,78 @@ export const fulfill = internalAction({
     });
 
     return { success: true };
+  },
+});
+
+export const resolveAccountNumber = action({
+  args: {
+    accountNumber: v.string(),
+    bankCode: v.string(),
+  },
+  handler: async (ctx, { accountNumber, bankCode }) => {
+    const { data: response, error } = await tryCatch(
+      fetch(`https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+      })
+    );
+
+    if (error || !response.ok)
+      return null;
+
+    const formattedResponse = await response.json() as {
+      status: boolean;
+      message: string;
+      data: {
+        account_name: string;
+      };
+    };
+
+    if (!formattedResponse.status)
+      return null;
+
+    return formattedResponse.data.account_name;
+  },
+});
+
+export const getBanks = action({
+  handler: async (): Promise<Array<{ name: string; code: string }>> => {
+    const { data: response, error } = await tryCatch(
+      fetch("https://api.paystack.co/bank", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+      })
+    );
+
+    if (error || !response.ok)
+      throw new InternalServerError(
+        `Failed to fetch banks: ${error?.message}`
+      );
+
+    const formattedResponse = await response.json() as {
+      status: boolean;
+      message: string;
+      data: Array<{
+        name: string;
+        code: string;
+        [key: string]: any;
+      }>;
+    };
+
+    if (!formattedResponse.status)
+      throw new InternalServerError(
+        `Failed to fetch banks: ${formattedResponse.message}`
+      );
+
+    // Return only the name and code for each bank
+    return formattedResponse.data.map(bank => ({
+      name: bank.name,
+      code: bank.code,
+    }));
   },
 });

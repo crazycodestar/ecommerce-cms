@@ -6,61 +6,140 @@ import { z } from "zod";
 
 // import {} from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import React from "react";
 import { toast } from "sonner";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { tryCatch } from "@/lib/try-catch";
 import { Loader } from "lucide-react";
-import { omit } from "es-toolkit";
 
-const paystackInfoSchema = z.object({
-  publicKey: z.string().min(2, { message: "Public key is required." }),
-  secretKey: z.string().min(2, { message: "Secret key is required." }),
-  hasAddedWebhookAndCallbackURL: z.literal(true),
+const bankInfoSchema = z.object({
+  bankCode: z.string().min(1, { message: "Bank is required." }),
+  bankName: z.string().min(1, { message: "Bank name is required." }),
+  accountNumber: z.string().length(10, { message: "Account number must be 10 digits." }),
 });
 
-type PaystackInfoValues = z.infer<typeof paystackInfoSchema>;
+type BankInfoValues = z.infer<typeof bankInfoSchema>;
 
 export function PaymentForm({
   defaultValues,
   slug,
 }: {
-  defaultValues: PaystackInfoValues;
+  defaultValues: BankInfoValues;
   slug: string;
 }) {
-  const form = useForm<PaystackInfoValues>({
-    resolver: zodResolver(paystackInfoSchema),
+  const form = useForm<BankInfoValues>({
+    resolver: zodResolver(bankInfoSchema),
     defaultValues,
     mode: "onChange",
   });
 
   const [isPending, startTransition] = React.useTransition();
+  const [banks, setBanks] = React.useState<Array<{ name: string; code: string }>>([]);
+  const [isLoadingBanks, setIsLoadingBanks] = React.useState(true);
+  const [isAccountResolvePending, startAccountResolveTransition] = React.useTransition();
+  const [accountName, setAccountName] = React.useState<string>("");
+
+  const getBanks = useAction(api.paystack.getBanks);
+  const resolveAccountNumber = useAction(api.paystack.resolveAccountNumber);
   const updateStore = useMutation(api.stores.updateStore);
-  async function onSubmit(data: PaystackInfoValues) {
+
+  const bankCode = form.watch("bankCode");
+  const accountNumber = form.watch("accountNumber");
+
+  React.useEffect(() => {
+    const loadBanks = async () => {
+      try {
+        const banksData = await getBanks();
+        setBanks(banksData);
+      } catch (error) {
+        toast.error("Failed to load banks");
+        console.error(error);
+      } finally {
+        setIsLoadingBanks(false);
+      }
+    };
+
+    loadBanks();
+  }, [getBanks]);
+
+  React.useEffect(() => {
+    const resolveDefaultAccount = async () => {
+      if (defaultValues.bankCode && defaultValues.accountNumber?.length === 10) {
+        startAccountResolveTransition(async () => {
+          try {
+            const resolvedAccountName = await resolveAccountNumber({
+              accountNumber: defaultValues.accountNumber,
+              bankCode: defaultValues.bankCode,
+            });
+
+            if (!resolvedAccountName) {
+              toast.error("Could not verify account");
+              return;
+            }
+
+            setAccountName(resolvedAccountName);
+          } catch (error) {
+            setAccountName("");
+            toast.error("Could not verify account");
+            console.error(error);
+          }
+        });
+      }
+    };
+
+    resolveDefaultAccount();
+  }, [defaultValues, resolveAccountNumber]);
+
+  React.useEffect(() => {
+    const resolveAccount = async () => {
+      if (bankCode && accountNumber?.length === 10) {
+        startAccountResolveTransition(async () => {
+          try {
+            setAccountName("");
+            const resolvedAccountName = await resolveAccountNumber({
+              accountNumber,
+              bankCode,
+            });
+
+            if (!resolvedAccountName) {
+              toast.error("Could not verify account");
+              return;
+            }
+
+            setAccountName(resolvedAccountName);
+          } catch (error) {
+            setAccountName("");
+            toast.error("Could not verify account");
+            console.error(error);
+          }
+        });
+      }
+    };
+
+    resolveAccount();
+  }, [bankCode, accountNumber, resolveAccountNumber]);
+
+  async function onSubmit(data: BankInfoValues) {
     startTransition(async () => {
       const { error } = await tryCatch(
         updateStore({
-          ...omit(data, ["hasAddedWebhookAndCallbackURL"]),
+          ...data,
           slug,
         })
       );
 
-      if (error)
-        return void toast.error("Failed to update store. Try again later");
-      toast.success("Profile updated.");
+      if (error) return void toast.error("Failed to update store. Try again later");
+      toast.success("Bank information updated.");
     });
   }
 
@@ -69,12 +148,32 @@ export function PaymentForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
-          name="publicKey"
+          name="bankCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Paystack Public Key</FormLabel>
+              <FormLabel>Select Bank</FormLabel>
               <FormControl>
-                <Input placeholder="pk_live_da16..." {...field} />
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isLoadingBanks}
+                  {...field}
+                  onChange={(e) => {
+                    const selectedBank = banks.find(bank => bank.code === e.target.value);
+                    field.onChange(e.target.value);
+                    form.setValue('bankName', selectedBank?.name || '', {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                      shouldTouch: true
+                    });
+                  }}
+                >
+                  <option value="">Select a bank</option>
+                  {banks.map((bank, index) => (
+                    <option key={index} value={bank.code}>
+                      {bank.name}
+                    </option>
+                  ))}
+                </select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -83,98 +182,41 @@ export function PaymentForm({
 
         <FormField
           control={form.control}
-          name="secretKey"
+          name="accountNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Paystack Secret Key</FormLabel>
+              <FormLabel>Account Number</FormLabel>
               <FormControl>
-                <Input placeholder="sk_live_da16..." {...field} />
+                <Input
+                  {...field}
+                  maxLength={10}
+                  placeholder="Enter 10-digit account number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <CopyInput
-          label="Paystack Webhook URL"
-          description="Add Webhook URL in your paystack webhook URL panel"
-        />
-        <CopyInput
-          label="Paystack Callback URL"
-          description="Add Callback URL in your paystack callback URL panel"
-        />
-        <FormField
-          control={form.control}
-          name="hasAddedWebhookAndCallbackURL"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>I have added Webhook URL and Callback URL</FormLabel>
-                <FormDescription>
-                  It is really important to add these webhooks to ensure that
-                  customer payments are properly processed
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
-        <Button disabled={isPending} type="submit">
-          {isPending && <Loader className="size-4 animate-spin" />} Update
-          Payment
+
+        <FormItem>
+          <FormLabel>Account Name</FormLabel>
+          <FormControl>
+            <Input
+              value={accountName}
+              readOnly
+              disabled
+              placeholder={isAccountResolvePending ? "Verifying account..." : "Account name will appear here"}
+            />
+          </FormControl>
+        </FormItem>
+
+        <Button disabled={isPending || isAccountResolvePending || accountName == ""} type="submit">
+          {isPending && <Loader className="size-4 animate-spin" />} Update Bank Information
         </Button>
       </form>
     </Form>
-  );
-}
-
-export default function CopyInput({
-  label,
-  description,
-}: {
-  label: string;
-  description?: string;
-}) {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  // Get the current URL when the component mounts or the modal opens
-  const cloudURL = process.env.NEXT_PUBLIC_CONVEX_URL!;
-  if (process.env.NODE_ENV !== "production") {
-    if (!cloudURL) {
-      throw new Error("webhookURL is required");
-    }
-  }
-
-  const webhookURL = cloudURL.replace("cloud", "site") + "/paystack";
-
-  const copyToClipboard = async () => {
-    if (inputRef.current) {
-      try {
-        await navigator.clipboard.writeText(inputRef.current.value);
-        toast(`The ${label} has been copied to your clipboard`);
-      } catch (err) {
-        console.error(err);
-        toast.error("Could not copy the URL to clipboard");
-      }
-    }
-  };
-
-  return (
-    <div className="mt-4">
-      <Label>{label}</Label>
-      <div className="flex items-center space-x-2 my-2">
-        <Input ref={inputRef} value={webhookURL} readOnly className="flex-1" />
-        <Button onClick={copyToClipboard} type="button">
-          Copy
-        </Button>
-      </div>
-      {description && (
-        <p className="text-muted-foreground text-xs">{description}</p>
-      )}
-    </div>
   );
 }

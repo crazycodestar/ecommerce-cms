@@ -16,16 +16,13 @@ import {
   ArrowRight,
   Check,
   Loader,
-  SquareArrowOutUpRight,
   Trash2,
 } from "lucide-react";
 
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,7 +37,6 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/clerk-react";
 import { useAction } from "convex/react";
 import { omit } from "es-toolkit";
-import Link from "next/link";
 
 const deliveryInfoSchema = z.object({
   deliveryOptions: z.array(
@@ -68,17 +64,18 @@ const storeInfoSchema = z.object({
   slug: z.string().optional(),
 });
 
-const paystackInfoSchema = z.object({
-  publicKey: z.string().min(2, { message: "Public key is required." }),
-  secretKey: z.string().min(2, { message: "Secret key is required." }),
-  hasAddedWebhookAndCallbackURL: z.literal(true),
+const bankInfoSchema = z.object({
+  bankCode: z.string().min(1, { message: "Please select a bank" }),
+  bankName: z.string(),
+  accountNumber: z.string().length(10, { message: "Account number must be 10 digits" }),
+  accountName: z.string().min(1, { message: "Account name is required" }),
 });
 
 export const createStoreSchema = z
   .object({
     ...storeInfoSchema.shape,
     ...deliveryInfoSchema.shape,
-    ...paystackInfoSchema.shape,
+    ...bankInfoSchema.shape,
   })
   .refine((data) => {
     data.name = data.name.toLowerCase();
@@ -110,10 +107,19 @@ export function CreateStore() {
       description: "",
       slug: "",
       deliveryOptions: [{ name: "", price: 0 }],
-      publicKey: "",
-      secretKey: "",
+      bankCode: "",
+      accountNumber: "",
+      accountName: "",
     },
   });
+
+  // React.useEffect(() => {
+  //   const subscription = form.watch((value, { name, type }) => {
+  //     console.log('Form errors:', JSON.stringify(form.formState.errors, null, 2));
+  //   });
+
+  //   return () => subscription.unsubscribe();
+  // }, [form]);
 
   // Get the current schema based on the step
   const getCurrentSchema = () => {
@@ -123,7 +129,7 @@ export function CreateStore() {
       case 2:
         return deliveryInfoSchema;
       case 3:
-        return paystackInfoSchema;
+        return bankInfoSchema;
       default:
         return storeInfoSchema;
     }
@@ -183,7 +189,7 @@ export function CreateStore() {
       try {
         const { data: slug, error } = await tryCatch(
           submitOnboarding({
-            ...omit(values, ["slug", "hasAddedWebhookAndCallbackURL"]),
+            ...omit(values, ["slug", "accountName"]),
             slug: values.slug!,
           })
         );
@@ -250,7 +256,7 @@ export function CreateStore() {
                   ? "Store Info"
                   : stepNumber === 2
                     ? "Shipping Address"
-                    : "Payment Info"}
+                    : "Bank Info"}
               </span>
             </div>
           ))}
@@ -283,7 +289,10 @@ export function CreateStore() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isCreatePending}>
+              <Button
+                type="submit"
+                disabled={isCreatePending || !form.formState.isValid}
+              >
                 {isCreatePending && (
                   <Loader className="mr-2 size-4 animate-spin" />
                 )}
@@ -393,83 +402,9 @@ export function CreateStoreForm({
         {/* Step 2: Shipping Address */}
         {step === 2 && <ShippingAddressForm form={form} />}
 
-        {/* Step 3: Payment Information */}
+        {/* Step 3: Bank Information */}
         {step === 3 && (
-          <div className="space-y-4">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-semibold">Payment Info</h2>
-              <p className="text-sm">
-                We manage payments using Paystack.{" "}
-                <Link
-                  className="text-blue-500 hover:underline inline-flex gap-1 items-center"
-                  href="https://paystack.com/"
-                  target="_blank"
-                >
-                  Sign Up
-                  <SquareArrowOutUpRight className="size-3" />
-                </Link>
-              </p>
-            </div>
-
-            <FormField
-              control={form.control}
-              name="publicKey"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paystack Public Key</FormLabel>
-                  <FormControl>
-                    <Input placeholder="pk_live_da16..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="secretKey"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paystack Secret Key</FormLabel>
-                  <FormControl>
-                    <Input placeholder="sk_live_da16..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <CopyInput
-              label="Paystack Webhook URL"
-              description="Add Webhook URL in your paystack webhook URL panel"
-            />
-            <CopyInput
-              label="Paystack Callback URL"
-              description="Add Callback URL in your paystack callback URL panel"
-            />
-            <FormField
-              control={form.control}
-              name="hasAddedWebhookAndCallbackURL"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      I have added Webhook URL and Callback URL
-                    </FormLabel>
-                    <FormDescription>
-                      It is really important to add these webhooks to ensure
-                      that customer payments are properly processed
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
+          <BankInformationForm form={form} />
         )}
         {children}
       </form>
@@ -619,6 +554,162 @@ const ShippingAddressForm = ({
           )}
         />
       </div>
+    </div>
+  );
+};
+
+const BankInformationForm = ({
+  form,
+}: {
+  form: UseFormReturn<CreateStoreSchema>;
+}) => {
+  const [banks, setBanks] = React.useState<Array<{ name: string; code: string }>>([]);
+  const [isLoadingBanks, setIsLoadingBanks] = React.useState(true);
+  const [isAccountResolvePending, startAccountResolveTransition] = React.useTransition();
+
+  const getBanks = useAction(api.paystack.getBanks);
+  const resolveAccountNumber = useAction(api.paystack.resolveAccountNumber);
+
+  const bankCode = form.watch("bankCode");
+  const accountNumber = form.watch("accountNumber");
+
+  React.useEffect(() => {
+    const loadBanks = async () => {
+      try {
+        const banksData = await getBanks();
+        setBanks(banksData);
+      } catch (error) {
+        toast.error("Failed to load banks");
+        console.error(error);
+      } finally {
+        setIsLoadingBanks(false);
+      }
+    };
+
+    loadBanks();
+  }, [getBanks]);
+
+  React.useEffect(() => {
+    const resolveAccount = async () => {
+      if (bankCode && accountNumber?.length === 10) {
+        startAccountResolveTransition(async () => {
+          try {
+            form.setValue("accountName", "", {
+            });
+            const accountName = await resolveAccountNumber({
+              accountNumber,
+              bankCode,
+            });
+
+            if (!accountName) {
+              toast.error("Could not verify account");
+              return;
+            }
+
+            form.setValue("accountName", accountName, {
+              shouldValidate: true,
+            });
+          } catch (error) {
+            form.setValue("accountName", "");
+            toast.error("Could not verify account");
+            console.error(error);
+          }
+        });
+      }
+    };
+
+    resolveAccount();
+  }, [bankCode, accountNumber, form, resolveAccountNumber]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-semibold">Bank Information</h2>
+        <p className="text-sm">Please provide your bank account details</p>
+      </div>
+
+      <FormField
+        control={form.control}
+        name="bankCode"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Select Bank</FormLabel>
+            <FormControl>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isLoadingBanks}
+                onBlur={field.onBlur}
+                onChange={(e) => {
+                  const selectedBank = banks.find(bank => bank.code === e.target.value);
+                  field.onChange(e.target.value);
+                  form.setValue('bankName', selectedBank?.name || '', {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true
+                  });
+                }}
+                value={field.value}
+              >
+                <option value="">Select a bank</option>
+                {banks.map((bank, index) => (
+                  <option key={index} value={bank.code}>
+                    {bank.name}
+                  </option>
+                ))}o
+              </select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="accountNumber"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Account Number</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                maxLength={10}
+                placeholder="Enter 10-digit account number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                onBlur={() => {
+                  field.onBlur();
+                  form.trigger("accountNumber");
+                }}
+                onChange={(e) => {
+                  field.onChange(e);
+                  form.trigger("accountNumber");
+                }}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="accountName"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Account Name</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                readOnly
+                disabled
+                placeholder={isAccountResolvePending ? "Verifying account..." : "Account name will appear here"}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };
