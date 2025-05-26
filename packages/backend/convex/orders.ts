@@ -34,9 +34,9 @@ export const updateOrderPaymentInformation = internalMutation({
 export const updateOrderPaymentStatus = internalMutation({
   args: {
     reference: Orders.withoutSystemFields.reference,
-    status: Orders.withoutSystemFields.status,
+    paymentStatus: Orders.withoutSystemFields.paymentStatus,
   },
-  handler: async (ctx, { reference, status }) => {
+  handler: async (ctx, { reference, paymentStatus }) => {
     const order = await ctx.db
       .query("orders")
       .withIndex("by_reference", (q) => q.eq("reference", reference))
@@ -44,17 +44,25 @@ export const updateOrderPaymentStatus = internalMutation({
 
     if (!order) throw new NotFoundError("order not found");
     await ctx.db.patch(order._id, {
-      status,
+      paymentStatus,
     });
 
-    if (status === "delivered") {
+    if (paymentStatus === "success") {
       ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
         orderId: order._id,
       });
       ctx.scheduler.runAfter(0, internal.email.sendOrderNotification, {
         orderId: order._id,
       });
+
+      return;
     }
+
+    await ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
+      orderId: order._id,
+    });
+
+    return;
   },
 });
 
@@ -136,14 +144,21 @@ export const createOrder = internalMutation({
     console.log(typeof orderNumber, orderNumber);
     const slug = "ORD-" + (orderNumber + 1).toString().padStart(5, "0");
 
-    return ctx.db.insert("orders", {
+    const orderId = await ctx.db.insert("orders", {
       ...args,
       slug,
       storeId: store._id,
       amount: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
       // shipping: 2000,
+      paymentStatus: "pending",
       status: "pending",
     });
+
+    await ctx.scheduler.runAfter(0, internal.email.sendOrderNotification, {
+      orderId,
+    });
+
+    return orderId;
   },
 });
 
@@ -293,6 +308,7 @@ export const getMyStoreOrders = query(async (ctx) => {
   const orders = await ctx.db
     .query("orders")
     .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
+    .filter((q) => q.neq(q.field("paymentStatus"), "pending"))
     .collect();
 
   if (!orders) return null;

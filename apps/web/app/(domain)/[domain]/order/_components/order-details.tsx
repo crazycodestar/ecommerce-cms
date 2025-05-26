@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { OrderType } from "@/lib/types";
@@ -9,20 +10,32 @@ interface OrderDetailsProps {
 }
 
 export function OrderDetails({ order }: OrderDetailsProps) {
+  const handlePayNow = () => {
+    window.location.href = order.url;
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <CardTitle>{order.reference}</CardTitle>
-            <Badge
-              variant={order.status === "delivered" ? "default" : "outline"}
-              className="w-fit"
-            >
-              Payment Status{" "}
-              <Separator orientation="vertical" className="min-h-3" />
-              {order.status}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={order.status === "delivered" ? "default" : "outline"}
+                className="w-fit"
+              >
+                Payment Status{" "}
+                <Separator orientation="vertical" className="min-h-3" />
+                {order.status}
+              </Badge>
+              {order.paymentStatus === "pending" && (
+                <Button onClick={handlePayNow} variant="outline" size="sm">
+                  Pay Now
+                </Button>
+              )}
+            </div>
+
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

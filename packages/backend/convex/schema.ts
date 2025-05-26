@@ -356,6 +356,7 @@ export const Orders = Table("orders", {
   url: v.optional(v.string()),
   accessCode: v.optional(v.string()),
   reference: v.optional(v.string()),
+  paymentStatus: v.union(v.literal("pending"), v.literal("success")),
   status: v.union(
     v.literal("pending"),
     v.literal("processing"),

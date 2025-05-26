@@ -1,4 +1,5 @@
 export interface OrderType {
+  url: string;
   email: string;
   phone: string;
   items: {
@@ -27,5 +28,6 @@ export interface OrderType {
   terminalTrackingNumber?: string;
   terminalTrackingUrl?: string;
   reference: string;
-  status: "pending" | "processing" | "shipping" | "delivered";  
+  status: "pending" | "processing" | "shipping" | "delivered";
+  paymentStatus: "pending" | "success";
 }

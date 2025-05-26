@@ -24,6 +24,7 @@ export default function ProductPage() {
     .map(
       (order): Order => ({
         ...order,
+        url: order.url ?? "",
         id: order._id,
         amount: order.amount,
         deliveryAmount: order.shipping,

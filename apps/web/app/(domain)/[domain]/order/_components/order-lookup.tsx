@@ -70,6 +70,8 @@ export function OrderLookup() {
         order && (
           <OrderDetails
             order={{
+              url: order.url ?? "",
+              paymentStatus: order.paymentStatus,
               amount: order.amount,
               deliveryAmount: order.shipping,
               email: order.email,
