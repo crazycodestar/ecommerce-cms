@@ -25,9 +25,9 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 variant={order.status === "delivered" ? "default" : "outline"}
                 className="w-fit"
               >
-                Payment Status{" "}
+                Status{" "}
                 <Separator orientation="vertical" className="min-h-3" />
-                {order.status}
+                {order.paymentStatus === "pending" ? "Unpaid" : order.status}
               </Badge>
               {order.paymentStatus === "pending" && (
                 <Button onClick={handlePayNow} variant="outline" size="sm">
