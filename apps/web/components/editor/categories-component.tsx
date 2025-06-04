@@ -23,7 +23,7 @@ export const CategoriesComponent = ({ items }: GalleryProps) => {
             </div>
             <div className="w-full">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {items.map((item, index) => (
+                    {items.map((item) => (
                         <div key={item.categoryId}>
                             <ContentImage
                                 imageId={item.imageId}

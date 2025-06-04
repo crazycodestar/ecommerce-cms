@@ -1,10 +1,3 @@
-import { Form } from "@/components/ui/form";
-import { api } from "@packages/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
-import { MinusCircle, PlusCircle } from "lucide-react";
-import { useFieldArray, UseFormReturn } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { FormInput } from "@/components/form/form-input";
 import {
   FormSelect,
@@ -15,7 +8,14 @@ import {
 } from "@/components/form/form-select";
 import { FormTextArea } from "@/components/form/form-text-area";
 import { ImageUploader } from "@/components/form/image-uploader";
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import { Content } from "@/hooks/use-editor";
+import { api } from "@packages/backend/convex/_generated/api";
+import { useQuery } from "convex/react";
+import { MinusCircle, PlusCircle } from "lucide-react";
+import { useFieldArray, UseFormReturn } from "react-hook-form";
 import { CollectionListForm } from "./collection-list-form";
 
 
@@ -51,7 +51,6 @@ export function ContentForm({
           {type === "categories" && (
             <div className="flex flex-col gap-4">
               <CollectionListForm form={form} />
-              {/* <CategoriesForm form={form} /> */}
             </div>
           )}
           {type === "collectionCarousel" && (
@@ -81,67 +80,6 @@ function BannerForm({ form }: { form: UseFormReturn<Content["content"]> }) {
         placeholder="Enter link"
         label="Link"
       />
-    </>
-  );
-}
-
-function CategoriesForm({ form }: { form: UseFormReturn<Content["content"]> }) {
-  const fieldArray = useFieldArray({
-    control: form.control,
-    name: "content.items",
-  });
-
-  const categories = useQuery(api.stores.getStoreCategories);
-
-  return (
-    <>
-      {fieldArray.fields.map((item, index) => (
-        <div key={item.id} className="flex flex-col gap-4">
-          <ImageUploader
-            control={form.control}
-            name={`content.items.${index}.imageId`}
-            label="Image"
-          />
-          <FormInput
-            control={form.control}
-            name={`content.items.${index}.title`}
-            placeholder="Enter title"
-            label="Title"
-          />
-          <FormSelect
-            label="Select a category"
-            control={form.control}
-            name={`content.items.${index}.categoryId`}
-          >
-            <FormSelectTrigger className="w-full">
-              <FormSelectValue placeholder="Select a category" />
-            </FormSelectTrigger>
-            <FormSelectContent>
-              {categories?.map((category) => (
-                <FormSelectItem key={category._id} value={category._id}>
-                  {category.name}
-                </FormSelectItem>
-              ))}
-            </FormSelectContent>
-          </FormSelect>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => fieldArray.remove(index)}
-          >
-            <MinusCircle className="size-4" /> Remove
-          </Button>
-          <Separator />
-        </div>
-      ))}
-      <Button
-        type="button"
-        onClick={() =>
-          fieldArray.append({ imageId: "", title: "", categoryId: "" })
-        }
-      >
-        <PlusCircle className="size-4" /> Add Item
-      </Button>
     </>
   );
 }

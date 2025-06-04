@@ -1,6 +1,6 @@
 "use client";
 
-import { BannerSchema, CarouselSchema, CategoriesSchema, CollectionCarouselSchema, ProductCarouselSchema, useEditor } from "@/hooks/use-editor";
+import { BannerSchema, CarouselSchema, CategoriesSchema, CollectionCarouselSchema, Content, ProductCarouselSchema } from "@/hooks/use-editor";
 import { PackageOpen } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
@@ -10,7 +10,6 @@ import { CategoriesComponent } from "./categories-component";
 import { CollectionCarouselComponent } from "./collection-carousel-component";
 import { EmptyState } from "./empty-state";
 import { ProductCarouselComponent } from "./product-carousel";
-import { Content } from "@/hooks/use-editor";
 
 export const ContentConsumer = ({ content }: { content: Content[] }) => {
     if (!content.length) return <div className="flex flex-col items-center justify-center h-full">

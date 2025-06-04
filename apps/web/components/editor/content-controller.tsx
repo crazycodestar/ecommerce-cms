@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { contentTypes as contentTypesInit, useEditor, type Content } from "@/hooks/use-editor";
-import { ArrowLeft, BookHeadphones, Columns4, Edit, GalleryHorizontal, GripVertical, LayoutList, Plus, Redo2, Save, TicketX, Trash, Undo2 } from "lucide-react";
+import { ArrowLeft, BookHeadphones, Columns4, Edit, GalleryHorizontal, GripVertical, LayoutList, Plus, Save, TicketX, Trash } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ContentForm as ContentFormV2 } from "./content-form-v2";
@@ -126,7 +126,7 @@ export function ContentController() {
                     </Button>
                 </div>
                 <div className="flex flex-col gap-2">
-                    <ContentForm isLoading={false} defaultValues={content.find(content => content.id === id)!.content} onSubmit={(data) => handleSubmit(data, activeTabIndex)} />
+                    <ContentForm defaultValues={content.find(content => content.id === id)!.content} onSubmit={(data) => handleSubmit(data, activeTabIndex)} />
                 </div>
             </div>
         )
@@ -181,7 +181,7 @@ export function ContentController() {
     </div>)
 }
 
-const ContentForm = ({ defaultValues, isLoading, onSubmit }: { defaultValues: Content["content"], isLoading: boolean, onSubmit: (data: Content["content"]) => void }) => {
+const ContentForm = ({ defaultValues, onSubmit }: { defaultValues: Content["content"], onSubmit: (data: Content["content"]) => void }) => {
     const form = useForm<Content["content"]>({
         defaultValues,
     })
