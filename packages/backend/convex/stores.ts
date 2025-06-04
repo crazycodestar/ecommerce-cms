@@ -142,6 +142,7 @@ export const createStore = mutation({
     if (existingSlug) throw new ConflictError("Slug already taken");
 
 
+    // TODO: setup boilerplate store content
     const storeId = await ctx.db.insert("stores", {
       ...args,
       owner: tokenIdentifier,

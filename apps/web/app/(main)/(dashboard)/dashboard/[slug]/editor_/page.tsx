@@ -2,24 +2,17 @@
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Content, useEditor } from "@/hooks/use-editor";
+import { tryCatch } from "@/lib/try-catch";
 import { api } from "@packages/backend/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
-import React, { useTransition } from "react";
-import { Browser } from "./_components/browser";
-import {
-  ContentForm,
-  ContentFormValues,
-  useContentForm,
-} from "./_components/content-form";
-import { ContentPreview } from "./_components/content-preview";
-import { EditorSidebar } from "./_components/editor-sidebar";
-import { Id } from "@packages/backend/convex/_generated/dataModel";
-import { useParams, useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { tryCatch } from "@/lib/try-catch";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useTransition } from "react";
 import { toast } from "sonner";
-import { ContentController } from "./_components/content-controller";
-import { ContentConsumer } from "./content-consumer";
+import { Browser } from "../../../../../../components/editor/browser";
+import { ContentConsumer } from "../../../../../../components/editor/content-consumer";
+import { ContentController } from "../../../../../../components/editor/content-controller";
+import { EditorSidebar } from "../../../../../../components/editor/editor-sidebar";
 
 const deploymentStages = [
   "Setting up project",
@@ -29,22 +22,33 @@ const deploymentStages = [
 
 export default function ContentPage() {
   const { slug } = useParams<{ slug: string }>();
-  const contentJson = useQuery(api.contents.getContentJson);
-  const isPending = contentJson === undefined;
+  const contentInit = useQuery(api.contents.getContent);
+  const isPending = contentInit === undefined;
 
-  const updateContentJson = useMutation(api.contents.updateContentJson);
+  const setContent = useEditor((state) => state.setContent)
+  const content = useEditor((state) => state.content)
+  useEffect(() => {
+    if (isPending) return;
+
+    if (!contentInit) return;
+
+    const parsedContent = JSON.parse(contentInit) as Content[]
+    setContent(parsedContent)
+  }, [isPending, contentInit, setContent]);
+
+  // submit content
+  const updateContent = useMutation(api.contents.updateContent);
   const [isPendingForm, startTransition] = useTransition();
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const isFromOnboarding = searchParams.get("from") === "onboarding";
 
-  async function onSubmit(data: ContentFormValues) {
+  async function onSubmit() {
     startTransition(async () => {
       const { error } = await tryCatch(
-        updateContentJson({
-          logoId: data.logo.imageId as unknown as Id<"_storage">,
-          contentJson: JSON.stringify(data),
+        updateContent({
+          content: JSON.stringify(content),
         })
       );
       if (error) {
@@ -64,10 +68,6 @@ export default function ContentPage() {
     });
   }
 
-  const {
-    form,
-  } = useContentForm(onSubmit, isPending, contentJson ?? undefined);
-
   return (
     <SidebarProvider
       style={{
@@ -77,26 +77,14 @@ export default function ContentPage() {
     >
       <EditorSidebar variant="inset">
         <ContentController />
-        {/* <ContentForm
-          form={form}
-          onSubmit={onSubmit}
-          isPending={isPendingForm}
-        /> */}
       </EditorSidebar>
       <SidebarInset>
-        <Browser storeSlug={slug} />
-        <ContentConsumer />
-        {/* {isPending ? (
-            <ContentPageLoading />
-          ) : (
-            <ContentPreview formValues={form.watch() as ContentFormValues} />
-            // <iframe
-            //   id="inlineFrameExample"
-            //   title="Inline Frame Example"
-            //   className="w-full min-h-full"
-            //   src="http://localhost:5173"
-            // ></iframe>
-          )} */}
+        <Browser onPublish={() => onSubmit()} isPending={isPendingForm} storeSlug={slug} />
+        {isPending ? (
+          <ContentPageLoading />
+        ) : (
+          <ContentConsumer content={content} />
+        )}
       </SidebarInset>
     </SidebarProvider>
   );

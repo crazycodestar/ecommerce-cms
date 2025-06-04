@@ -1,17 +1,18 @@
+"use client";
+
 import { BannerSchema, CarouselSchema, CategoriesSchema, CollectionCarouselSchema, ProductCarouselSchema, useEditor } from "@/hooks/use-editor";
 import { PackageOpen } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
-import { BannerComponent } from "./_components/banner-component";
-import { CarouselComponent } from "./_components/carousel";
-import { CategoriesComponent } from "./_components/categories-component";
-import { CollectionCarouselComponent } from "./_components/collection-carousel-component";
-import { EmptyState } from "./_components/empty-state";
-import { ProductCarouselComponent } from "./_components/product-carousel";
+import { BannerComponent } from "./banner-component";
+import { CarouselComponent } from "./carousel";
+import { CategoriesComponent } from "./categories-component";
+import { CollectionCarouselComponent } from "./collection-carousel-component";
+import { EmptyState } from "./empty-state";
+import { ProductCarouselComponent } from "./product-carousel";
+import { Content } from "@/hooks/use-editor";
 
-export const ContentConsumer = () => {
-    const { content } = useEditor()
-
+export const ContentConsumer = ({ content }: { content: Content[] }) => {
     if (!content.length) return <div className="flex flex-col items-center justify-center h-full">
         <PackageOpen className="size-10 text-muted-foreground" />
         <h1 className="text-xl font-bold">No Content</h1>

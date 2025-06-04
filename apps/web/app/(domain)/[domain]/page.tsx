@@ -6,31 +6,36 @@ import Link from "next/link";
 import { fetchQuery } from "convex/nextjs";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import { ContentConsumer } from "@/components/editor/content-consumer";
+import { Content } from "@/hooks/use-editor";
 
 export default async function Page({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: storeSlug } = await params;
-  const contents = await fetchQuery(api.contents.getContentJsonByStoreSlug, {
+  const content = await fetchQuery(api.contents.getContentByStoreSlug, {
     storeSlug,
   });
+  const parsedContent = content ? JSON.parse(content) as Content[] : [];
   const products = await fetchQuery(api.products.getProductsByStoreSlug, {
     slug: storeSlug,
   });
 
   if (!storeSlug) return notFound();
 
-  return (
-    <>
-      <HeroSection contents={contents} storeSlug={storeSlug} />
+  return <ContentConsumer content={parsedContent} />
 
-      <section className="container mx-auto px-4 md:px-8 py-16 flex flex-col gap-8">
-        <h2 className="text-lg font-light uppercase tracking-wide text-center">
-          My Products
-        </h2>
+  // return (
+  //   <>
+  //     <HeroSection contents={contents} storeSlug={storeSlug} />
 
-        <MyProducts products={products} />
-      </section>
-    </>
-  );
+  //     <section className="container mx-auto px-4 md:px-8 py-16 flex flex-col gap-8">
+  //       <h2 className="text-lg font-light uppercase tracking-wide text-center">
+  //         My Products
+  //       </h2>
+
+  //       <MyProducts products={products} />
+  //     </section>
+  //   </>
+  // );
 }
 
 const contentFormSchema = z.object({

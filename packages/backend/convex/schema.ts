@@ -211,6 +211,7 @@ export const Stores = Table("stores", {
   slug: v.string(),
   contents: v.array(contentTypes),
   contentJson: v.optional(v.string()),
+  content: v.optional(v.string()),
   logoId: v.optional(v.id("_storage")),
   siteUrl: v.optional(v.string()),
   deliveryOptions: v.array(

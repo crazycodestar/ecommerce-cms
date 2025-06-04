@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
+  ArrowRight,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-export function Browser({ storeSlug }: { storeSlug: string }) {
+export function Browser({ storeSlug, onPublish, isPending }: { storeSlug: string, onPublish: () => void, isPending: boolean }) {
   const url = process.env.NODE_ENV === "development" ? `http://${storeSlug}.localhost:3000` : `https://${storeSlug}.convertlykit.store`;
 
   return (
@@ -45,6 +47,10 @@ export function Browser({ storeSlug }: { storeSlug: string }) {
           )}
         </div>
       </div>
+      <Button onClick={onPublish} disabled={isPending} className="flex items-center gap-2">
+        {isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+        Publish
+      </Button>
     </div>
   )
 }
