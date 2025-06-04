@@ -29,6 +29,7 @@ import {
 // import { ContentFormValues } from "./content-form";
 import { useState } from "react";
 import { z } from "zod";
+import { Content } from "@/hooks/use-editor";
 
 interface Collection {
   _id: string;
@@ -52,7 +53,7 @@ export const contentFormSchema = z.object({
 });
 
 interface CollectionListFormProps {
-  form: UseFormReturn<ContentFormValues>;
+  form: UseFormReturn<Content["content"]>;
 }
 
 export type ContentFormValues = z.infer<typeof contentFormSchema>;
@@ -63,7 +64,7 @@ export function CollectionListForm({ form }: CollectionListFormProps) {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "collectionList.items",
+    name: "content.items",
   });
 
   const handlePrev = () => {
@@ -155,13 +156,13 @@ export function CollectionListForm({ form }: CollectionListFormProps) {
                   </div>
                   <ImageUploader
                     control={form.control}
-                    name={`collectionList.items.${index}.imageId`}
+                    name={`content.items.${index}.imageId`}
                     label="Image"
                   />
 
                   <FormField
                     control={form.control}
-                    name={`collectionList.items.${index}.title`}
+                    name={`content.items.${index}.title`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Title</FormLabel>
@@ -178,7 +179,7 @@ export function CollectionListForm({ form }: CollectionListFormProps) {
 
                   <FormField
                     control={form.control}
-                    name={`collectionList.items.${index}.collectionId`}
+                    name={`content.items.${index}.collectionId`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Collection</FormLabel>

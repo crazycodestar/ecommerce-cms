@@ -18,6 +18,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { tryCatch } from "@/lib/try-catch";
 import { toast } from "sonner";
+import { ContentController } from "./_components/content-controller";
+import { ContentConsumer } from "./content-consumer";
 
 const deploymentStages = [
   "Setting up project",
@@ -70,19 +72,21 @@ export default function ContentPage() {
     <SidebarProvider
       style={{
         // @ts-expect-error sidebar config
-        "--sidebar-width": "25rem",
+        "--sidebar-width": "20rem",
       }}
     >
       <EditorSidebar variant="inset">
-        <ContentForm
+        <ContentController />
+        {/* <ContentForm
           form={form}
           onSubmit={onSubmit}
           isPending={isPendingForm}
-        />
+        /> */}
       </EditorSidebar>
-      <SidebarInset className="z-10">
-        <Browser storeSlug={slug}>
-          {isPending ? (
+      <SidebarInset>
+        <Browser storeSlug={slug} />
+        <ContentConsumer />
+        {/* {isPending ? (
             <ContentPageLoading />
           ) : (
             <ContentPreview formValues={form.watch() as ContentFormValues} />
@@ -92,8 +96,7 @@ export default function ContentPage() {
             //   className="w-full min-h-full"
             //   src="http://localhost:5173"
             // ></iframe>
-          )}
-        </Browser>
+          )} */}
       </SidebarInset>
     </SidebarProvider>
   );
