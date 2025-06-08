@@ -2,18 +2,21 @@ import { omit } from "convex-helpers";
 import { Table } from "convex-helpers/server";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { internalQuery, mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { ConflictError, NotFoundError } from "./error";
 import { slugify } from "./lib/slugify";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifierWithAuthError,
 } from "./utils";
+import { getAll } from "convex-helpers/server/relationships";
+import { internal } from "./_generated/api";
 
 export const Collections = Table("collections", {
   name: v.string(),
   slug: v.string(),
   storeId: v.id("stores"),
+  categoryIds: v.array(v.id("categories")),
 });
 
 export const CollectionsOnProducts = Table("collectionsOnProducts", {
@@ -23,7 +26,7 @@ export const CollectionsOnProducts = Table("collectionsOnProducts", {
 
 // Collections
 export const createCollection = mutation({
-  args: omit(Collections.withoutSystemFields, ["storeId", "slug"]),
+  args: omit(Collections.withoutSystemFields, ["storeId", "slug", "categoryIds"]),
   handler: async (ctx, args) => {
     const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
     const store = await getStoreByTokenIdentifierWithAuthError(
@@ -41,7 +44,7 @@ export const createCollection = mutation({
     if (existingCollection)
       throw new ConflictError("collection already exists");
 
-    return ctx.db.insert("collections", { ...args, storeId: store._id, slug });
+    return ctx.db.insert("collections", { ...args, storeId: store._id, slug, categoryIds: [] });
   },
 });
 
@@ -160,6 +163,43 @@ export const deleteCollections = mutation({
 });
 
 // Collections on Products
+export const addCategoryToCollection = internalMutation({
+  args: {
+    categoryId: v.id("categories"),
+    collectionId: v.id("collections"),
+  },
+  handler: async (ctx, { categoryId, collectionId }) => {
+    const collection = await ctx.db.get(collectionId);
+    if (!collection) throw new NotFoundError("Collection not found");
+
+    if (collection.categoryIds.includes(categoryId)) return { success: true };
+
+    return ctx.db.patch(collectionId, { categoryIds: [...collection.categoryIds, categoryId] });
+  },
+});
+
+export const removeCategoryFromCollection = internalMutation({
+  args: {
+    categoryId: v.id("categories"),
+    collectionId: v.id("collections"),
+  },
+  handler: async (ctx, { categoryId, collectionId }) => {
+    const collection = await ctx.db.get(collectionId);
+    if (!collection) throw new NotFoundError("Collection not found");
+
+    const productsInCollectionIds = (await ctx.db.query("collectionsOnProducts").withIndex("by_collectionId", q => q.eq("collectionId", collectionId)).collect()).map(pic => pic.productId);
+    const productsInCollection = (await getAll(ctx.db, productsInCollectionIds)).filter((p): p is NonNullable<typeof p> => p?.categoryId === categoryId);
+
+    console.log("productsInCollection", productsInCollection);
+    const collectionHasCategory = productsInCollection.some(p => p?.categoryId === categoryId);
+
+    console.log("collectionHasCategory", collectionHasCategory);
+
+    if (collectionHasCategory) return { success: true };
+    return ctx.db.patch(collectionId, { categoryIds: collection.categoryIds.filter((id) => id !== categoryId) });
+  },
+});
+
 export const addProductToCollection = mutation({
   args: {
     productId: v.id("products"),
@@ -194,6 +234,13 @@ export const addProductToCollection = mutation({
       throw new ConflictError("product already in collection");
 
     // mutation
+    if (product.categoryId) {
+      await ctx.scheduler.runAfter(0, internal.collections.addCategoryToCollection, {
+        categoryId: product.categoryId,
+        collectionId: collection._id,
+      })
+    }
+
     return ctx.db.insert("collectionsOnProducts", {
       collectionId: collection._id,
       productId: product._id,
@@ -279,6 +326,13 @@ export const removeProductFromCollection = mutation({
       throw new NotFoundError("product not in collection");
 
     // mutation
+    if (product.categoryId) {
+      await ctx.scheduler.runAfter(0, internal.collections.removeCategoryFromCollection, {
+        categoryId: product.categoryId,
+        collectionId: collection._id,
+      })
+    }
+
     return ctx.db.delete(existingCollectionOnProduct._id);
   },
 });
@@ -952,5 +1006,25 @@ export const apiGetSubCategoriesByParentIdAndStoreSlug = internalQuery({
       .withIndex("by_storeId", (q) => q.eq("storeId", store._id))
       .filter((q) => q.eq(q.field("parentId"), parentId))
       .collect();
+  },
+});
+
+// more
+export const getCollectionOrCategoryBySlugAndStoreSlug = query({
+  args: {
+    storeSlug: v.string(),
+    slug: v.string(),
+  },
+  handler: async (ctx, { storeSlug, slug }) => {
+    const store = await ctx.db.query("stores").withIndex("by_slug", (q) => q.eq("slug", storeSlug)).unique();
+    if (!store) throw new NotFoundError("Store not found");
+
+    const collection = await ctx.db.query("collections").withIndex("by_storeId_slug", (q) => q.eq("storeId", store._id).eq("slug", slug)).unique();
+    if (collection) return collection;
+
+    const category = await ctx.db.query("categories").withIndex("by_storeId_slug", (q) => q.eq("storeId", store._id).eq("slug", slug)).unique();
+    if (category) return category;
+
+    throw new NotFoundError("Collection or Category not found");
   },
 });

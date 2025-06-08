@@ -10,12 +10,15 @@ import {
 } from "./_generated/server";
 import { defaultUnitTypeName } from "./constants";
 import { NotFoundError, UnauthorizedError } from "./error";
-import { Categories, Metadatas, Products, UnitTypes } from "./schema";
+import { Categories, Metadatas, Products, Properties, UnitTypes } from "./schema";
 import {
   getStoreByTokenIdentifierWithAuthError,
   getTokenIdentifier,
   getTokenIdentifierWithAuthError,
 } from "./utils";
+import { slugify } from "./lib/slugify";
+import { paginationOptsValidator } from "convex/server";
+import { getAll } from "convex-helpers/server/relationships";
 
 export const getProductImageUrl = query({
   args: {
@@ -237,6 +240,19 @@ export const updateProduct = mutation({
     if (store.owner !== identity)
       throw new UnauthorizedError("User not authorized to update store");
 
+    // cronjob to add potential new options in each property
+    if (product.properties && product.properties.length > 0) {
+      ctx.scheduler.runAfter(0, api.products.AddOptionToProperties, {
+        // FIXME: Why doesn't it filter out the types that aren't string
+        properties: product.properties
+          .filter((p) => typeof p.value === "string")
+          .map((p) => ({
+            propertyId: p.propertyId,
+            option: p.value as string,
+          })),
+      });
+    }
+
     const variants =
       product.variants &&
       (await Promise.all(
@@ -274,10 +290,13 @@ export const createProperty = mutation({
       ctx,
       tokenIdentifier
     );
+
+    const slug = slugify(name);
     return ctx.db.insert("properties", {
       categoryId,
       storeId: store._id,
       name,
+      slug,
       type,
       options,
     });
@@ -324,9 +343,12 @@ export const createCategory = mutation({
       ctx,
       tokenIdentifier
     );
+
+    const slug = slugify(args.category.name);
     const categoryId = await ctx.db.insert("categories", {
       storeId: store._id,
       name: args.category.name,
+      slug,
     });
 
     await Promise.all(
@@ -335,6 +357,7 @@ export const createCategory = mutation({
           await ctx.db.insert("categories", {
             storeId: store._id,
             name: subCategory.name,
+            slug: slugify(subCategory.name),
             parentId: categoryId,
           })
       )
@@ -344,7 +367,7 @@ export const createCategory = mutation({
 
 export const createSubcategory = mutation({
   args: {
-    ...omit(Categories.withoutSystemFields, ["parentId", "storeId"]),
+    ...omit(Categories.withoutSystemFields, ["parentId", "storeId", "slug"]),
     parentId: v.id("categories"),
   },
   handler: async (ctx, { parentId, ...args }) => {
@@ -359,6 +382,7 @@ export const createSubcategory = mutation({
 
     await ctx.db.insert("categories", {
       ...args,
+      slug: slugify(args.name),
       parentId: category._id,
       storeId: store._id,
     });
@@ -604,5 +628,188 @@ export const apiGetProductsByStoreSlug = internalQuery({
         };
       })
     );
+  },
+});
+
+// product browser function
+
+
+    async function getCategoryTreeByIdFunc(ctx: QueryCtx,
+      parentId: Id<"categories">, storeId: Id<"stores">
+    ): Promise<DataModel["categories"]["document"][] | null> {
+      const c = await ctx.db.get(parentId);
+      if (!c) return null;
+      if (c.storeId !== storeId) return null;
+      if (!c.parentId) return [c];
+
+      const cat = await getCategoryTreeByIdFunc(ctx, c.parentId, storeId);
+      if (!cat) return [c];
+      return [c, ...cat];
+    }
+
+async function getCategoryDescendants(ctx: QueryCtx, categoryId: Id<"categories">, storeId: Id<"stores">): Promise<DataModel["categories"]["document"][]> {
+  const categories: DataModel["categories"]["document"][] = [];
+
+  const category = await ctx.db.get(categoryId);
+  if (category && category.storeId === storeId) categories.push(category);
+
+  const descendants = await ctx.db.query("categories").withIndex("by_parentId_storeId", (q) => q.eq("parentId", categoryId).eq("storeId", storeId)).collect();
+  for (const descendant of descendants) {
+    const descendants = await getCategoryDescendants(ctx, descendant._id, storeId);
+    categories.push(...descendants);
+  }
+
+  return categories;
+}
+
+export const getProductsBySlug = query({
+  args: {
+    storeSlug: v.string(),
+
+    slug: v.string(),
+    // slug: v.union(v.id("categories"), v.id("collections")),
+    subCategories: v.optional(v.array(v.string())),
+    properties: v.optional(v.array(v.object({
+      slug: v.string(),
+      value: Products.withoutSystemFields.properties.element.fields.value,
+    }))),
+    stock: v.optional(v.boolean()),
+    minPrice: v.optional(v.number()),
+    maxPrice: v.optional(v.number()),
+
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, { storeSlug, slug, subCategories, properties, stock, minPrice, maxPrice, paginationOpts }) => {
+    const store = await ctx.db.query("stores").withIndex("by_slug", (q) => q.eq("slug", storeSlug)).unique();
+    if (!store) throw new NotFoundError("No Store Found");
+
+    // Load more products than needed initially, then filter
+    const BATCH_MULTIPLIER = 3; // Load 3x more products than requested
+    const batchSize = paginationOpts.numItems * BATCH_MULTIPLIER;
+    // Modified pagination options
+    const batchPaginationOpts = {
+      ...paginationOpts,
+      numItems: batchSize
+    };
+
+    let type: "categories" | "collections" = "categories";
+
+    let id: Id<"categories"> | Id<"collections"> | undefined;
+    id = (await ctx.db.query("categories").withIndex("by_storeId_slug", (q) => q.eq("storeId", store._id).eq("slug", slug)).unique())?._id;
+    if (!id) {
+      id = (await ctx.db.query("collections").withIndex("by_storeId_slug", (q) => q.eq("storeId", store._id).eq("slug", slug)).unique())?._id;
+      type = "collections";
+    }
+
+    if (!id) throw new NotFoundError("No Category or Collection Found");
+
+    const results = await ctx.db.query("products").withIndex("by_storeId", (q) => q.eq("storeId", store._id)).paginate(batchPaginationOpts);
+
+    return {
+      ...results,
+      page: await Promise.all(results.page.map(async (p) => {
+      // filter out products that are not in the collection
+      if (type === "collections") {
+        const productIds = (await ctx.db.query("collectionsOnProducts").withIndex("by_collectionId", (q) => q.eq("collectionId", id as Id<"collections">)).collect()).map((c) => c.productId);
+        const inProductsIds = productIds.includes(p._id);
+        if (!inProductsIds) return null;
+      }
+
+      // filter out products that are not in the category
+      if (type === "categories") {
+        const categoryTree = await getCategoryDescendants(ctx, id as Id<"categories">, store._id);
+        if (!categoryTree) return null;
+
+        const inCategoryTree = categoryTree.some((c) => c._id === p.categoryId);
+        if (!inCategoryTree) return null;
+      }
+
+      // filter out products that are not in the sub category
+      if (subCategories) {
+        if (!p.categoryId) return null;
+
+        const subCategorySet: Id<"categories">[] = [];
+
+        for (const subCategory of subCategories) {
+          const subCategoryId = await ctx.db.query("categories").withIndex("by_storeId_slug", (q) => q.eq("storeId", store._id).eq("slug", subCategory)).unique();
+          if (!subCategoryId) continue;
+
+          const subCategoryTree = await getCategoryDescendants(ctx, subCategoryId._id, store._id);
+          if (!subCategoryTree) continue
+
+          subCategorySet.push(...subCategoryTree.map((c) => c._id));
+        }
+
+        const inSubCategoryTree = subCategorySet.includes(p.categoryId);
+        if (!inSubCategoryTree) return null;
+      }
+
+      // filter out products that don't have the properties
+      if (properties) {
+        const allProperties = await ctx.db.query("properties").withIndex("by_storeId", (q) => q.eq("storeId", store._id)).collect();
+        if (!allProperties) return null;
+
+        const propertiesWithIds = properties.map((p) => ({
+          ...p,
+          _id: allProperties.find((pt) => pt.slug === p.slug)?._id,
+        })).filter((p): p is Omit<typeof p, "_id"> & { _id: Id<"properties"> } => p._id !== undefined);
+
+        const propertiesMatch = propertiesWithIds.every((pwi) => {
+          const productProperty = p.properties?.find((pp) => pp.propertyId === pwi._id);
+          return productProperty?.value === pwi.value;
+        });
+
+        if (!propertiesMatch) return null;
+      }
+
+      // filter out products that are out of stock
+      if (stock !== undefined && p.stock === 0) return null;
+
+      // filter out products that are outside price range
+      if (minPrice !== undefined && p.price < minPrice) return null;
+      if (maxPrice !== undefined && p.price > maxPrice) return null;
+
+      return getRichProduct(ctx, p._id);
+      }))
+      }
+  },
+});
+
+export const getFiltersBySlugAndStoreSlug = query({
+  args: {
+    storeSlug: v.string(),
+    slug: v.string(),
+  },
+  handler: async (ctx, { storeSlug, slug }) => {
+    const store = await ctx.db.query("stores").withIndex("by_slug", (q) => q.eq("slug", storeSlug)).unique();
+    if (!store) throw new NotFoundError("No Store Found");
+
+    let type: "categories" | "collections" = "categories";
+
+    let id: Id<"categories"> | Id<"collections"> | undefined;
+    id = (await ctx.db.query("categories").withIndex("by_storeId_slug", (q) => q.eq("storeId", store._id).eq("slug", slug)).unique())?._id;
+    if (!id) {
+      id = (await ctx.db.query("collections").withIndex("by_storeId_slug", (q) => q.eq("storeId", store._id).eq("slug", slug)).unique())?._id;
+      type = "collections";
+    }
+
+    if (!id) throw new NotFoundError("No Category or Collection Found");
+
+    const categoryIds: Id<"categories">[] = [];
+
+    if (type === "categories") {
+      const categoryTree = await getCategoryDescendants(ctx, id as Id<"categories">, store._id);
+      categoryIds.push(...categoryTree.map((c) => c._id));
+    }
+
+    if (type === "collections") {
+      const collection = await ctx.db.get(id as Id<"collections">);
+      if (!collection) return [];
+
+      categoryIds.push(...collection.categoryIds);
+    }
+
+    const properties = (await ctx.db.query("properties").withIndex("by_storeId", (q) => q.eq("storeId", store._id)).collect()).filter((p) => categoryIds.includes(p.categoryId));
+    return properties;
   },
 });

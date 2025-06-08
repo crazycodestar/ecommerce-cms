@@ -295,6 +295,7 @@ export const MetadataPresets = Table("metadataPresets", {
 // FIXME: Categories should have a slug
 export const Categories = Table("categories", {
   name: v.string(),
+  slug: v.string(),
   storeId: v.id("stores"),
   parentId: v.optional(v.id("categories")),
 });
@@ -302,6 +303,7 @@ export const Categories = Table("categories", {
 // FIXME: properties should have a slug
 export const Properties = Table("properties", {
   name: v.string(),
+  slug: v.string(),
   storeId: v.id("stores"),
   categoryId: v.id("categories"),
   options: v.optional(v.array(v.string())),
@@ -391,11 +393,12 @@ export default defineSchema({
   products: Products.table.index("by_categoryId_storeId", [
     "categoryId",
     "storeId",
-  ]),
+  ]).index("by_storeId", ["storeId"]),
   categories: Categories.table
     .index("by_storeId", ["storeId"])
-    .index("by_parentId_storeId", ["parentId", "storeId"]),
-  properties: Properties.table.index("by_storeId", ["storeId"]),
+    .index("by_parentId_storeId", ["parentId", "storeId"])
+    .index("by_storeId_slug", ["storeId", "slug"]),
+  properties: Properties.table.index("by_storeId", ["storeId"]).index("by_storeId_slug", ["storeId", "slug"]).index("by_categoryId_storeId", ["categoryId", "storeId"]),
   metadatas: Metadatas.table.index("by_storeId", ["storeId"]),
   metadataPresets: MetadataPresets.table.index("by_storeId", ["storeId"]),
   collections: Collections.table
@@ -404,7 +407,8 @@ export default defineSchema({
     .index("by_storeId_slug", ["storeId", "slug"]),
   collectionsOnProducts: CollectionsOnProducts.table
     .index("by_collectionId_productId", ["collectionId", "productId"])
-    .index("by_productId", ["productId"]),
+    .index("by_productId", ["productId"])
+    .index("by_collectionId", ["collectionId"]),
   unitTypes: UnitTypes.table.index("by_storeId", ["storeId"]),
   orders: Orders.table
     .index("by_storeId", ["storeId"])
