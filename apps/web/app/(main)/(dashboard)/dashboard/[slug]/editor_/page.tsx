@@ -9,10 +9,10 @@ import { useMutation, useQuery } from "convex/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useTransition } from "react";
 import { toast } from "sonner";
-import { Browser } from "../../../../../../components/editor/browser";
-import { ContentConsumer } from "../../../../../../components/editor/content-consumer";
-import { ContentController } from "../../../../../../components/editor/content-controller";
-import { EditorSidebar } from "../../../../../../components/editor/editor-sidebar";
+import { Browser } from "@/components/editor/browser";
+import { ContentConsumer } from "@/components/editor/content-consumer";
+import { ContentController } from "@/components/editor/content-controller";
+import { EditorSidebar } from "@/components/editor/editor-sidebar";
 
 const deploymentStages = [
   "Setting up project",
@@ -83,7 +83,7 @@ export default function ContentPage() {
         {isPending ? (
           <ContentPageLoading />
         ) : (
-          <ContentConsumer content={content} />
+          <ContentConsumer content={content} slug={slug} />
         )}
       </SidebarInset>
     </SidebarProvider>

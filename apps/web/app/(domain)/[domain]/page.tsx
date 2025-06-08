@@ -14,5 +14,5 @@ export default async function Page({ params }: { params: Promise<{ domain: strin
 
   if (!storeSlug) return notFound();
 
-  return <ContentConsumer content={parsedContent} />
+  return <ContentConsumer content={parsedContent} slug={storeSlug} />
 }

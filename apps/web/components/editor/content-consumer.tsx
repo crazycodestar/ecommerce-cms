@@ -2,7 +2,6 @@
 
 import { BannerSchema, CarouselSchema, CategoriesSchema, CollectionCarouselSchema, Content, ProductCarouselSchema } from "@/hooks/use-editor";
 import { PackageOpen } from "lucide-react";
-import { useParams } from "next/navigation";
 import React from "react";
 import { BannerComponent } from "./banner-component";
 import { CarouselComponent } from "./carousel";
@@ -11,7 +10,7 @@ import { CollectionCarouselComponent } from "./collection-carousel-component";
 import { EmptyState } from "./empty-state";
 import { ProductCarouselComponent } from "./product-carousel";
 
-export const ContentConsumer = ({ content }: { content: Content[] }) => {
+export const ContentConsumer = ({ content, slug }: { content: Content[], slug: string }) => {
     if (!content.length) return <div className="flex flex-col items-center justify-center h-full">
         <PackageOpen className="size-10 text-muted-foreground" />
         <h1 className="text-xl font-bold">No Content</h1>
@@ -23,7 +22,7 @@ export const ContentConsumer = ({ content }: { content: Content[] }) => {
             {content.map(({ content: { type, content } }, index) => (
                 <React.Fragment key={index}>
                     {type === "carousel" && <CarouselWrapper content={content} />}
-                    {type === "productCarousel" && <ProductCarouselWrapper content={content} />}
+                    {type === "productCarousel" && <ProductCarouselWrapper content={content} slug={slug} />}
                     {type === "banner" && <BannerWrapper content={content} />}
                     {type === "categories" && <CategoriesWrapper content={content} />}
                     {type === "collectionCarousel" && <CollectionCarouselWrapper content={content} />}
@@ -43,8 +42,7 @@ export const CarouselWrapper = ({ content }: { content: CarouselSchema["content"
     )
 }
 
-export const ProductCarouselWrapper = ({ content }: { content: ProductCarouselSchema["content"] }) => {
-    const { slug } = useParams<{ slug: string }>()
+export const ProductCarouselWrapper = ({ content, slug }: { content: ProductCarouselSchema["content"], slug: string }) => {
     const isMissing = Object.values(content).some(value => !value)
     if (isMissing) return <EmptyState />
 
