@@ -53,6 +53,11 @@ export function ImageUploader<T extends FieldValues>({
     field: ControllerRenderProps<T, Path<T>>;
   }) => {
     async function uploadImage(file: File) {
+      if (process.env.NODE_ENV === "development") {
+        field.onChange("kg2ak88kcdxnz7pmt6a61vfwj57h6kce");
+        return;
+      }
+
       startUploading(async () => {
         const { data: imageUrl, error } = await tryCatch(generateUploadUrl());
         if (error) {

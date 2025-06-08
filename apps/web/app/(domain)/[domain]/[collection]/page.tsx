@@ -3,32 +3,33 @@ import { api } from "@packages/backend/convex/_generated/api";
 import { fetchQuery } from "convex/nextjs";
 import { Filter } from "lucide-react";
 import Image from "next/image";
+import { Filters } from "../../_components/filters-v2";
 
 export default async function CollectionPage({ params }: { params: Promise<{ domain: string, collection: string }> }) {
   const { domain: storeSlug, collection: collectionSlug } = await params;
 
   const collection = await fetchQuery(
-    api.collections.getCollectionBySlugAndStoreSlug,
+    api.collections.getCollectionOrCategoryBySlugAndStoreSlug,
     {
       storeSlug,
       slug: collectionSlug,
     }
   );
 
-  const products = await fetchQuery(
-    api.collections.getProductsByCollectionSlugAndStoreSlug,
-    {
-      storeSlug,
-      collectionSlug,
-
-    }
-  );
+  const { page: products } = await fetchQuery(api.products.getProductsBySlug, {
+    storeSlug,
+    slug: collectionSlug,
+    paginationOpts: {
+      cursor: null,
+      numItems: 10,
+    },
+  });
 
   const isPending = products === undefined;
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="md:mx-8 py-4">
+      <div className="container md:mx-auto mx-8 py-4">
         {/* Page Title */}
         <div className="mb-4">
           {collection === undefined ? (
@@ -45,10 +46,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ dom
           <aside className="w-full md:w-64 shrink-0">
             <div className="sticky top-4">
               <div className="hidden md:block">
-                {/* <Filters
-                  isChecked={isChecked}
-                  onTogglePropertyFilter={handleTogglePropertyFilter}
-                  properties={properties} */}
+                <Filters storeSlug={storeSlug} slug={collectionSlug} />
               </div>
               {/* Mobile Filter Button */}
               <div className="md:hidden">
@@ -90,7 +88,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ dom
                       <div className="h-full max-w-full flex flex-col gap-2">
                         <Image
                           src={
-                            product.mainImage ??
+                            product.imageUrls[0] ??
                             "/placeholder.svg?height=400&width=300"
                           }
                           width={300}

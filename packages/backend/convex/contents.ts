@@ -168,3 +168,51 @@ export const getContentJsonByStoreSlug = query({
     return store.contentJson;
   },
 });
+
+// v3 content
+export const updateContent = mutation({
+  args: {
+    content: v.string(),
+  },
+  handler: async (ctx, { content }) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    return ctx.db.patch(store._id, {
+      content,
+    });
+  },
+});
+
+export const getContent = query({
+  handler: async (ctx) => {
+    const tokenIdentifier = await getTokenIdentifierWithAuthError(ctx);
+    const store = await getStoreByTokenIdentifierWithAuthError(
+      ctx,
+      tokenIdentifier
+    );
+
+    return store.content;
+  },
+});
+
+export const getContentByStoreSlug = query({
+  args: {
+    storeSlug: v.string(),
+  },
+  handler: async (ctx, { storeSlug }) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_slug", (q) => q.eq("slug", storeSlug))
+      .unique();
+
+    if (!store) {
+      return null;
+    }
+
+    return store.content;
+  },
+});

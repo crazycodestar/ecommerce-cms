@@ -9,11 +9,14 @@ const CarouselSchema = z.object({
         z.object({
           imageId: z.string(),
           collectionId: z.string(),
+          title: z.string().optional(),
+          description: z.string().optional(),
         })
       )
       .min(1, { message: "Atleast one image is required" }),
   }),
 });
+export type CarouselSchema = z.infer<typeof CarouselSchema>;
 
 export const CollectionCarouselSchema = z.object({
   type: z.literal("collectionCarousel"),
@@ -34,6 +37,7 @@ export const CollectionCarouselSchema = z.object({
       .min(1, { message: "Atleast one collection is required" }),
   }),
 });
+export type CollectionCarouselSchema = z.infer<typeof CollectionCarouselSchema>;
 
 const ProductCarouselSchema = z.object({
   type: z.literal("productCarousel"),
@@ -43,6 +47,7 @@ const ProductCarouselSchema = z.object({
     collectionId: z.string().min(1, { message: "Please select a collection" }),
   }),
 });
+export type ProductCarouselSchema = z.infer<typeof ProductCarouselSchema>;
 
 const BannerSchema = z.object({
   type: z.literal("banner"),
@@ -51,6 +56,7 @@ const BannerSchema = z.object({
     link: z.string().url({ message: "Link must be a valid URL" }),
   }),
 });
+export type BannerSchema = z.infer<typeof BannerSchema>;
 
 const CategoriesSchema = z.object({
   type: z.literal("categories"),
@@ -68,11 +74,12 @@ const CategoriesSchema = z.object({
       .min(1, { message: "Atleast one category is required" }),
   }),
 });
+export type CategoriesSchema = z.infer<typeof CategoriesSchema>;
 
 export const Content = z.object({
   id: z.string(),
-  name: z.string(),
-  type: z.string(),
+  // name: z.string(),
+  // type: z.string(),
   content: z.discriminatedUnion("type", [
     CollectionCarouselSchema,
     ProductCarouselSchema,
@@ -83,6 +90,48 @@ export const Content = z.object({
 });
 
 export type Content = z.infer<typeof Content>;
+
+export const contentTypes: (Content["content"] & { name: string })[] = [
+            {
+                type: "banner",
+                name: "Banner",
+                content: {
+                  imageId: "",
+                  link: "",
+                }
+            },
+            {
+                type: "carousel",
+                name: "Carousel",
+                content: {
+                  items: [],
+                }
+            },
+            {
+                type: "categories",
+                name: "Categories",
+                content: {
+                  items: [],
+                }
+            },
+            {
+                type: "collectionCarousel",
+                name: "Collection Carousel",
+                content: {
+                  items: [],
+                }
+            },
+            {
+                type: "productCarousel",
+                name: "Product Carousel",
+                content: {
+                  title: "",
+                  description: "",
+                  collectionId: "",
+                }
+            }
+        
+]
 
 interface EditorState {
   content: Content[];
