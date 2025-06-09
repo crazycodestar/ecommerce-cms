@@ -813,3 +813,14 @@ export const getFiltersBySlugAndStoreSlug = query({
     return properties;
   },
 });
+
+// temp
+// FIXME: remove
+export const getContentById = query({
+  args: {
+    id: v.union(v.id("categories"), v.id("collections")),
+  },
+  handler: async (ctx, { id }) => {
+    return ctx.db.get(id);
+  },
+})

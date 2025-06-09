@@ -9,6 +9,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ContentImage } from "./content-image";
+import { api } from "@packages/backend/convex/_generated/api";
+import { useQuery } from "convex/react";
 
 export function CollectionCarouselComponent({ items }: { items: CarouselSlide[] }) {
     return (
@@ -155,42 +157,7 @@ function SplitCarousel({
                 onTouchEnd={handleTouchEnd}
             >
                 {slides.map((slide, index) => (
-                    <div
-                        key={index}
-                        className="w-full flex-shrink-0 flex flex-col md:flex-row"
-                        aria-hidden={index !== currentIndex}
-                    >
-                        {/* Image container (left side) */}
-                        <div className={cn("w-full md:w-1/2", imageContainerClassName)}>
-                            <ContentImage
-                                imageId={slide.imageId}
-                                alt="image"
-                                className={cn(
-                                    "w-full aspect-square object-cover",
-                                    imageClassName
-                                )}
-                                height={800}
-                                width={800}
-                                priority={index === 0}
-                            />
-                        </div>
-
-                        {/* Content container (right side) */}
-                        <div
-                            className={cn(
-                                "w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center space-y-4",
-                                contentContainerClassName
-                            )}
-                        >
-                            <h2 className="text-3xl font-bold">{slide.title}</h2>
-                            <p className="text-lg">{slide.description}</p>
-                            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
-                                <Button asChild variant="link" className="px-0">
-                                    <Link href="#">Explore</Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+                    <SpllitCarouselItem key={index} slide={slide} imageContainerClassName={imageContainerClassName} imageClassName={imageClassName} contentContainerClassName={contentContainerClassName} priority={index === 0} />
                 ))}
             </div>
 
@@ -224,4 +191,48 @@ function SplitCarousel({
             )}
         </div>
     );
+}
+
+export const SpllitCarouselItem = ({ slide, imageContainerClassName, imageClassName, contentContainerClassName, priority }: { slide: CarouselSlide, imageContainerClassName: string, imageClassName: string, contentContainerClassName: string, priority: boolean }) => {
+    const content = useQuery(api.products.getContentById, {
+        id: slide.collectionId,
+    });
+
+
+    return (
+        <div
+            className="w-full flex-shrink-0 flex flex-col md:flex-row"
+        >
+            {/* Image container (left side) */}
+            <div className={cn("w-full md:w-1/2", imageContainerClassName)}>
+                <ContentImage
+                    imageId={slide.imageId}
+                    alt="image"
+                    className={cn(
+                        "w-full aspect-square object-cover",
+                        imageClassName
+                    )}
+                    height={800}
+                    width={800}
+                    priority={priority}
+                />
+            </div>
+
+            {/* Content container (right side) */}
+            <div
+                className={cn(
+                    "w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center space-y-4",
+                    contentContainerClassName
+                )}
+            >
+                <h2 className="text-3xl font-bold">{slide.title}</h2>
+                <p className="text-lg">{slide.description}</p>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pt-2">
+                    <Button asChild variant="link" className="px-0">
+                        <Link href={`/${content?.slug}`}>Explore</Link>
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )
 }

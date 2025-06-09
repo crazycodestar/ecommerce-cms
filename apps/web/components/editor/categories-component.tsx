@@ -3,12 +3,14 @@
 import { Id } from "@packages/backend/convex/_generated/dataModel";
 import { ContentImage } from "./content-image";
 import Link from "next/link";
+import { api } from "@packages/backend/convex/_generated/api";
+import { useQuery } from "convex/react";
 
 export interface GalleryProps {
     items: {
         imageId: Id<"_storage">;
         title: string;
-        categoryId: Id<"categories">;
+        collectionId: Id<"collections">;
     }[];
 }
 
@@ -24,23 +26,36 @@ export const CategoriesComponent = ({ items }: GalleryProps) => {
             <div className="w-full">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {items.map((item) => (
-                        <div key={item.categoryId}>
-                            <ContentImage
-                                imageId={item.imageId}
-                                alt={item.title}
-                                width={800}
-                                height={800}
-                                className="aspect-square"
-                            />
-                            <Link href="#">
-                                <h3 className="text-center text-lg font-semibold mt-2">
-                                    {item.title}
-                                </h3>
-                            </Link>
-                        </div>
+                        <CategoryItem key={item.collectionId} item={item} />
                     ))}
                 </div>
             </div>
         </section>
     );
 };
+
+const CategoryItem = ({ item }: { item: { imageId: Id<"_storage">, title: string, collectionId: Id<"collections"> } }) => {
+    console.log(item);
+    const content = useQuery(api.products.getContentById, {
+        id: item.collectionId,
+    });
+
+
+    return (
+        <div>
+            <ContentImage
+                imageId={item.imageId}
+                alt={item.title}
+                width={800}
+                height={800}
+                className="aspect-square"
+            />
+            <Link href={`/${content?.slug}`}>
+                <h3 className="text-center text-lg font-semibold mt-2">
+                    {item.title}
+                </h3>
+            </Link>
+        </div>
+
+    )
+}

@@ -1,8 +1,5 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import {
     Carousel,
@@ -13,7 +10,9 @@ import {
 import { api } from "@packages/backend/convex/_generated/api";
 import { Id } from "@packages/backend/convex/_generated/dataModel";
 import { usePaginatedQuery } from "convex/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export interface ProductCarouselProps {
     title: string;
@@ -29,12 +28,11 @@ export const ProductCarouselComponent = ({
     storeSlug,
 }: ProductCarouselProps) => {
     // TODO: move pagination into a reusable hook and add support for loadmore on intersection observer
-    const { results, status } = usePaginatedQuery(
+    const { results } = usePaginatedQuery(
         api.collections.getProductsByCollectionIdAndStoreSlug,
         { collectionId, storeSlug },
         { initialNumItems: 10 }
     );
-    const isLoading = status === "LoadingFirstPage";
 
     const [carouselApi, setCarouselApi] = useState<CarouselApi>();
     const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -64,6 +62,7 @@ export const ProductCarouselComponent = ({
 
             <div className="relative w-full">
                 <Carousel
+                    className="relative"
                     setApi={setCarouselApi}
                     opts={{
                         breakpoints: {
@@ -73,15 +72,10 @@ export const ProductCarouselComponent = ({
                         },
                     }}
                 >
-                    {isLoading || results.length !== 0 ? null : (
-                        <div className="w-full text-center py-12">
-                            This collection is empty
-                        </div>
-                    )}
-                    {isLoading && (
-                        <CarouselContent>
-                            {Array.from({ length: 20 }).map((_, index) => (
-                                <CarouselItem key={index} className="max-w-[210px]">
+                    <CarouselContent>
+                        {results.map((product, index) => (
+                            <CarouselItem key={index} className="max-w-[210px]">
+                                {!product && (
                                     <a href="#" className="rounded-xl">
                                         <div className="h-full max-w-full flex flex-col gap-2">
                                             <div className="w-full aspect-[3/4] object-cover object-center bg-muted" />
@@ -91,85 +85,66 @@ export const ProductCarouselComponent = ({
                                             </div>
                                         </div>
                                     </a>
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                    )}
+                                )}
+                                {product && (
+                                    <a href={`/prd/${product._id}`} className="rounded-xl">
+                                        <div className="h-full max-w-full flex flex-col gap-2">
+                                            <Image
+                                                src={
+                                                    product.mainImage ??
+                                                    "/placeholder.svg?height=400&width=300"
+                                                }
+                                                width={300}
+                                                height={400}
+                                                alt={product.name}
+                                                className="w-full aspect-[3/4] object-cover object-center bg-muted"
+                                            />
+                                            <div>
+                                                <h3>{product.name}</h3>
+                                                <p className="font-bold">
+                                                    {product.price.toLocaleString("en-NG", {
+                                                        style: "currency",
+                                                        currency: "NGN",
+                                                    })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                )}
+                            </CarouselItem>
+                        ))}
+                    </CarouselContent>
 
-                    {results && (
-                        <CarouselContent>
-                            {results.map((product, index) => (
-                                <CarouselItem key={index} className="max-w-[210px]">
-                                    {!product && (
-                                        <a href="#" className="rounded-xl">
-                                            <div className="h-full max-w-full flex flex-col gap-2">
-                                                <div className="w-full aspect-[3/4] object-cover object-center bg-muted" />
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="h-4 w-[70px] rounded-xs bg-muted" />
-                                                    <div className="h-4 w-[140px] rounded-xs bg-muted" />
-                                                </div>
-                                            </div>
-                                        </a>
-                                    )}
-                                    {product && (
-                                        <a href={`/prd/${product._id}`} className="rounded-xl">
-                                            <div className="h-full max-w-full flex flex-col gap-2">
-                                                <Image
-                                                    src={
-                                                        product.mainImage ??
-                                                        "/placeholder.svg?height=400&width=300"
-                                                    }
-                                                    width={300}
-                                                    height={400}
-                                                    alt={product.name}
-                                                    className="w-full aspect-[3/4] object-cover object-center bg-muted"
-                                                />
-                                                <div>
-                                                    <h3>{product.name}</h3>
-                                                    <p className="font-bold">
-                                                        {product.price.toLocaleString("en-NG", {
-                                                            style: "currency",
-                                                            currency: "NGN",
-                                                        })}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    )}
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
+                    {results.length === 0 ? null : (
+                        <>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                    carouselApi?.scrollPrev();
+                                }}
+                                disabled={!canScrollPrev}
+                                className="disabled:pointer-events-auto md:flex absolute h-full top-0 rounded-none hover:bg-black/50"
+                            >
+                                <ChevronLeft className="size-5" />
+                            </Button>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                    carouselApi?.scrollNext();
+                                }}
+                                disabled={!canScrollNext}
+                                className="disabled:pointer-events-auto md:flex absolute h-full top-0 rounded-none hover:bg-black/50 right-0"
+                            >
+                                <ChevronRight className="size-5" />
+                            </Button>
+                        </>
                     )}
                 </Carousel>
 
-                {results.length === 0 ? null : (
-                    <>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                                carouselApi?.scrollPrev();
-                            }}
-                            disabled={!canScrollPrev}
-                            className="disabled:pointer-events-auto md:flex absolute h-full top-0 rounded-none hover:bg-black/50"
-                        >
-                            <ChevronLeft className="size-5" />
-                        </Button>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                                carouselApi?.scrollNext();
-                            }}
-                            disabled={!canScrollNext}
-                            className="disabled:pointer-events-auto md:flex absolute h-full top-0 rounded-none hover:bg-black/50 right-0"
-                        >
-                            <ChevronRight className="size-5" />
-                        </Button>
-                    </>
-                )}
             </div>
         </section>
     );
