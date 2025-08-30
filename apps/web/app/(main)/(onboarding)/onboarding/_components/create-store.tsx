@@ -11,13 +11,7 @@ import { tryCatch } from "@/lib/try-catch";
 import { Button } from "@/components/ui/button";
 
 import { slugify } from "@/lib/slugify";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Loader,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader, Trash2 } from "lucide-react";
 
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
 import {
@@ -67,7 +61,9 @@ const storeInfoSchema = z.object({
 const bankInfoSchema = z.object({
   bankCode: z.string().min(1, { message: "Please select a bank" }),
   bankName: z.string(),
-  accountNumber: z.string().length(10, { message: "Account number must be 10 digits" }),
+  accountNumber: z
+    .string()
+    .length(10, { message: "Account number must be 10 digits" }),
   accountName: z.string().min(1, { message: "Account name is required" }),
 });
 
@@ -352,7 +348,8 @@ export function CreateStoreForm({
                   </FormControl>
                   {field.value && (
                     <p className="text-sm text-muted-foreground">
-                      Your store website will be {slugify(field.value)}.convertlykit.store
+                      Your store website will be {slugify(field.value)}
+                      .convertlykit.store
                     </p>
                   )}
                   <FormMessage />
@@ -403,9 +400,7 @@ export function CreateStoreForm({
         {step === 2 && <ShippingAddressForm form={form} />}
 
         {/* Step 3: Bank Information */}
-        {step === 3 && (
-          <BankInformationForm form={form} />
-        )}
+        {step === 3 && <BankInformationForm form={form} />}
         {children}
       </form>
     </Form>
@@ -563,9 +558,12 @@ const BankInformationForm = ({
 }: {
   form: UseFormReturn<CreateStoreSchema>;
 }) => {
-  const [banks, setBanks] = React.useState<Array<{ name: string; code: string }>>([]);
+  const [banks, setBanks] = React.useState<
+    Array<{ name: string; code: string }>
+  >([]);
   const [isLoadingBanks, setIsLoadingBanks] = React.useState(true);
-  const [isAccountResolvePending, startAccountResolveTransition] = React.useTransition();
+  const [isAccountResolvePending, startAccountResolveTransition] =
+    React.useTransition();
 
   const getBanks = useAction(api.paystack.getBanks);
   const resolveAccountNumber = useAction(api.paystack.resolveAccountNumber);
@@ -594,8 +592,7 @@ const BankInformationForm = ({
       if (bankCode && accountNumber?.length === 10) {
         startAccountResolveTransition(async () => {
           try {
-            form.setValue("accountName", "", {
-            });
+            form.setValue("accountName", "", {});
             const accountName = await resolveAccountNumber({
               accountNumber,
               bankCode,
@@ -640,12 +637,14 @@ const BankInformationForm = ({
                 disabled={isLoadingBanks}
                 onBlur={field.onBlur}
                 onChange={(e) => {
-                  const selectedBank = banks.find(bank => bank.code === e.target.value);
+                  const selectedBank = banks.find(
+                    (bank) => bank.code === e.target.value
+                  );
                   field.onChange(e.target.value);
-                  form.setValue('bankName', selectedBank?.name || '', {
+                  form.setValue("bankName", selectedBank?.name || "", {
                     shouldValidate: true,
                     shouldDirty: true,
-                    shouldTouch: true
+                    shouldTouch: true,
                   });
                 }}
                 value={field.value}
@@ -655,7 +654,8 @@ const BankInformationForm = ({
                   <option key={index} value={bank.code}>
                     {bank.name}
                   </option>
-                ))}o
+                ))}
+                o
               </select>
             </FormControl>
             <FormMessage />
@@ -703,7 +703,11 @@ const BankInformationForm = ({
                 {...field}
                 readOnly
                 disabled
-                placeholder={isAccountResolvePending ? "Verifying account..." : "Account name will appear here"}
+                placeholder={
+                  isAccountResolvePending
+                    ? "Verifying account..."
+                    : "Account name will appear here"
+                }
               />
             </FormControl>
             <FormMessage />

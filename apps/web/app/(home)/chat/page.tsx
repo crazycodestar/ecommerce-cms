@@ -72,34 +72,40 @@ export default async function Chat() {
         <div className="flex flex-col mt-16 gap-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard
-              image={<Image
-                src="/organization.png"
-                alt="organization"
-                width={238}
-                height={262}
-              />}
+              image={
+                <Image
+                  src="/organization.png"
+                  alt="organization"
+                  width={238}
+                  height={262}
+                />
+              }
               imageContainerClassName="pt-8"
               title="Team Collaboration"
               description="Work together with your team to manage your leads"
             />
             <FeatureCard
-              image={<Image
-                src="/ai-messaging.png"
-                alt="ai-messaging"
-                width={343.06}
-                height={213.43}
-              />}
+              image={
+                <Image
+                  src="/ai-messaging.png"
+                  alt="ai-messaging"
+                  width={343.06}
+                  height={213.43}
+                />
+              }
               imageContainerClassName="pt-4 md:px-4"
               title="Messaging with AI"
               description="Automate conversations with AI powered chatbots"
             />
             <FeatureCard
-              image={<Image
-                src="/integrations.png"
-                alt="integrations"
-                width={266}
-                height={122}
-              />}
+              image={
+                <Image
+                  src="/integrations.png"
+                  alt="integrations"
+                  width={266}
+                  height={122}
+                />
+              }
               imageContainerClassName="pt-8 md:pt-0 md:px-4"
               title="Socials Integration"
               description="Reach your customers on their favourite platforms"
@@ -107,24 +113,28 @@ export default async function Chat() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-8">
             <FeatureCard
-              image={<Image
-                src="/analytics.png"
-                alt="analytics"
-                width={662}
-                height={235}
-                className="w-full px-10"
-              />}
+              image={
+                <Image
+                  src="/analytics.png"
+                  alt="analytics"
+                  width={662}
+                  height={235}
+                  className="w-full px-10"
+                />
+              }
               imageContainerClassName="pt-4 items-end"
               title="Powerful Analytics"
               description="Get insights on your customers and their behaviour"
             />
             <FeatureCard
-              image={<Image
-                src="/shortcuts.png"
-                alt="shortcuts"
-                width={354}
-                height={279}
-              />}
+              image={
+                <Image
+                  src="/shortcuts.png"
+                  alt="shortcuts"
+                  width={354}
+                  height={279}
+                />
+              }
               imageContainerClassName="pt-8 md:px-4"
               title="Shortcuts and Templates"
               description="Save time with templates and shortcuts"

@@ -23,12 +23,9 @@ import React from "react";
 export function Nav({ storeSlug }: { storeSlug: string }) {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const items = useCartStore((state) => state.items);
-  const categories = useQuery(
-    api.collections.getCategoriesByStoreSlug,
-    {
-      storeSlug,
-    }
-  );
+  const categories = useQuery(api.collections.getCategoriesByStoreSlug, {
+    storeSlug,
+  });
 
   const isPending = categories === undefined;
   return (
@@ -73,7 +70,10 @@ export function Nav({ storeSlug }: { storeSlug: string }) {
                         </Button>
                       </div>
                       {activeId === slug && (
-                        <SubCategoryMenuMobile parentId={_id} storeSlug={storeSlug} />
+                        <SubCategoryMenuMobile
+                          parentId={_id}
+                          storeSlug={storeSlug}
+                        />
                       )}
                     </div>
                   ))}
@@ -155,7 +155,13 @@ export function Nav({ storeSlug }: { storeSlug: string }) {
   );
 }
 
-const SubCategoryMenu = ({ parentId, storeSlug }: { parentId: Id<"categories">, storeSlug: string }) => {
+const SubCategoryMenu = ({
+  parentId,
+  storeSlug,
+}: {
+  parentId: Id<"categories">;
+  storeSlug: string;
+}) => {
   const subCategories = useQuery(
     api.collections.getSubCategoriesByParentIdAndStoreSlug,
     {

@@ -1,39 +1,55 @@
 "use client";
 
+import { ContentConsumer } from "@/components/editor/content-consumer";
+import { EditorSidebar } from "@/components/editor/editor-sidebar";
+import { Navbar } from "@/components/editor/nav-bar";
+import { PropertiesSidebar } from "@/components/editor/properties-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Content, useEditor } from "@/hooks/use-editor";
+import { Content, useEditor, useSync } from "@/hooks/use-editor";
+import { useView } from "@/hooks/use-view";
 import { tryCatch } from "@/lib/try-catch";
 import { api } from "@packages/backend/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
+import { Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Browser } from "@/components/editor/browser";
-import { ContentConsumer } from "@/components/editor/content-consumer";
-import { ContentController } from "@/components/editor/content-controller";
-import { EditorSidebar } from "@/components/editor/editor-sidebar";
-
-const deploymentStages = [
-  "Setting up project",
-  "Spinning up server",
-  "Deploying project",
-];
+import { View } from "./view";
 
 export default function ContentPage() {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isInIframe, setIsInIframe] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    setShouldRender(true);
+    setIsInIframe(window.self !== window.top);
+  }, []);
+
+  if (!shouldRender) return null;
+  return isInIframe ? <View /> : <PageContent />;
+}
+
+const PageContent = () => {
+  useSync();
+
+  const boundaryRef = useRef<HTMLDivElement>(null);
+  const { view, setView, width, setWidth } = useView({ boundaryRef });
   const { slug } = useParams<{ slug: string }>();
   const contentInit = useQuery(api.contents.getContent);
   const isPending = contentInit === undefined;
 
-  const setContent = useEditor((state) => state.setContent)
-  const content = useEditor((state) => state.content)
+  const setContent = useEditor((state) => state.setContent);
+  const content = useEditor((state) => state.content);
+
   useEffect(() => {
     if (isPending) return;
 
     if (!contentInit) return;
 
-    const parsedContent = JSON.parse(contentInit) as Content[]
-    setContent(parsedContent)
+    const parsedContent = JSON.parse(contentInit) as Content[];
+    setContent(parsedContent);
   }, [isPending, contentInit, setContent]);
 
   // submit content
@@ -68,209 +84,62 @@ export default function ContentPage() {
     });
   }
 
+  const url =
+    process.env.NODE_ENV === "development"
+      ? `http://${slug}.localhost:3000`
+      : `https://${slug}.convertlykit.store`;
+
   return (
     <SidebarProvider
       style={{
         // @ts-expect-error sidebar config
-        "--sidebar-width": "20rem",
+        "--sidebar-width": "15rem",
       }}
     >
-      <EditorSidebar variant="inset">
-        <ContentController />
-      </EditorSidebar>
-      <SidebarInset>
-        <Browser onPublish={() => onSubmit()} isPending={isPendingForm} storeSlug={slug} />
+      <EditorSidebar />
+      <SidebarInset className="bg-neutral-100">
+        <Navbar
+          onPublish={onSubmit}
+          isPending={isPendingForm}
+          url={url}
+          view={view}
+          setView={setView}
+        />
         {isPending ? (
           <ContentPageLoading />
         ) : (
-          <ContentConsumer content={content} slug={slug} />
+          <ContentConsumer
+            content={content}
+            slug={slug}
+            view={view}
+            width={width}
+            setWidth={setWidth}
+            ref={boundaryRef}
+          />
         )}
       </SidebarInset>
+      <PropertiesSidebar side="right" />
     </SidebarProvider>
   );
-}
+};
 
 const ContentPageLoading = () => {
-  const [currentStage, setCurrentStage] = React.useState(0);
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentStage((prev) => (prev + 1) % deploymentStages.length);
-    }, 3000); // Change stage every 3 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-200">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-32" />
-            <div className="flex space-x-4">
-              <Skeleton className="h-6 w-6 rounded-full" />
-              <Skeleton className="h-6 w-6 rounded-full" />
-            </div>
-          </div>
-          <div className="mt-2 flex space-x-6 overflow-x-auto py-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-16" />
-            ))}
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Banner */}
-      <div className="relative">
-        <Skeleton className="h-[400px] w-full" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Skeleton className="mb-4 h-10 w-64" />
-          <Skeleton className="h-6 w-48" />
-        </div>
+    <div className="min-h-[calc(100vh-48px)]">
+      <div className="flex flex-col items-center justify-center min-h-full gap-4">
+        <Loader2 className="size-10 text-muted-foreground animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading content...</p>
       </div>
+    </div>
+  );
+};
 
-      {/* Product Carousel */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="mb-4 h-6 w-48" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex flex-col space-y-2">
-              <Skeleton className="aspect-square w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-1/4" />
-              <div className="flex space-x-1">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Skeleton key={j} className="h-3 w-3" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Promo Banner */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="h-24 w-full rounded-md" />
-      </div>
-
-      {/* Featured Section */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="mb-4 h-6 w-32" />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col space-y-2">
-              <Skeleton className="aspect-[4/3] w-full" />
-              <Skeleton className="h-5 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Brands Section */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="mb-4 h-6 w-40" />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col space-y-2">
-              <Skeleton className="aspect-square w-full" />
-              <Skeleton className="h-5 w-1/2" />
-              <Skeleton className="h-4 w-1/4" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Second Product Carousel */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="mb-4 h-6 w-48" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex flex-col space-y-2">
-              <Skeleton className="aspect-square w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-1/4" />
-              <div className="flex space-x-1">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Skeleton key={j} className="h-3 w-3" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Currently Loving */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="mb-4 h-6 w-40" />
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-square w-full" />
-          ))}
-        </div>
-      </div>
-
-      {/* Shop By Category */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="mb-4 h-6 w-40" />
-        <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center space-y-2">
-              <Skeleton className="h-16 w-16 rounded-full" />
-              <Skeleton className="h-4 w-16" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Looks Curated For You */}
-      <div className="container mx-auto mt-8 px-4">
-        <Skeleton className="mb-4 h-6 w-48" />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Skeleton className="aspect-[3/2] w-full" />
-          <div className="grid grid-cols-2 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-square w-full" />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="mt-12 border-t border-gray-200 py-8">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex flex-col space-y-2">
-                <Skeleton className="h-5 w-32" />
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <Skeleton key={j} className="h-4 w-24" />
-                ))}
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 flex justify-center space-x-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-8 rounded-full" />
-            ))}
-          </div>
-        </div>
-      </footer>
-
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-4">
-            Deploying your project
-          </h2>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
-            <p className="text-lg">{deploymentStages[currentStage]}</p>
-          </div>
-          <p className="text-sm text-gray-500">This may take a few minutes.</p>
-        </div>
+const EditorLoading = () => {
+  return (
+    <div className="min-h-[calc(100vh-48px)]">
+      <div className="flex flex-col items-center justify-center min-h-full gap-4">
+        <Loader2 className="size-10 text-muted-foreground animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading editor...</p>
       </div>
     </div>
   );

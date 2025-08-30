@@ -1,21 +1,28 @@
 "use client";
 
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, FileText, Layers, Plus } from "lucide-react";
 import * as React from "react";
 
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import ChatInput from "./chat-input";
 import ChatMessage from "./chat-message";
+import { ContentController } from "./content-controller";
+import { AddElementSidebar } from "./add-element-sidebar";
+import { useEditor } from "@/hooks/use-editor";
+
 // Define message types
 type MessageRole = "user" | "assistant";
 
@@ -26,29 +33,141 @@ interface Message {
   timestamp: Date;
 }
 
-export function EditorSidebar({
-  children,
-  ...props
-}: React.ComponentProps<typeof Sidebar> & { children: React.ReactNode }) {
+const navMain = [
+  {
+    title: "Add Element",
+    label: "add-element",
+    icon: Plus,
+  },
+  {
+    title: "Pages",
+    label: "pages",
+    icon: FileText,
+  },
+  {
+    title: "Layers",
+    label: "layers",
+    icon: Layers,
+  },
+];
+
+export function EditorSidebar() {
+  const [activeItem, setActiveItem] = React.useState<
+    (typeof navMain)[number]["label"] | null
+  >(null);
+
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader className="border-b">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <Link href="/dashboard">
-                <ArrowLeftIcon className="h-5 w-5" />
-                <span className="text-base font-semibold">Dashboard</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <div className="relative">
+      <Sidebar
+        collapsible="none"
+        className="w-[calc(var(--sidebar-width-icon)+1px)]! border-r"
+      >
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
+                <a href="#">
+                  <div className="text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <Image
+                      src="/logo.svg"
+                      alt="Logo"
+                      className="size-6"
+                      width={24}
+                      height={24}
+                    />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">Acme Inc</span>
+                    <span className="truncate text-xs">Enterprise</span>
+                  </div>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent className="px-1.5 md:px-0">
+              <SidebarMenu>
+                {navMain.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      tooltip={{
+                        children: item.title,
+                        hidden: false,
+                      }}
+                      onClick={() => {
+                        setActiveItem((i) =>
+                          i === item.label ? null : item.label
+                        );
+                      }}
+                      isActive={activeItem === item.label}
+                      className="px-2.5 md:px-2"
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+      {activeItem === "layers" && <LayersSidebar />}
+      {activeItem === "add-element" && (
+        <AddElementSidebar
+          setIsOpen={(open) => setActiveItem(open ? "add-element" : null)}
+        />
+      )}
+      {activeItem === "pages" && <PagesSidebar />}
+    </div>
+  );
+}
+
+function LayersSidebar() {
+  const pages = useEditor((state) => state.pages);
+
+  return (
+    <Sidebar
+      collapsible="none"
+      variant="floating"
+      className="hidden flex-1 md:flex absolute top-0 left-[calc(var(--sidebar-width-icon)+1.1px)] z-50"
+    >
+      <SidebarHeader className="gap-3.5 border-b p-4">
+        <div className="flex w-full items-center justify-between">
+          <div className="text-foreground text-base font-medium">Layers</div>
+        </div>
       </SidebarHeader>
-      <SidebarContent className="flex flex-col gap-6 p-4 h-full">
-        {children}
+      <SidebarContent>
+        <SidebarGroup className="px-0">
+          <SidebarGroupContent>
+            <pre>{JSON.stringify(pages, null, 2)}</pre>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
+
+function PagesSidebar() {
+  return (
+    <Sidebar
+      collapsible="none"
+      variant="floating"
+      className="hidden flex-1 md:flex absolute top-0 left-[calc(var(--sidebar-width-icon)+1.1px)] z-50"
+    >
+      <SidebarHeader className="gap-3.5 border-b p-4">
+        <div className="flex w-full items-center justify-between">
+          <div className="text-foreground text-base font-medium">Pages</div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup className="px-0">
+          <SidebarGroupContent>
+            <ContentController />
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );

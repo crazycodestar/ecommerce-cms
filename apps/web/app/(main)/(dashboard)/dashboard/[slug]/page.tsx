@@ -1,16 +1,29 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { formatCurrency } from "@/lib/utils"
-import { api } from "@packages/backend/convex/_generated/api"
-import { useQuery } from "convex/react"
+import { AnimatedGroup } from "@/components/motion-primitives/animated-group";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
+import { api } from "@packages/backend/convex/_generated/api";
+import { useQuery } from "convex/react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -21,10 +34,10 @@ import {
   Eye,
   Plus,
   AlertCircle,
-} from "lucide-react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
-import { useMemo } from "react"
+} from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -36,46 +49,52 @@ import {
   PieChart,
   Pie,
   Cell,
-} from "recharts"
+} from "recharts";
 
 export default function DashboardPage() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug } = useParams<{ slug: string }>();
 
   // Fetch data
-  const store = useQuery(api.stores.getStore, { slug })
-  const products = useQuery(api.products.getProductsByStoreSlug, { slug })
-  const orders = useQuery(api.orders.getMyStoreOrders)
+  const store = useQuery(api.stores.getStore, { slug });
+  const products = useQuery(api.products.getProductsByStoreSlug, { slug });
+  const orders = useQuery(api.orders.getMyStoreOrders);
 
   // Calculate metrics
   const metrics = useMemo(() => {
-    if (!orders || !products) return null
+    if (!orders || !products) return null;
 
-    const validOrders = orders.filter((order) => order !== undefined)
-    const validProducts = products.filter((product) => product !== undefined)
+    const validOrders = orders.filter((order) => order !== undefined);
+    const validProducts = products.filter((product) => product !== undefined);
 
     // Calculate revenue
-    const totalRevenue = validOrders.reduce((sum, order) => sum + (order.amount || 0), 0)
+    const totalRevenue = validOrders.reduce(
+      (sum, order) => sum + (order.amount || 0),
+      0
+    );
     const lastMonthRevenue = validOrders
       .filter((order) => {
-        const orderDate = new Date(order._creationTime)
-        const lastMonth = new Date()
-        lastMonth.setMonth(lastMonth.getMonth() - 1)
-        return orderDate >= lastMonth
+        const orderDate = new Date(order._creationTime);
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        return orderDate >= lastMonth;
       })
-      .reduce((sum, order) => sum + (order.amount || 0), 0)
+      .reduce((sum, order) => sum + (order.amount || 0), 0);
 
     // Calculate order metrics
-    const totalOrders = validOrders.length
-    const pendingOrders = validOrders.filter((order) => order.status === "pending").length
+    const totalOrders = validOrders.length;
+    const pendingOrders = validOrders.filter(
+      (order) => order.status === "pending"
+    ).length;
     const completedOrders = validOrders.filter((order) =>
-      ["shipping", "delivered"].includes(order.status)).length
+      ["shipping", "delivered"].includes(order.status)
+    ).length;
 
     // Calculate product metrics
-    const totalProducts = validProducts.length
+    const totalProducts = validProducts.length;
     const activeProducts = validProducts.length;
 
     // Calculate average order value
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     return {
       totalRevenue,
@@ -86,57 +105,57 @@ export default function DashboardPage() {
       totalProducts,
       activeProducts,
       averageOrderValue,
-    }
-  }, [orders, products])
+    };
+  }, [orders, products]);
 
   // Prepare chart data
   const salesData = useMemo(() => {
-    if (!orders) return []
+    if (!orders) return [];
 
-    const validOrders = orders.filter((order) => order !== undefined)
+    const validOrders = orders.filter((order) => order !== undefined);
     const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date()
-      date.setDate(date.getDate() - (6 - i))
-      return date
-    })
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date;
+    });
 
     return last7Days.map((date) => {
       const dayOrders = validOrders.filter((order) => {
-        const orderDate = new Date(order._creationTime)
-        return orderDate.toDateString() === date.toDateString()
-      })
+        const orderDate = new Date(order._creationTime);
+        return orderDate.toDateString() === date.toDateString();
+      });
 
       return {
         date: date.toLocaleDateString("en-US", { weekday: "short" }),
         sales: dayOrders.reduce((sum, order) => sum + (order.amount || 0), 0),
         orders: dayOrders.length,
-      }
-    })
-  }, [orders])
+      };
+    });
+  }, [orders]);
 
   // Order status data for pie chart
   const orderStatusData = useMemo(() => {
-    if (!metrics) return []
+    if (!metrics) return [];
 
     return [
       { name: "Completed", value: metrics.completedOrders, color: "#10b981" },
       { name: "Pending", value: metrics.pendingOrders, color: "#f59e0b" },
-    ]
-  }, [metrics])
+    ];
+  }, [metrics]);
 
   // Recent orders
   const recentOrders = useMemo(() => {
-    if (!orders) return []
+    if (!orders) return [];
 
     return orders
       .filter((order) => order !== undefined)
       .sort((a, b) => b._creationTime - a._creationTime)
-      .slice(0, 5)
-  }, [orders])
+      .slice(0, 5);
+  }, [orders]);
 
   // TODO: Top products (mock data for now since we don't have sales data per product)
   const topProducts = useMemo(() => {
-    if (!products) return []
+    if (!products) return [];
 
     return products
       .filter((product) => product !== undefined)
@@ -145,11 +164,11 @@ export default function DashboardPage() {
         ...product,
         sales: 0,
         revenue: 0,
-      }))
-  }, [products])
+      }));
+  }, [products]);
 
   if (!store || !metrics) {
-    return <DashboardSkeleton />
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -159,7 +178,9 @@ export default function DashboardPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back to {store.name}</p>
+            <p className="text-muted-foreground">
+              Welcome back to {store.name}
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" asChild>
@@ -222,7 +243,10 @@ export default function DashboardPage() {
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis className="text-xs" />
                   <Tooltip
@@ -259,7 +283,9 @@ export default function DashboardPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -296,7 +322,9 @@ export default function DashboardPage() {
                 <TableBody>
                   {recentOrders.map((order) => (
                     <TableRow key={order._id}>
-                      <TableCell className="font-medium">#{order.slug.slice(-8)}</TableCell>
+                      <TableCell className="font-medium">
+                        #{order.slug.slice(-8)}
+                      </TableCell>
                       <TableCell>
                         {order.firstName} {order.lastName}
                       </TableCell>
@@ -308,7 +336,11 @@ export default function DashboardPage() {
                   ))}
                 </TableBody>
               </Table>
-              {recentOrders.length === 0 && <div className="text-center py-8 text-muted-foreground">No orders yet</div>}
+              {recentOrders.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No orders yet
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -331,7 +363,9 @@ export default function DashboardPage() {
                 <TableBody>
                   {topProducts.map((product) => (
                     <TableRow key={product._id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {product.name}
+                      </TableCell>
                       <TableCell>{formatCurrency(product.price)}</TableCell>
                       <TableCell>{product.sales}</TableCell>
                       <TableCell>{formatCurrency(product.revenue)}</TableCell>
@@ -340,7 +374,9 @@ export default function DashboardPage() {
                 </TableBody>
               </Table>
               {topProducts.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">No products yet</div>
+                <div className="text-center py-8 text-muted-foreground">
+                  No products yet
+                </div>
               )}
             </CardContent>
           </Card>
@@ -383,7 +419,7 @@ export default function DashboardPage() {
         </Card>
       </AnimatedGroup>
     </div>
-  )
+  );
 }
 
 function MetricCard({
@@ -394,12 +430,12 @@ function MetricCard({
   trend,
   trendValue,
 }: {
-  title: string
-  value: string
-  description: string
-  icon: React.ElementType
-  trend?: "up" | "down" | "neutral"
-  trendValue?: string
+  title: string;
+  value: string;
+  description: string;
+  icon: React.ElementType;
+  trend?: "up" | "down" | "neutral";
+  trendValue?: string;
 }) {
   return (
     <Card>
@@ -412,14 +448,18 @@ function MetricCard({
         <p className="text-xs text-muted-foreground">{description}</p>
         {trendValue && (
           <div className="flex items-center mt-2">
-            {trend === "up" && <ArrowUpIcon className="h-3 w-3 text-green-600 mr-1" />}
-            {trend === "down" && <ArrowDownIcon className="h-3 w-3 text-red-600 mr-1" />}
+            {trend === "up" && (
+              <ArrowUpIcon className="h-3 w-3 text-green-600 mr-1" />
+            )}
+            {trend === "down" && (
+              <ArrowDownIcon className="h-3 w-3 text-red-600 mr-1" />
+            )}
             <span className="text-xs text-muted-foreground">{trendValue}</span>
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function DashboardSkeleton() {
@@ -466,5 +506,5 @@ function DashboardSkeleton() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

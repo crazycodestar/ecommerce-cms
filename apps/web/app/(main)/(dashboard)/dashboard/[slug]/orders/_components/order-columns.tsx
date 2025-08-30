@@ -26,7 +26,13 @@ import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatRelative } from "date-fns";
 import { Eye, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMutation } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { toast } from "sonner";
@@ -47,7 +53,9 @@ function OrderStatusSelect({ order }: { order: Order }) {
   return (
     <Select
       defaultValue={order.status}
-      onValueChange={(value: "pending" | "processing" | "shipping" | "delivered") => {
+      onValueChange={(
+        value: "pending" | "processing" | "shipping" | "delivered"
+      ) => {
         updateStatus({ orderId: order.id as Id<"orders">, status: value })
           .then(() => {
             toast.success("Order status updated");
@@ -175,7 +183,7 @@ export const Columns: ColumnDef<Order>[] = [
     cell: ({ row }) => {
       const order = row.original as Order;
       return <OrderStatusSelect order={order} />;
-    }
+    },
   },
   {
     id: "actions",

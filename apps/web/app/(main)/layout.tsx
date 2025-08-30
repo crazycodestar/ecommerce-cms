@@ -6,7 +6,6 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-
   return <ConvexClientProvider>{children}</ConvexClientProvider>;
 
   // return <ConvexClientProvider><ThemeProvider

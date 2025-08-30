@@ -75,42 +75,44 @@ export const ProductCarouselComponent = ({
                     <CarouselContent>
                         {results.map((product, index) => (
                             <CarouselItem key={index} className="max-w-[210px]">
-                                {!product && (
-                                    <a href="#" className="rounded-xl">
-                                        <div className="h-full max-w-full flex flex-col gap-2">
-                                            <div className="w-full aspect-[3/4] object-cover object-center bg-muted" />
-                                            <div className="flex flex-col gap-1">
-                                                <div className="h-4 w-[70px] rounded-xs bg-muted" />
-                                                <div className="h-4 w-[140px] rounded-xs bg-muted" />
+                                <>
+                                    {!product && (
+                                        <a href="#" className="rounded-xl">
+                                            <div className="h-full max-w-full flex flex-col gap-2">
+                                                <div className="w-full aspect-[3/4] object-cover object-center bg-muted" />
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="h-4 w-[70px] rounded-xs bg-muted" />
+                                                    <div className="h-4 w-[140px] rounded-xs bg-muted" />
+                                                </div>
                                             </div>
-                                        </div>
-                                    </a>
-                                )}
-                                {product && (
-                                    <a href={`/prd/${product._id}`} className="rounded-xl">
-                                        <div className="h-full max-w-full flex flex-col gap-2">
-                                            <Image
-                                                src={
-                                                    product.mainImage ??
-                                                    "/placeholder.svg?height=400&width=300"
-                                                }
-                                                width={300}
-                                                height={400}
-                                                alt={product.name}
-                                                className="w-full aspect-[3/4] object-cover object-center bg-muted"
-                                            />
-                                            <div>
-                                                <h3>{product.name}</h3>
-                                                <p className="font-bold">
-                                                    {product.price.toLocaleString("en-NG", {
-                                                        style: "currency",
-                                                        currency: "NGN",
-                                                    })}
-                                                </p>
+                                        </a>
+                                    )}
+                                    {product && (
+                                        <a href={`/prd/${product._id}`} className="rounded-xl">
+                                            <div className="h-full max-w-full flex flex-col gap-2">
+                                                <Image
+                                                    src={
+                                                        product.mainImage ??
+                                                        "/placeholder.svg?height=400&width=300"
+                                                    }
+                                                    width={300}
+                                                    height={400}
+                                                    alt={product.name}
+                                                    className="w-full aspect-[3/4] object-cover object-center bg-muted"
+                                                />
+                                                <div>
+                                                    <h3>{product.name}</h3>
+                                                    <p className="font-bold">
+                                                        {product.price.toLocaleString("en-NG", {
+                                                            style: "currency",
+                                                            currency: "NGN",
+                                                        })}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </a>
-                                )}
+                                        </a>
+                                    )}
+                                </>
                             </CarouselItem>
                         ))}
                     </CarouselContent>

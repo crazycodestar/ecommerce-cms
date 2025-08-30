@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import useCartStore, { useCart } from "@/lib/hooks/use-cart-store";
@@ -122,7 +122,7 @@ export default function Page() {
 
   const getDeliveryPrice = () => {
     const selectedOffering = deliveryInfo?.find(
-      o => o.name === watch('deliveryInfo.selectedOffering')
+      (o) => o.name === watch("deliveryInfo.selectedOffering")
     );
     return selectedOffering?.price ?? 0;
   };
@@ -262,7 +262,7 @@ export default function Page() {
                     {...register("country")}
                     id="country"
                     className="w-full border rounded p-2"
-                  // disabled
+                    // disabled
                   >
                     <option value="NG">Nigeria</option>
                   </select>
@@ -415,7 +415,9 @@ export default function Page() {
 
                 <div>
                   <div className="space-y-4">
-                    <h3 className="font-normal text-sm">Select Delivery Option</h3>
+                    <h3 className="font-normal text-sm">
+                      Select Delivery Option
+                    </h3>
                     {errors.deliveryInfo?.selectedOffering && (
                       <p className="text-red-500 text-xs">
                         {errors.deliveryInfo.selectedOffering.message}
@@ -426,24 +428,26 @@ export default function Page() {
                       {deliveryInfo?.map((offering) => (
                         <label
                           key={offering.name}
-                          className={`flex items-center justify-between p-4 border rounded cursor-pointer hover:bg-gray-50 ${watch('deliveryInfo.selectedOffering') === offering.name
-                            ? 'border-blue-500 bg-blue-50'
-                            : ''
-                            }`}
+                          className={`flex items-center justify-between p-4 border rounded cursor-pointer hover:bg-gray-50 ${
+                            watch("deliveryInfo.selectedOffering") ===
+                            offering.name
+                              ? "border-blue-500 bg-blue-50"
+                              : ""
+                          }`}
                         >
                           <div className="flex items-center gap-3">
                             <input
                               type="radio"
                               value={offering.name}
-                              {...register('deliveryInfo.selectedOffering')}
+                              {...register("deliveryInfo.selectedOffering")}
                               className="size-4"
                             />
                             <span>{offering.name}</span>
                           </div>
                           <span className="font-normal">
-                            {offering.price.toLocaleString('en-NG', {
-                              style: 'currency',
-                              currency: 'NGN'
+                            {offering.price.toLocaleString("en-NG", {
+                              style: "currency",
+                              currency: "NGN",
                             })}
                           </span>
                         </label>
@@ -455,9 +459,7 @@ export default function Page() {
 
                 <button
                   type="submit"
-                  disabled={
-                    isPending || isOrderProcessing
-                  }
+                  disabled={isPending || isOrderProcessing}
                   className="flex gap-2 items-center justify-center cursor-pointer w-full bg-black text-white py-3 font-normal mt-4 disabled:opacity-50"
                 >
                   {isOrderProcessing && (

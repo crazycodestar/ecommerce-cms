@@ -5,7 +5,11 @@ import { Filter } from "lucide-react";
 import Image from "next/image";
 import { Filters } from "../../_components/filters-v2";
 
-export default async function CollectionPage({ params }: { params: Promise<{ domain: string, collection: string }> }) {
+export default async function CollectionPage({
+  params,
+}: {
+  params: Promise<{ domain: string; collection: string }>;
+}) {
   const { domain: storeSlug, collection: collectionSlug } = await params;
 
   const collection = await fetchQuery(

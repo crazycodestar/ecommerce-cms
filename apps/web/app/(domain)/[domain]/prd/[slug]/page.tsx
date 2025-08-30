@@ -5,7 +5,11 @@ import { fetchQuery } from "convex/nextjs";
 import Image from "next/image";
 import OrderLayout from "../_components/order-layout";
 
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const product = await fetchQuery(api.products.getProductById, {
     id: slug as Id<"products">,

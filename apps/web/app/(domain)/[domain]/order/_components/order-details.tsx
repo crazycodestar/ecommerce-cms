@@ -25,8 +25,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 variant={order.status === "delivered" ? "default" : "outline"}
                 className="w-fit"
               >
-                Status{" "}
-                <Separator orientation="vertical" className="min-h-3" />
+                Status <Separator orientation="vertical" className="min-h-3" />
                 {order.paymentStatus === "pending" ? "Unpaid" : order.status}
               </Badge>
               {order.paymentStatus === "pending" && (
@@ -35,7 +34,6 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 </Button>
               )}
             </div>
-
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

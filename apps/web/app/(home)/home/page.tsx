@@ -81,33 +81,39 @@ export default async function Home() {
         <div className="flex flex-col mt-16 gap-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard
-              image={<Image
-                src="/socials.png"
-                alt="socials"
-                width={338}
-                height={157}
-              />}
+              image={
+                <Image
+                  src="/socials.png"
+                  alt="socials"
+                  width={338}
+                  height={157}
+                />
+              }
               imageContainerClassName="pt-8 md:pt-0 md:px-4 lg:px-8 xl:px-0"
               title="Integrates with socials"
               description="Manage campaigns across socials"
             />
             <FeatureCard
-              image={<Image
-                src="/products.png"
-                alt="products"
-                width={434}
-                height={305}
-              />}
+              image={
+                <Image
+                  src="/products.png"
+                  alt="products"
+                  width={434}
+                  height={305}
+                />
+              }
               title="Manage product inventory"
               description="Manage inventory in physical and online store"
             />
             <FeatureCard
-              image={<Image
-                src="/logistics.png"
-                alt="logistics"
-                width={266}
-                height={122}
-              />}
+              image={
+                <Image
+                  src="/logistics.png"
+                  alt="logistics"
+                  width={266}
+                  height={122}
+                />
+              }
               imageContainerClassName="pt-8 md:pt-0 md:px-4"
               title="Logistics and shipping"
               description="Integrates with 20+ local and internal providers"
@@ -115,24 +121,28 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-8">
             <FeatureCard
-              image={<Image
-                src="/scheduling.png"
-                alt="scheduling"
-                width={741}
-                height={246}
-                className="w-full pl-7"
-              />}
+              image={
+                <Image
+                  src="/scheduling.png"
+                  alt="scheduling"
+                  width={741}
+                  height={246}
+                  className="w-full pl-7"
+                />
+              }
               imageContainerClassName="pt-10 items-end"
               title="Coordinate campaigns"
               description="Schedule campaigns and posts across all platforms"
             />
             <FeatureCard
-              image={<Image
-                src="/site-builder.png"
-                alt="site-builder"
-                width={384}
-                height={362}
-              />}
+              image={
+                <Image
+                  src="/site-builder.png"
+                  alt="site-builder"
+                  width={384}
+                  height={362}
+                />
+              }
               title="Build your site"
               description="Build your site with our easy to use site builder"
             />

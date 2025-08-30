@@ -25,7 +25,9 @@ import { Loader } from "lucide-react";
 const bankInfoSchema = z.object({
   bankCode: z.string().min(1, { message: "Bank is required." }),
   bankName: z.string().min(1, { message: "Bank name is required." }),
-  accountNumber: z.string().length(10, { message: "Account number must be 10 digits." }),
+  accountNumber: z
+    .string()
+    .length(10, { message: "Account number must be 10 digits." }),
 });
 
 type BankInfoValues = z.infer<typeof bankInfoSchema>;
@@ -44,9 +46,12 @@ export function PaymentForm({
   });
 
   const [isPending, startTransition] = React.useTransition();
-  const [banks, setBanks] = React.useState<Array<{ name: string; code: string }>>([]);
+  const [banks, setBanks] = React.useState<
+    Array<{ name: string; code: string }>
+  >([]);
   const [isLoadingBanks, setIsLoadingBanks] = React.useState(true);
-  const [isAccountResolvePending, startAccountResolveTransition] = React.useTransition();
+  const [isAccountResolvePending, startAccountResolveTransition] =
+    React.useTransition();
   const [accountName, setAccountName] = React.useState<string>("");
 
   const getBanks = useAction(api.paystack.getBanks);
@@ -74,7 +79,10 @@ export function PaymentForm({
 
   React.useEffect(() => {
     const resolveDefaultAccount = async () => {
-      if (defaultValues.bankCode && defaultValues.accountNumber?.length === 10) {
+      if (
+        defaultValues.bankCode &&
+        defaultValues.accountNumber?.length === 10
+      ) {
         startAccountResolveTransition(async () => {
           try {
             const resolvedAccountName = await resolveAccountNumber({
@@ -138,7 +146,8 @@ export function PaymentForm({
         })
       );
 
-      if (error) return void toast.error("Failed to update store. Try again later");
+      if (error)
+        return void toast.error("Failed to update store. Try again later");
       toast.success("Bank information updated.");
     });
   }
@@ -158,12 +167,14 @@ export function PaymentForm({
                   disabled={isLoadingBanks}
                   {...field}
                   onChange={(e) => {
-                    const selectedBank = banks.find(bank => bank.code === e.target.value);
+                    const selectedBank = banks.find(
+                      (bank) => bank.code === e.target.value
+                    );
                     field.onChange(e.target.value);
-                    form.setValue('bankName', selectedBank?.name || '', {
+                    form.setValue("bankName", selectedBank?.name || "", {
                       shouldValidate: true,
                       shouldDirty: true,
-                      shouldTouch: true
+                      shouldTouch: true,
                     });
                   }}
                 >
@@ -208,13 +219,21 @@ export function PaymentForm({
               value={accountName}
               readOnly
               disabled
-              placeholder={isAccountResolvePending ? "Verifying account..." : "Account name will appear here"}
+              placeholder={
+                isAccountResolvePending
+                  ? "Verifying account..."
+                  : "Account name will appear here"
+              }
             />
           </FormControl>
         </FormItem>
 
-        <Button disabled={isPending || isAccountResolvePending || accountName == ""} type="submit">
-          {isPending && <Loader className="size-4 animate-spin" />} Update Bank Information
+        <Button
+          disabled={isPending || isAccountResolvePending || accountName == ""}
+          type="submit"
+        >
+          {isPending && <Loader className="size-4 animate-spin" />} Update Bank
+          Information
         </Button>
       </form>
     </Form>

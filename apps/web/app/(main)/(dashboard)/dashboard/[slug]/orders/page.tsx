@@ -40,22 +40,20 @@ export default function ProductPage() {
           lastName: order.lastName,
           zipCode: order.zip,
         },
-        status: order.status as "pending" | "processing" | "shipping" | "delivered",
+        status: order.status as
+          | "pending"
+          | "processing"
+          | "shipping"
+          | "delivered",
       })
     );
-
 
   return (
     <div className="mx-auto container py-8">
       <div className="flex justify-between items-center">
         <Heading title="Orders" description="These are all your orders" />
       </div>
-      {data ? (
-        <DataTable
-          columns={Columns}
-          data={data}
-        />
-      ) : <TableLoader />}
+      {data ? <DataTable columns={Columns} data={data} /> : <TableLoader />}
     </div>
   );
 }

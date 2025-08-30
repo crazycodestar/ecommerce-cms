@@ -6,7 +6,6 @@ export default function DomainLayout({
 }: {
   children: React.ReactNode;
 }) {
-
   return (
     <ConvexClientProviderWithoutAuth>
       {children}

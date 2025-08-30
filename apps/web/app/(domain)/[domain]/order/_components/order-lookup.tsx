@@ -23,8 +23,8 @@ export function OrderLookup() {
     !canLoad
       ? "skip"
       : {
-        option: reference ? { reference } : { slug: slug! },
-      }
+          option: reference ? { reference } : { slug: slug! },
+        }
   );
 
   const isPending = canLoad && order === undefined;
@@ -86,7 +86,11 @@ export function OrderLookup() {
                 lastName: order.lastName,
                 zipCode: order.zip,
               },
-              status: order.status as "pending" | "processing" | "shipping" | "delivered",
+              status: order.status as
+                | "pending"
+                | "processing"
+                | "shipping"
+                | "delivered",
             }}
           />
         )

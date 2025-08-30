@@ -18,10 +18,7 @@ export default async function SettingsGeneralPage({
         <h3 className="text-lg font-medium">Payment Information</h3>
       </div>
       <Separator />
-      <PaymentForm
-        defaultValues={{ ...store }}
-        slug={slug}
-      />
+      <PaymentForm defaultValues={{ ...store }} slug={slug} />
     </div>
   );
 }

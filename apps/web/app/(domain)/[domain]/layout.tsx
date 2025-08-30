@@ -6,42 +6,42 @@ import { Footer } from "../_components/footer";
 import { Nav } from "../_components/nav";
 
 export async function generateMetadata({
-    params,
+  params,
 }: {
-    params: Promise<{ domain: string }>;
+  params: Promise<{ domain: string }>;
 }): Promise<Metadata> {
-    const { domain } = await params;
-    const store = await fetchQuery(api.stores.getStoreBySlugPublic, {
-        storeSlug: domain,
-    })
-    const imageUrl = store?.logoId
-        ? await fetchQuery(api.contents.getImageUrl, {
-            imageId: store.logoId,
-        })
-        : null;
+  const { domain } = await params;
+  const store = await fetchQuery(api.stores.getStoreBySlugPublic, {
+    storeSlug: domain,
+  });
+  const imageUrl = store?.logoId
+    ? await fetchQuery(api.contents.getImageUrl, {
+        imageId: store.logoId,
+      })
+    : null;
 
-    return {
-        title: store?.name,
-        description: store?.description,
-        icons: {
-            icon: imageUrl ?? "/logo.svg",
-        },
-    };
+  return {
+    title: store?.name,
+    description: store?.description,
+    icons: {
+      icon: imageUrl ?? "/logo.svg",
+    },
+  };
 }
 
 export default async function DomainLayout({
-    children,
-    params,
+  children,
+  params,
 }: {
-    children: React.ReactNode;
-    params: Promise<{ domain: string }>;
+  children: React.ReactNode;
+  params: Promise<{ domain: string }>;
 }) {
-    const { domain: storeSlug } = await params;
-    return (
-        <div className="flex flex-col min-h-svh">
-            <Nav storeSlug={storeSlug} />
-            {children}
-            <Footer />
-        </div>
-    );
+  const { domain: storeSlug } = await params;
+  return (
+    <div className="flex flex-col min-h-svh">
+      <Nav storeSlug={storeSlug} />
+      {children}
+      <Footer />
+    </div>
+  );
 }
