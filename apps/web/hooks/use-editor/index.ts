@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { template } from "./template";
+import { Pages, Element, layers } from "./elements";
 
 const CarouselSchema = z.object({
   type: z.literal("carousel"),
@@ -135,152 +136,15 @@ export const contentTypes: (Content["content"] & { name: string })[] = [
   },
 ];
 
-export type ClassName = {
-  id: string;
-  text: string;
-};
-
-// First, define the base element types
-export type BaseElement = {
-  id: string;
-  name: string;
-  hasBeenEdited?: boolean;
-  className?: ClassName[];
-};
-
-export type BodyElement = BaseElement & {
-  type: "body";
-  children: Element[];
-};
-
-export type SectionElement = BaseElement & {
-  type: "section";
-  children: Element[];
-};
-
-export type TextElement = BaseElement & {
-  type: "text";
-  text: string;
-};
-
-export type ImageElement = BaseElement & {
-  type: "image";
-  src: string;
-  alt?: string;
-};
-
-export type ContainerElement = BaseElement & {
-  type: "container";
-  children: Element[];
-};
-
-export type LinkElement = BaseElement & {
-  type: "link";
-  href: string;
-  text: string;
-};
-
-export type LinkBlockElement = BaseElement & {
-  type: "linkBlock";
-  href: string;
-  children: Element[];
-};
-
-export type CodeEmbedElement = BaseElement & {
-  type: "codeEmbed";
-  code: string;
-};
-
-// Union type of all possible elements
-export type Element =
-  | BodyElement
-  | SectionElement
-  | TextElement
-  | ImageElement
-  | ContainerElement
-  | LinkElement
-  | LinkBlockElement
-  | CodeEmbedElement;
-
-// Factory object with proper typing
-export const Element = {
-  body: {
-    id: "",
-    name: "Body",
-    type: "body" as const,
-    children: [],
-  },
-  section: {
-    id: "",
-    name: "Section",
-    type: "section" as const,
-    children: [],
-  },
-  text: {
-    id: "",
-    name: "Text",
-    type: "text" as const,
-    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.",
-  },
-  image: {
-    id: "",
-    name: "Image",
-    type: "image" as const,
-    src: "/placeholder.svg",
-    alt: "",
-  },
-  container: {
-    id: "",
-    name: "Container",
-    type: "container" as const,
-    children: [],
-  },
-  link: {
-    id: "",
-    name: "Link",
-    type: "link" as const,
-    href: "/",
-    text: "Link",
-  },
-  linkBlock: {
-    id: "",
-    name: "Link Block",
-    type: "linkBlock" as const,
-    href: "/",
-    children: [],
-  },
-  codeEmbed: {
-    id: "",
-    name: "Code Embed",
-    type: "codeEmbed" as const,
-    code: "",
-  },
-} satisfies Record<Element["type"], Element>;
-
-export type ElementType = (typeof Element)[keyof typeof Element]["type"];
-
-export type Page = {
-  id: string;
-  name: string;
-  elements: Element[];
-};
-
-function getDefaultElement(
-  element: Element["type"]
-): Omit<Element, "hasBeenEdited" | "id"> {
-  return Element[element as keyof typeof Element];
-}
-
-export type Pages = [Page & { id: "home" }, ...Page[]];
 interface EditorState {
   // pages
   pages: Pages;
-  addContentToPage: (
+  addElementToPage: (
     pageId: string,
     parentId: string | undefined,
     elementType: Element["type"]
   ) => void;
-  insertContentToPage: (
+  insertElementToPage: (
     pageId: string,
     siblingId: string,
     instruction: "before" | "after",
@@ -298,8 +162,14 @@ interface EditorState {
   setContent: (content: Content[]) => void;
 
   // focus element
-  focusElement: Element["id"] | null;
-  setFocusElement: (id: Element["id"] | null) => void;
+  focusElement: Element | null;
+  setFocusElement: (focusElement: Element | null) => void;
+
+  // properties
+  // styles: Style[];
+  // addStyle: (style: Style) => void;
+  // updateStyle: (className: PropertyClassName, property: PropertySchema) => void;
+  // removeStyle: (className: PropertyClassName) => void;
 }
 
 export const useEditor = create<EditorState>()(
@@ -308,7 +178,8 @@ export const useEditor = create<EditorState>()(
       focusElement: null,
       content: [],
       pages: template as Pages,
-      addContentToPage: (pageId, parentId, elementType) =>
+      // styles: [],
+      addElementToPage: (pageId, parentId, elementType) =>
         set((state) => {
           const page = state.pages.find((page) => page.id === pageId);
           if (!page) return state;
@@ -321,7 +192,7 @@ export const useEditor = create<EditorState>()(
             pages: state.pages,
           };
         }),
-      insertContentToPage: (pageId, siblingId, instruction, elementType) =>
+      insertElementToPage: (pageId, siblingId, instruction, elementType) =>
         set((state) => {
           const page = state.pages.find((page) => page.id === pageId);
           if (!page) return state;
@@ -363,7 +234,7 @@ export const useEditor = create<EditorState>()(
           return { content: newContent };
         }),
       setContent: (content) => set({ content }),
-      setFocusElement: (id) => set({ focusElement: id }),
+      setFocusElement: (focusElement) => set({ focusElement }),
       updateElement: (id, element) =>
         set((state) => ({
           pages: state.pages.map((page) => ({
@@ -371,6 +242,21 @@ export const useEditor = create<EditorState>()(
             elements: layers.update(page.elements, id, element),
           })) as Pages,
         })),
+      // addStyle: (style) =>
+      //   set((state) => ({
+      //     styles: styles.add(state.styles, style),
+      //   })),
+      // updateStyle: (className, property) =>
+      //   set((state) => ({
+      //     styles: styles.update(state.styles, {
+      //       className,
+      //       property,
+      //     }),
+      //   })),
+      // removeStyle: (className) =>
+      //   set((state) => ({
+      //     styles: styles.remove(state.styles, className),
+      //   })),
     }),
     {
       name: "editor-storage", // unique name for localStorage key
@@ -379,92 +265,11 @@ export const useEditor = create<EditorState>()(
         focusElement: state.focusElement,
         content: state.content,
         pages: state.pages,
+        // styles: state.styles,
       }),
     }
   )
 );
-
-export const layers = {
-  add: (
-    data: Element[],
-    parentId: string,
-    newItemType: Element["type"]
-  ): Element[] => {
-    const newItem = layers.newItem(newItemType);
-    return data.map((item) => {
-      if (item.id === parentId && "children" in item) {
-        return {
-          ...item,
-          children: [...item.children, newItem],
-        };
-      }
-      if (layers.hasChildren(item)) {
-        return {
-          ...item,
-          children: layers.add(item.children, parentId, newItemType),
-        };
-      }
-      return item;
-    });
-  },
-  insert(
-    pos: "before" | "after",
-    data: Element[],
-    siblingId: string,
-    newItemType: Element["type"]
-  ): Element[] {
-    return data.flatMap((item) => {
-      if (item.id === siblingId) {
-        const newItem = layers.newItem(newItemType);
-        return pos === "before" ? [newItem, item] : [item, newItem];
-      }
-      if (layers.hasChildren(item)) {
-        return {
-          ...item,
-          children: layers.insert(pos, item.children, siblingId, newItemType),
-        };
-      }
-      return item;
-    });
-  },
-  update: (
-    data: Element[],
-    id: string,
-    element: Partial<Element>
-  ): Element[] => {
-    return data.map((item) => {
-      if (item.id === id) return { ...item, ...element, hasBeenEdited: true };
-      if (layers.hasChildren(item)) {
-        return {
-          ...item,
-          children: layers.update(item.children, id, element),
-        };
-      }
-      return item;
-    }) as Element[];
-  },
-  // utilities
-  newItem: (type: Element["type"]): Element => {
-    return {
-      ...getDefaultElement(type),
-      hasBeenEdited: false,
-      id: crypto.randomUUID(),
-    } as Element;
-  },
-  find: (data: Element[], id: string): Element | undefined => {
-    for (const element of data) {
-      if (element.id === id) return element;
-      if (layers.hasChildren(element)) {
-        const found = layers.find(element.children, id);
-        if (found) return found;
-      }
-    }
-  },
-  hasChildren: (data: Element): data is Element & { children: Element[] } => {
-    if (!("children" in data)) return false;
-    return data.children.length > 0;
-  },
-};
 
 type WindowWithSync = Window & typeof globalThis & { sync: () => void };
 

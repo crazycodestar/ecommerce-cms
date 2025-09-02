@@ -1,17 +1,22 @@
 "use client";
 
+import { useEditor, useSync } from "@/hooks/use-editor";
+import { layers } from "@/hooks/use-editor/elements";
 import {
   BodyElement,
   CodeEmbedElement,
+  LinkBlockElement,
+  LinkElement,
+  ImageElement,
+  ContainerElement,
+  TextElement,
+  SectionElement,
   Element,
   type ElementType,
   type Page,
-  layers,
-  useEditor,
-  useSync,
-} from "@/hooks/use-editor";
+} from "@/hooks/use-editor/elements";
 import { cn } from "@/lib/utils";
-import { PropsWithChildren, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // drag and drop
 import invariant from "tiny-invariant";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
@@ -24,12 +29,10 @@ import {
   monitorForExternal,
 } from "@atlaskit/pragmatic-drag-and-drop/external/adapter";
 import { DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
-import { LinkBlockElement } from "@/hooks/use-editor";
-import { LinkElement } from "@/hooks/use-editor";
-import { ImageElement } from "@/hooks/use-editor";
-import { ContainerElement } from "@/hooks/use-editor";
-import { TextElement } from "@/hooks/use-editor";
-import { SectionElement } from "@/hooks/use-editor";
+import {
+  parseJSONToTailwindCSS,
+  useBaseStyles,
+} from "@/hooks/use-editor/properties";
 
 type HighlightBox = {
   left: number;
@@ -43,8 +46,8 @@ type HighlightBox = {
 };
 
 const useMonitor = (page: Page) => {
-  const insertContentToPage = useEditor((state) => state.insertContentToPage);
-  const addContentToPage = useEditor((state) => state.addContentToPage);
+  const insertElementToPage = useEditor((state) => state.insertElementToPage);
+  const addElementToPage = useEditor((state) => state.addElementToPage);
 
   const [isDragging, setIsDragging] = useState(false);
   const [activeElement, setActiveElement] = useState<HighlightBox | null>(null);
@@ -158,12 +161,22 @@ const useMonitor = (page: Page) => {
           const { closest, dropTarget } = getClosestAndDropTarget(location);
           if (!dropTarget) return;
 
+          const validDropTarget = recursivelyFindNearestElement(
+            dropTarget as HTMLElement
+          );
+          if (!validDropTarget) return;
+
           const element = source.getStringData("text/plain") as Element["type"];
           const instruction = closest?.instruction;
 
           if (instruction)
-            insertContentToPage(page.id, dropTarget.id, instruction, element);
-          else addContentToPage(page.id, dropTarget.id, element);
+            insertElementToPage(
+              page.id,
+              validDropTarget.dataset.id,
+              instruction,
+              element
+            );
+          else addElementToPage(page.id, validDropTarget.dataset.id, element);
 
           setIsDragging(false);
           setActiveElement(null);
@@ -239,7 +252,9 @@ const useInspector = (elements: Element[]) => {
       const rect = validEl.getBoundingClientRect();
       const id = validEl.dataset.id;
 
-      setFocusElement(id);
+      const focusElement = layers.find(elements, id);
+      if (focusElement) setFocusElement(focusElement);
+
       setFocusElementPreview({
         left: rect.left + window.scrollX,
         top: rect.top + window.scrollY,
@@ -407,15 +422,16 @@ function Indicator({ page }: { page: Page }) {
 
 export function View() {
   useSync();
+  useBaseStyles();
 
   const pages = useEditor((state) => state.pages);
   const page = pages.find((page) => page.id === "home")!;
 
   return (
-    <div className="min-h-screen">
+    <>
       <Indicator page={page} />
       {page.elements.map((element) => routeToElement(element))}
-    </div>
+    </>
   );
 }
 
@@ -449,7 +465,7 @@ function routeToElement(element: Element) {
 }
 
 const emptyClassNames =
-  "h-[50px] border border-dashed border-neutral-600 inset-ring-2 inset-ring-neutral-300";
+  "h-[50px] w-full border border-dashed border-neutral-600 inset-ring-2 inset-ring-neutral-300";
 const editModeClassNames = "cursor-default";
 
 function Body({ element }: { element: BodyElement }) {
@@ -475,7 +491,7 @@ function Body({ element }: { element: BodyElement }) {
       ref={ref}
       data-id={element.id}
       className={cn(
-        element.className?.map((c) => c.text).join(" ") ?? "",
+        parseJSONToTailwindCSS(element.style),
         "min-h-screen",
         editModeClassNames
       )}
@@ -504,17 +520,17 @@ function Section({ element }: { element: SectionElement }) {
   }, []);
 
   return (
-    <div
+    <section
       ref={ref}
       data-id={element.id}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        element.className?.map((c) => c.text).join(" ") ?? "",
+        parseJSONToTailwindCSS(element.style),
         editModeClassNames
       )}
     >
       {element.children.map((child) => routeToElement(child))}
-    </div>
+    </section>
   );
 }
 
@@ -522,10 +538,7 @@ function Text({ element }: { element: TextElement }) {
   return (
     <p
       data-id={element.id}
-      className={cn(
-        element.className?.map((c) => c.text).join(" ") ?? "",
-        editModeClassNames
-      )}
+      className={cn(element.className?.join(" ") ?? "", editModeClassNames)}
     >
       {element.text}
     </p>
@@ -556,7 +569,7 @@ function Container({ element }: { element: ContainerElement }) {
       data-id={element.id}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        element.className?.map((c) => c.text).join(" ") ?? "",
+        parseJSONToTailwindCSS(element.style),
         editModeClassNames
       )}
     >
@@ -573,7 +586,7 @@ function Image({ element }: { element: ImageElement }) {
       alt={element.alt}
       className={cn(
         !element.hasBeenEdited && "size-[200px] object-cover",
-        element.className?.map((c) => c.text).join(" ") ?? "",
+        parseJSONToTailwindCSS(element.style),
         editModeClassNames
       )}
     />
@@ -585,10 +598,7 @@ function Link({ element }: { element: LinkElement }) {
     <a
       data-id={element.id}
       href={element.href}
-      className={cn(
-        element.className?.map((c) => c.text).join(" ") ?? "",
-        editModeClassNames
-      )}
+      className={cn(parseJSONToTailwindCSS(element.style), editModeClassNames)}
       onClick={(e) => e.preventDefault()}
     >
       {element.text}
@@ -621,7 +631,7 @@ function LinkBlock({ element }: { element: LinkBlockElement }) {
       href={element.href}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        element.className?.map((c) => c.text).join(" ") ?? "",
+        parseJSONToTailwindCSS(element.style),
         editModeClassNames
       )}
       onClick={(e) => e.preventDefault()}
@@ -639,7 +649,7 @@ function CodeEmbed({ element }: { element: CodeEmbedElement }) {
       data-id={element.id}
       className={cn(
         !element.hasBeenEdited && emptyClassNames,
-        element.className?.map((c) => c.text).join(" ") ?? "",
+        parseJSONToTailwindCSS(element.style),
         editModeClassNames
       )}
       dangerouslySetInnerHTML={{

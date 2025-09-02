@@ -8,10 +8,11 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { Element, useEditor } from "@/hooks/use-editor";
+import { useEditor } from "@/hooks/use-editor";
+import { Element } from "@/hooks/use-editor/elements";
 import {
   BoxIcon,
   CodeXmlIcon,
@@ -76,7 +77,7 @@ export function AddElementSidebar({
 }: {
   setIsOpen: (open: boolean) => void;
 }) {
-  const addContentToPage = useEditor((state) => state.addContentToPage);
+  const addContentToPage = useEditor((state) => state.addElementToPage);
 
   const handleAddElement = (element: AddElement) => {
     addContentToPage("home", undefined, element.type);

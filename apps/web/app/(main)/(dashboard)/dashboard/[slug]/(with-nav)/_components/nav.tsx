@@ -31,8 +31,6 @@ export function Nav() {
     },
   ];
 
-  if (pathname?.includes("/editor_")) return null;
-
   return (
     <>
       <header className="sticky top-0 z-10 flex flex-col shrink-0 border-b px-2 pt-2 justify-between bg-background">
