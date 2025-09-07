@@ -185,3 +185,25 @@
     @apply text-muted-foreground content-[attr(data-placeholder)] float-left h-0 pointer-events-none;
   }
 }
+
+.color-picker-container .react-colorful__saturation {
+  border-radius: 7px;
+  width: 242px;
+  height: 242px;
+}
+
+.color-picker-container .react-colorful__hue,
+.color-picker-container .react-colorful__alpha {
+  height: 14px;
+  width: 242px;
+  border-radius: 7px;
+  margin-top: 8px;
+}
+
+.color-picker-container .react-colorful__hue-pointer,
+.color-picker-container .react-colorful__saturation-pointer,
+.color-picker-container .react-colorful__alpha-pointer {
+  width: 18px;
+  height: 18px;
+  border: 4.5px solid #fff;
+}

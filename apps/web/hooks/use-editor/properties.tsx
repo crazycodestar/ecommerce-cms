@@ -619,7 +619,7 @@ export const borderRadiusObjectShape = z.union([
 export type BorderRadiusObjectShape = z.infer<typeof borderRadiusObjectShape>;
 
 export const opacitySchema = z.object({
-  opacity: z.coerce.number().optional(),
+  opacity: z.coerce.number().min(0).max(100).optional(),
 });
 export type OpacitySchema = z.infer<typeof opacitySchema>;
 
@@ -721,10 +721,143 @@ export const borderRadius: StyleType<BorderRadiusSchema> = {
   },
 };
 
+const imageSchema = z.object({
+  type: z.literal("image"),
+  value: z.string(),
+  objectFit: z
+    .union([
+      z.literal("cover"),
+      z.literal("contain"),
+      z.literal("fill"),
+      z.literal("tile"),
+    ])
+    .optional(),
+});
+
+const colorValuseShape = z.object({
+  value: z.string(),
+  opacity: z.coerce.number().min(0).max(100),
+});
+
+const gradientValueSchema = z.object({
+  deg: z.coerce.number(),
+  colors: z.array(
+    z.object({
+      ...colorValuseShape.shape,
+      position: z.coerce.number().optional(),
+    })
+  ),
+});
+export type GradientValueSchema = z.infer<typeof gradientValueSchema>;
+
+const linearGradientSchema = z.object({
+  type: z.literal("linear-gradient"),
+  ...gradientValueSchema.shape,
+  // clipToText: z.boolean().optional(),
+});
+
+const radialGradientSchema = z.object({
+  type: z.literal("radial-gradient"),
+  ...gradientValueSchema.shape,
+});
+
+const conicGradientSchema = z.object({
+  type: z.literal("conic-gradient"),
+  ...gradientValueSchema.shape,
+});
+
+const colorValueSchema = z.object({
+  type: z.literal("color"),
+  ...colorValuseShape.shape,
+});
+
+export type ColorSchema = z.infer<typeof colorSchema>;
+
+export const colorSchema = z.discriminatedUnion("type", [
+  imageSchema,
+  linearGradientSchema,
+  radialGradientSchema,
+  conicGradientSchema,
+  colorValueSchema,
+]);
+
+export const backgroundSchema = z.object({
+  background: z
+    .object({
+      value: colorSchema,
+      // clipToText: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+export const background: StyleType<BackgroundSchema> = {
+  schema: backgroundSchema,
+  defaultValues: {
+    background: undefined,
+  },
+  transform: (value: BackgroundSchema) => {
+    if (value.background === undefined) return "";
+
+    const background = value.background.value;
+    // const clipToText = value.background.clipToText;
+
+    function parseGradientValue(value: GradientValueSchema) {
+      let style: string[] = [];
+      if (value.deg !== 180) style.push(`${value.deg}deg`);
+
+      const colors = value.colors
+        .map(
+          (color) =>
+            `${color.value}${color.position && color.position !== 100 ? `_${color.position}%` : ""}`
+        )
+        .join();
+
+      style.push(colors);
+      return style.join();
+    }
+
+    let style: string[] = [];
+    switch (background.type) {
+      case "image":
+        style.push(`bg-[url(${background.value})]`);
+        if (background.objectFit && background.objectFit !== "tile") {
+          style.push(`bg-${background.objectFit}`);
+        } else if (background.objectFit) {
+          style.push(`bg-repeat`);
+        }
+        break;
+      case "linear-gradient":
+        style.push(`bg-linear-[${parseGradientValue(background)}]`);
+
+        break;
+      case "radial-gradient":
+        style.push(`bg-radial-[${parseGradientValue(background)}]`);
+
+        break;
+      case "conic-gradient":
+        style.push(`bg-conic-[${parseGradientValue(background)}]`);
+        break;
+      case "color":
+        style.push(`bg-[${background.value}]`);
+        break;
+    }
+
+    // if (clipToText) {
+    //   style.push(`bg-clip-text`);
+    // }
+
+    return style.join(" ");
+  },
+};
+
+export type BackgroundSchema = z.infer<typeof backgroundSchema>;
+
 const style = [
   margin,
   padding,
   width,
+  minWidth,
+  maxWidth,
   height,
   maxHeight,
   minHeight,
@@ -738,6 +871,7 @@ const style = [
   overflow,
   opacity,
   borderRadius,
+  background,
 ];
 
 export const styleSchema = z.object({
@@ -759,6 +893,7 @@ export const styleSchema = z.object({
   ...overflowSchema.shape,
   ...opacitySchema.shape,
   ...borderRadiusSchema.shape,
+  ...backgroundSchema.shape,
 });
 export type StyleSchema = z.infer<typeof styleSchema>;
 
@@ -766,24 +901,27 @@ export type StyleSchema = z.infer<typeof styleSchema>;
  * and provides the default values for each property type
  */
 
-export function getDefaultValues() {
-  return {
-    ...margin.defaultValues,
-    ...padding.defaultValues,
-    ...width.defaultValues,
-    ...height.defaultValues,
-    ...display.defaultValues,
-    ...gapX.defaultValues,
-    ...gapY.defaultValues,
-    ...justifyContent.defaultValues,
-    ...alignItems.defaultValues,
-    ...flexWrap.defaultValues,
-    ...gridCols.defaultValues,
-    ...overflow.defaultValues,
-    ...opacity.defaultValues,
-    ...borderRadius.defaultValues,
-  };
-}
+export const getDefaultValues = () => ({
+  ...margin.defaultValues,
+  ...padding.defaultValues,
+  ...width.defaultValues,
+  ...maxWidth.defaultValues,
+  ...minWidth.defaultValues,
+  ...height.defaultValues,
+  ...maxHeight.defaultValues,
+  ...minHeight.defaultValues,
+  ...display.defaultValues,
+  ...gapX.defaultValues,
+  ...gapY.defaultValues,
+  ...justifyContent.defaultValues,
+  ...alignItems.defaultValues,
+  ...flexWrap.defaultValues,
+  ...gridCols.defaultValues,
+  ...overflow.defaultValues,
+  ...opacity.defaultValues,
+  ...borderRadius.defaultValues,
+  ...background.defaultValues,
+});
 
 /*
  * This implements the stuctures into CSS styles for each property type
@@ -798,7 +936,7 @@ export const parseJSONToTailwindCSS = <T extends StyleSchema>(
     Object.entries(styleObj)
       .map(([type, value]) => {
         const styleType = style.find((style) =>
-          Object.keys(style.defaultValues).includes(type)
+          Object.keys(style.schema.shape).includes(type)
         );
 
         // @ts-expect-error
@@ -816,11 +954,13 @@ export const useBaseStyles = () => {
   useEffect(() => {
     const baseStyle = document.createElement("style");
     baseStyle.innerHTML = `
-    div, section {
-      display: flex;
-      flex-direction: column;
-      align-items: start;
-    }
+      @layer base {
+        div, section {
+          display: flex;
+          flex-direction: column;
+          align-items: start;
+        }
+      }
     `;
     document.head.appendChild(baseStyle);
 
@@ -831,6 +971,19 @@ export const useBaseStyles = () => {
 
     return () => {
       document.head.removeChild(baseStyle);
+      document.head.removeChild(tailwindCSSScript);
+    };
+  }, []);
+};
+
+export const useTailwindCSS = () => {
+  useEffect(() => {
+    const tailwindCSSScript = document.createElement("script");
+    tailwindCSSScript.src =
+      "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4";
+    document.head.appendChild(tailwindCSSScript);
+
+    return () => {
       document.head.removeChild(tailwindCSSScript);
     };
   }, []);

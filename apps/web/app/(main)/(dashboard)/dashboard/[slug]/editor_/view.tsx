@@ -32,6 +32,7 @@ import { DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/dist/type
 import {
   parseJSONToTailwindCSS,
   useBaseStyles,
+  useTailwindCSS,
 } from "@/hooks/use-editor/properties";
 
 type HighlightBox = {
@@ -423,6 +424,7 @@ function Indicator({ page }: { page: Page }) {
 export function View() {
   useSync();
   useBaseStyles();
+  useTailwindCSS();
 
   const pages = useEditor((state) => state.pages);
   const page = pages.find((page) => page.id === "home")!;

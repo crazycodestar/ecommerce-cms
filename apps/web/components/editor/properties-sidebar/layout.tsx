@@ -76,7 +76,7 @@ export function Layout() {
 
   return (
     <div className="p-2 pb-3">
-      <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-2">
+      <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-1 h-7 items-center">
         <h3 className="text-sm font-medium col-span-4">Layout</h3>
         {/* <AlignOptions onAlign={marginForm.handleAlign} /> */}
       </div>

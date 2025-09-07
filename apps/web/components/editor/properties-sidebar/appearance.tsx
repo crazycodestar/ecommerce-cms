@@ -1,28 +1,37 @@
 import {
+  AddColorIcon,
   BorderBottomIcon,
   BorderLeftIcon,
   BorderRightIcon,
   BorderTopIcon,
 } from "@/components/icons";
-import { ScanIcon, SquareDashedIcon, SunMediumIcon } from "lucide-react";
+import {
+  Diamond,
+  DiamondIcon,
+  Minus,
+  PlusIcon,
+  ScanIcon,
+  SquareDashedIcon,
+  SunMediumIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { PropertyButton } from "./property-button";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
+import { PropertyColorInput } from "./property-color-input";
+import { Button } from "@/components/ui/button";
 
 export function Appearance() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { form } = useStyle();
+  const { form, handleSetValue } = useStyle();
 
   return (
     <div className="p-2 pb-3 border-t">
-      <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-2">
-        <h3 className="text-sm font-medium col-span-4 opacity-[.67]">
-          Appearance
-        </h3>
+      <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-1.5 h-7 items-center">
+        <h3 className="text-sm font-medium col-span-4">Appearance</h3>
       </div>
 
-      <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2">
+      <div className="grid grid-cols-[repeat(3,2fr)_repeat(2,28px)] gap-2">
         <PropertyInput
           icon={SunMediumIcon}
           containerClassNames="col-span-2"
@@ -75,6 +84,41 @@ export function Appearance() {
             />
           </>
         )}
+
+        {form.watch("background.value") ? (
+          <>
+            <PropertyColorInput
+              containerClassNames="col-span-4"
+              control={form.control}
+              name="background.value"
+              label="Background"
+            />
+            <PropertyButton
+              className="col-span-1"
+              onClick={() => handleSetValue("background", undefined)}
+            >
+              <Minus className="size-3.5" />
+            </PropertyButton>
+          </>
+        ) : (
+          <PropertyButton
+            onClick={() =>
+              handleSetValue("background.value", {
+                type: "color",
+                value: "#ffffff",
+                opacity: 100,
+              })
+            }
+            variant="outline"
+            className="col-span-4 text-xs w-full border-0"
+          >
+            {/* <PlusIcon className="size-3.5 mr-2" /> */}
+            Add Background Color
+          </PropertyButton>
+        )}
+        {/* <pre className="col-span-4">
+          {JSON.stringify(form.watch("background.value"), null, 2)}
+        </pre> */}
       </div>
     </div>
   );

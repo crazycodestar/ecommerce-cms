@@ -15,6 +15,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { View } from "./view";
+import { useTailwindCSS } from "@/hooks/use-editor/properties";
 
 export default function ContentPage() {
   const [shouldRender, setShouldRender] = useState(false);
