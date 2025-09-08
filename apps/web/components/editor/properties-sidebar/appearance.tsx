@@ -1,25 +1,15 @@
 import {
-  AddColorIcon,
   BorderBottomIcon,
   BorderLeftIcon,
   BorderRightIcon,
   BorderTopIcon,
 } from "@/components/icons";
-import {
-  Diamond,
-  DiamondIcon,
-  Minus,
-  PlusIcon,
-  ScanIcon,
-  SquareDashedIcon,
-  SunMediumIcon,
-} from "lucide-react";
+import { Minus, ScanIcon, SquareDashedIcon, SunMediumIcon } from "lucide-react";
 import { useState } from "react";
 import { PropertyButton } from "./property-button";
+import { PropertyColorInput } from "./property-color-input";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
-import { PropertyColorInput } from "./property-color-input";
-import { Button } from "@/components/ui/button";
 
 export function Appearance() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -45,6 +35,7 @@ export function Appearance() {
           control={form.control}
           name="borderRadius"
           label="Border radius"
+          lowerLimit={0}
         />
         <PropertyButton
           onClick={() => setIsExpanded(!isExpanded)}

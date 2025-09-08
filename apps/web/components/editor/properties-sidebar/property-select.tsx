@@ -1,11 +1,4 @@
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -13,14 +6,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { Control, FieldValues, Path } from "react-hook-form";
+import {
+  useController,
+  type Control,
+  type FieldValues,
+  type Path,
+} from "react-hook-form";
+import { useStyle } from "./style-context";
 
 interface PropertySelectInputProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
   label?: string;
-  description?: string;
   containerClassNames?: string;
   children: React.ReactNode;
 }
@@ -29,32 +32,45 @@ export const PropertySelect = <T extends FieldValues>({
   control,
   name,
   label,
-  description,
   containerClassNames,
   children,
 }: PropertySelectInputProps<T>) => {
+  const { form, onSubmit } = useStyle();
+  const { field } = useController({ control, name });
+
+  function handleChange(value: string) {
+    field.onChange(value);
+    form.handleSubmit(onSubmit)();
+  }
+
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem className={cn("grid", containerClassNames)}>
-          {label && <FormLabel>{label}</FormLabel>}
-          <Select onValueChange={field.onChange} defaultValue={field.value}>
-            {children}
-          </Select>
-          <FormMessage />
-        </FormItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <FormItem className={cn("grid", containerClassNames)}>
+              <Select onValueChange={handleChange} defaultValue={field.value}>
+                {children}
+              </Select>
+              <TooltipContent className="pointer-events-none">
+                <p>{label}</p>
+              </TooltipContent>
+            </FormItem>
+          </TooltipTrigger>
+        </Tooltip>
       )}
     />
   );
 };
 
-export const PropertySelectTrigger = (
-  props: React.ComponentProps<typeof SelectTrigger>
-) => (
+export const PropertySelectTrigger = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectTrigger>) => (
   <FormControl>
-    <SelectTrigger {...props} />
+    <SelectTrigger className={cn("max-h-7", className)} size="sm" {...props} />
   </FormControl>
 );
 export const PropertySelectValue = SelectValue;

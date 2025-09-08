@@ -3,6 +3,7 @@ import { z } from "zod";
 import { useEditor } from ".";
 import { isEqual } from "es-toolkit";
 import { cn } from "@/lib/utils";
+import { opacityPercentToHex } from "@/lib/opacity-to-hex";
 
 /*
  * This is a singleton object that contains the methods for adding,
@@ -51,6 +52,10 @@ import { cn } from "@/lib/utils";
 //     ) as PropertyClassName | undefined;
 //   },
 // };
+
+function generateOpacityHex(opacity: number) {
+  return opacity !== 100 ? opacityPercentToHex(opacity) : "";
+}
 
 function formatReturnedValue<T extends string | number>(
   value: string | number,
@@ -808,7 +813,7 @@ export const background: StyleType<BackgroundSchema> = {
       const colors = value.colors
         .map(
           (color) =>
-            `${color.value}${color.position && color.position !== 100 ? `_${color.position}%` : ""}`
+            `${color.value}${generateOpacityHex(color.opacity)}${color.position && color.position !== 100 ? `_${color.position}%` : ""}`
         )
         .join();
 
@@ -838,7 +843,9 @@ export const background: StyleType<BackgroundSchema> = {
         style.push(`bg-conic-[${parseGradientValue(background)}]`);
         break;
       case "color":
-        style.push(`bg-[${background.value}]`);
+        style.push(
+          `bg-[${background.value}${generateOpacityHex(background.opacity)}]`
+        );
         break;
     }
 
@@ -851,6 +858,205 @@ export const background: StyleType<BackgroundSchema> = {
 };
 
 export type BackgroundSchema = z.infer<typeof backgroundSchema>;
+
+export const strokeSchema = z.object({
+  stroke: z
+    .object({
+      fill: colorValueSchema,
+      width: z.coerce.number(),
+      style: z.union([
+        z.literal("solid"),
+        z.literal("dashed"),
+        z.literal("dotted"),
+        z.literal("double"),
+      ]),
+    })
+    .optional(),
+});
+
+export type StrokeSchema = z.infer<typeof strokeSchema>;
+
+export const stroke: StyleType<StrokeSchema> = {
+  schema: strokeSchema,
+  defaultValues: {
+    stroke: undefined,
+  },
+  transform: (value: StrokeSchema) => {
+    if (value.stroke === undefined) return "";
+
+    let style: string[] = [];
+    style.push(
+      `border-[${value.stroke.fill.value}${generateOpacityHex(value.stroke.fill.opacity)}]`
+    );
+    style.push(`border-[${value.stroke.width}px]`);
+    style.push(`border-${value.stroke.style}`);
+    return style.join(" ");
+  },
+};
+
+export const dropShadowSchema = z.object({
+  dropShadow: z
+    .object({
+      x: z.coerce.number(),
+      y: z.coerce.number(),
+      spread: z.coerce.number(),
+      color: colorValueSchema,
+    })
+    .optional(),
+});
+export type DropShadowSchema = z.infer<typeof dropShadowSchema>;
+
+export const dropShadow: StyleType<DropShadowSchema> = {
+  schema: dropShadowSchema,
+  defaultValues: {
+    dropShadow: undefined,
+  },
+  transform: ({ dropShadow }: DropShadowSchema) => {
+    if (dropShadow === undefined) return "";
+
+    return `drop-shadow-[${dropShadow.x}px_${dropShadow.y}px_${dropShadow.spread}px_${dropShadow.color.value}${generateOpacityHex(dropShadow.color.opacity)}]`;
+  },
+};
+
+export const blurSchema = z.object({
+  blur: z.coerce.number().optional(),
+});
+export type BlurSchema = z.infer<typeof blurSchema>;
+
+export const blur: StyleType<BlurSchema> = {
+  schema: blurSchema,
+  defaultValues: {
+    blur: undefined,
+  },
+  transform: ({ blur }: BlurSchema) => {
+    if (blur === undefined) return "";
+    return `blur-[${blur}px]`;
+  },
+};
+
+export const backdropBlurSchema = z.object({
+  backdropBlur: z.coerce.number().optional(),
+});
+export type BackdropBlurSchema = z.infer<typeof backdropBlurSchema>;
+
+export const backdropBlur: StyleType<BackdropBlurSchema> = {
+  schema: backdropBlurSchema,
+  defaultValues: {
+    backdropBlur: undefined,
+  },
+  transform: ({ backdropBlur }: BackdropBlurSchema) => {
+    if (backdropBlur === undefined) return "";
+    return `backdrop-blur-[${backdropBlur}px]`;
+  },
+};
+
+export const positionSchema = z.object({
+  position: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("relative"),
+      justifySelf: z
+        .union([
+          z.literal("start"),
+          z.literal("end"),
+          z.literal("center"),
+          z.literal("stretch"),
+        ])
+        .optional(),
+      alignSelf: z
+        .union([
+          z.literal("start"),
+          z.literal("end"),
+          z.literal("center"),
+          z.literal("stretch"),
+        ])
+        .optional(),
+      colSpan: z.coerce.number().optional(),
+    }),
+    z.object({
+      type: z.literal("absolute"),
+    }),
+    z.object({
+      type: z.literal("fixed"),
+    }),
+    z.object({
+      type: z.literal("sticky"),
+    }),
+  ]),
+});
+export type PositionSchema = z.infer<typeof positionSchema>;
+
+export const position: StyleType<PositionSchema> = {
+  schema: positionSchema,
+  defaultValues: {
+    position: {
+      type: "relative",
+      colSpan: 1,
+    },
+  },
+  transform: (value: PositionSchema) => {
+    if (isEqual(value, position.defaultValues)) return "";
+
+    switch (value.position.type) {
+      case "relative":
+        return `relative ${value.position.justifySelf ? `justify-self-${value.position.justifySelf}` : ""} ${value.position.alignSelf ? `self-${value.position.alignSelf}` : ""} ${value.position.colSpan && value.position.colSpan !== 1 ? `col-span-${value.position.colSpan}` : ""}`;
+      case "absolute":
+        return `absolute`;
+      case "fixed":
+        return `fixed`;
+      case "sticky":
+        return `sticky`;
+    }
+  },
+};
+
+export const PositionValueSchema = z.object({
+  pos: z.coerce.number(),
+  isFlipped: z.boolean(),
+});
+
+export const xSchema = z.object({
+  x: PositionValueSchema,
+});
+export type XSchema = z.infer<typeof xSchema>;
+
+export const x: StyleType<XSchema> = {
+  schema: xSchema,
+  defaultValues: {
+    x: {
+      pos: 0,
+      isFlipped: false,
+    },
+  },
+  transform: ({ x }: XSchema) => {
+    if (x === undefined) return "";
+
+    if (x.pos === 0) return "";
+    if (x.isFlipped) return `right-[${x.pos}px]`;
+    return `left-[${x.pos}px]`;
+  },
+};
+
+export const ySchema = z.object({
+  y: PositionValueSchema,
+});
+export type YSchema = z.infer<typeof ySchema>;
+
+export const y: StyleType<YSchema> = {
+  schema: ySchema,
+  defaultValues: {
+    y: {
+      pos: 0,
+      isFlipped: false,
+    },
+  },
+  transform: ({ y }: YSchema) => {
+    if (y === undefined) return "";
+
+    if (y.pos === 0) return "";
+    if (y.isFlipped) return `bottom-[${y.pos}px]`;
+    return `top-[${y.pos}px]`;
+  },
+};
 
 const style = [
   margin,
@@ -872,6 +1078,13 @@ const style = [
   opacity,
   borderRadius,
   background,
+  stroke,
+  dropShadow,
+  blur,
+  backdropBlur,
+  position,
+  x,
+  y,
 ];
 
 export const styleSchema = z.object({
@@ -894,6 +1107,13 @@ export const styleSchema = z.object({
   ...opacitySchema.shape,
   ...borderRadiusSchema.shape,
   ...backgroundSchema.shape,
+  ...strokeSchema.shape,
+  ...dropShadowSchema.shape,
+  ...blurSchema.shape,
+  ...backdropBlurSchema.shape,
+  ...positionSchema.shape,
+  ...xSchema.shape,
+  ...ySchema.shape,
 });
 export type StyleSchema = z.infer<typeof styleSchema>;
 
@@ -921,6 +1141,13 @@ export const getDefaultValues = () => ({
   ...opacity.defaultValues,
   ...borderRadius.defaultValues,
   ...background.defaultValues,
+  ...stroke.defaultValues,
+  ...dropShadow.defaultValues,
+  ...blur.defaultValues,
+  ...backdropBlur.defaultValues,
+  ...position.defaultValues,
+  ...x.defaultValues,
+  ...y.defaultValues,
 });
 
 /*

@@ -21,6 +21,9 @@ import { useForm } from "react-hook-form";
 import { Appearance } from "./appearance";
 import { Layout } from "./layout";
 import { StyleProvider } from "./style-context";
+import { Stroke } from "./stroke";
+import { Effects } from "./effects";
+import { Position } from "./position";
 
 export function PropertiesSidebar({
   ...props
@@ -46,8 +49,11 @@ export function PropertiesSidebar({
       <SidebarContent className="flex flex-col gap-6 h-full">
         {focusElement ? (
           <StyleProvider>
+            <Position />
             <Layout />
             <Appearance />
+            <Stroke />
+            <Effects />
           </StyleProvider>
         ) : (
           <div className="h-[200px] flex items-center justify-center border border-muted-foreground/50 border-dashed rounded-md">

@@ -55,13 +55,14 @@ export const PropertyInput = <T extends FieldValues>({
   const { inputRef } = useBlurOnEnter();
   const { handleMouseDown } = useResizeOnDrag({
     onDrag: (deltaX) => {
+      const value = Math.min(
+        Math.max(lowerLimit !== undefined ? lowerLimit : -Infinity, deltaX),
+        upperLimit !== undefined ? upperLimit : Infinity
+      );
       field.onChange(
         typeof field.value === "object"
-          ? setValuesInObject(field.value, deltaX)
-          : Math.min(
-              Math.max(lowerLimit ?? -Infinity, deltaX),
-              upperLimit ?? Infinity
-            )
+          ? setValuesInObject(field.value, value)
+          : value
       );
       form.handleSubmit(onSubmit)();
     },

@@ -38,9 +38,10 @@ export const StyleProvider = ({ children }: { children: ReactNode }) => {
   const onSubmit = (data: StyleSchema) => {
     if (!focusElement) return;
 
-    const { success, data: result } = styleSchema.safeParse(data);
+    const { success, data: result, error } = styleSchema.safeParse(data);
     if (success) return updateElement(focusElement.id, { style: result });
 
+    console.log(error);
     form.reset();
   };
 

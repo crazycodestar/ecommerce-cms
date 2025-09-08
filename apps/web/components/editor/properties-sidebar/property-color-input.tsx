@@ -62,6 +62,7 @@ interface PropertyColorInputProps<T extends FieldValues> {
   containerClassNames?: string;
   rightElement?: React.ReactNode;
   className?: string;
+  noOptions?: boolean;
 }
 
 export const PropertyColorInput = <T extends FieldValues>({
@@ -71,6 +72,7 @@ export const PropertyColorInput = <T extends FieldValues>({
   containerClassNames,
   className,
   rightElement,
+  noOptions,
 }: PropertyColorInputProps<T>) => {
   const { form, onSubmit } = useStyle();
 
@@ -102,7 +104,11 @@ export const PropertyColorInput = <T extends FieldValues>({
                   side="left"
                   sideOffset={16}
                 >
-                  <ColorPicker data={field.value} onChange={handleChange} />
+                  <ColorPicker
+                    data={field.value}
+                    onChange={handleChange}
+                    noOptions={noOptions}
+                  />
                 </PopoverContent>
               </Popover>
             }
@@ -550,8 +556,11 @@ function ValueInput({
     onDrag: (deltaX) => {
       onChange(
         Math.min(
-          Math.max(lowerLimit ?? -Infinity, value + deltaX),
-          upperLimit ?? Infinity
+          Math.max(
+            lowerLimit !== undefined ? lowerLimit : -Infinity,
+            value + deltaX
+          ),
+          upperLimit !== undefined ? upperLimit : Infinity
         )
       );
     },
@@ -667,7 +676,10 @@ function GradientThumb({
 
       const pos = ((offsetLeft + deltaX) / width) * 100;
       const appliedValue = Math.floor(
-        Math.min(Math.max(lowerLimit ?? -Infinity, pos), upperLimit ?? Infinity)
+        Math.min(
+          Math.max(lowerLimit !== undefined ? lowerLimit : -Infinity, pos),
+          upperLimit !== undefined ? upperLimit : Infinity
+        )
       );
 
       ref.current.style.left = `${appliedValue}%`;
@@ -714,7 +726,7 @@ function ColorIndicator({ color, ...props }: ColorIndicatorProps) {
   return (
     <button
       style={parseColor}
-      className={cn("size-3.5 rounded-xs")}
+      className={cn("size-3.5 rounded-xs border")}
       {...props}
     />
   );
