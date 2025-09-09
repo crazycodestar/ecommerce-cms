@@ -51,12 +51,14 @@ export const PropertySelect = <T extends FieldValues>({
         <Tooltip>
           <TooltipTrigger asChild>
             <FormItem className={cn("grid", containerClassNames)}>
-              <Select onValueChange={handleChange} defaultValue={field.value}>
+              <Select onValueChange={handleChange} value={field.value}>
                 {children}
               </Select>
-              <TooltipContent className="pointer-events-none">
-                <p>{label}</p>
-              </TooltipContent>
+              {label && (
+                <TooltipContent className="pointer-events-none">
+                  <p>{label}</p>
+                </TooltipContent>
+              )}
             </FormItem>
           </TooltipTrigger>
         </Tooltip>

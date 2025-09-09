@@ -24,6 +24,8 @@ import { StyleProvider } from "./style-context";
 import { Stroke } from "./stroke";
 import { Effects } from "./effects";
 import { Position } from "./position";
+import { Typography } from "./typography";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function PropertiesSidebar({
   ...props
@@ -35,7 +37,7 @@ export function PropertiesSidebar({
     : null;
 
   return (
-    <Sidebar collapsible="none" className="min-h-svh" {...props}>
+    <Sidebar collapsible="none" className="min-h-svh max-h-svh" {...props}>
       <SidebarHeader className="border-b">
         <SidebarMenu>
           <SidebarMenuItem className="font-medium">
@@ -46,12 +48,13 @@ export function PropertiesSidebar({
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="flex flex-col gap-6 h-full">
+      <SidebarContent className="flex flex-col gap-6 h-full overflow-y-auto">
         {focusElement ? (
           <StyleProvider>
             <Position />
             <Layout />
             <Appearance />
+            <Typography />
             <Stroke />
             <Effects />
           </StyleProvider>

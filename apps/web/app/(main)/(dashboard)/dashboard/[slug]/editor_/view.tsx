@@ -540,7 +540,7 @@ function Text({ element }: { element: TextElement }) {
   return (
     <p
       data-id={element.id}
-      className={cn(element.className?.join(" ") ?? "", editModeClassNames)}
+      className={cn(parseJSONToTailwindCSS(element.style), editModeClassNames)}
     >
       {element.text}
     </p>

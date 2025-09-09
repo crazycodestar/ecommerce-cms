@@ -998,7 +998,19 @@ export const position: StyleType<PositionSchema> = {
 
     switch (value.position.type) {
       case "relative":
-        return `relative ${value.position.justifySelf ? `justify-self-${value.position.justifySelf}` : ""} ${value.position.alignSelf ? `self-${value.position.alignSelf}` : ""} ${value.position.colSpan && value.position.colSpan !== 1 ? `col-span-${value.position.colSpan}` : ""}`;
+        let style = `relative ${value.position.alignSelf ? `self-${value.position.alignSelf}` : ""} ${value.position.colSpan && value.position.colSpan !== 1 ? `col-span-${value.position.colSpan}` : ""}`;
+        switch (value.position.justifySelf) {
+          case "start":
+            style += ` mr-auto`;
+            break;
+          case "center":
+            style += ` mx-auto`;
+            break;
+          case "end":
+            style += ` ml-auto`;
+            break;
+        }
+        return style;
       case "absolute":
         return `absolute`;
       case "fixed":
@@ -1058,6 +1070,144 @@ export const y: StyleType<YSchema> = {
   },
 };
 
+export const fontSizeSchema = z.object({
+  fontSize: z.coerce.number().optional(),
+});
+export type FontSizeSchema = z.infer<typeof fontSizeSchema>;
+
+export const fontSize: StyleType<FontSizeSchema> = {
+  schema: fontSizeSchema,
+  defaultValues: {
+    fontSize: undefined,
+  },
+  transform: ({ fontSize }: FontSizeSchema) => {
+    if (fontSize === undefined) return "";
+    return `text-[${fontSize}px]`;
+  },
+};
+
+export const fontWeightSchema = z.object({
+  fontWeight: z
+    .union([
+      z.literal("thin"),
+      z.literal("extralight"),
+      z.literal("light"),
+      z.literal("normal"),
+      z.literal("medium"),
+      z.literal("semibold"),
+      z.literal("bold"),
+      z.literal("extrabold"),
+      z.literal("black"),
+    ])
+    .optional(),
+});
+export type FontWeightSchema = z.infer<typeof fontWeightSchema>;
+
+export const fontWeight: StyleType<FontWeightSchema> = {
+  schema: fontWeightSchema,
+  defaultValues: {
+    fontWeight: undefined,
+  },
+  transform: (value: FontWeightSchema) => {
+    if (isEqual(value, fontWeight.defaultValues)) return "";
+    if (value.fontWeight === "normal") return "";
+    return `font-${value.fontWeight}`;
+  },
+};
+
+export const fontFamilySchema = z.object({
+  fontFamily: z.string().optional(),
+});
+export type FontFamilySchema = z.infer<typeof fontFamilySchema>;
+
+export const fontFamily: StyleType<FontFamilySchema> = {
+  schema: fontFamilySchema,
+  defaultValues: {
+    fontFamily: undefined,
+  },
+  transform: (value: FontFamilySchema) => {
+    if (isEqual(value, fontFamily.defaultValues)) return "";
+    if (value.fontFamily === "system-ui") return "";
+    return `font-[${value.fontFamily}]`;
+  },
+};
+
+export const fontStyleSchema = z.object({
+  fontStyle: z.union([z.literal("normal"), z.literal("italic")]).optional(),
+});
+export type FontStyleSchema = z.infer<typeof fontStyleSchema>;
+
+export const fontStyle: StyleType<FontStyleSchema> = {
+  schema: fontStyleSchema,
+  defaultValues: {
+    fontStyle: undefined,
+  },
+  transform: (value: FontStyleSchema) => {
+    if (isEqual(value, fontStyle.defaultValues)) return "";
+    if (value.fontStyle === "normal") return "";
+    return `italic`;
+  },
+};
+
+export const leadingSchema = z.object({
+  leading: z.coerce.number().optional(),
+});
+export type LeadingSchema = z.infer<typeof leadingSchema>;
+
+export const leading: StyleType<LeadingSchema> = {
+  schema: leadingSchema,
+  defaultValues: {
+    leading: undefined,
+  },
+  transform: (value: LeadingSchema) => {
+    if (isEqual(value, leading.defaultValues)) return "";
+    if (value.leading === 1.5) return "";
+
+    return `leading-[${value.leading}em]`;
+  },
+};
+
+export const trackingSchema = z.object({
+  tracking: z.coerce.number().optional(),
+});
+export type TrackingSchema = z.infer<typeof trackingSchema>;
+
+export const tracking: StyleType<TrackingSchema> = {
+  schema: trackingSchema,
+  defaultValues: {
+    tracking: undefined,
+  },
+  transform: (value: TrackingSchema) => {
+    if (isEqual(value, tracking.defaultValues)) return "";
+    if (value.tracking === 1.5) return "";
+
+    return `tracking-[${value.tracking}em]`;
+  },
+};
+
+export const textAlignSchema = z.object({
+  textAlign: z
+    .union([
+      z.literal("left"),
+      z.literal("center"),
+      z.literal("right"),
+      z.literal("justify"),
+    ])
+    .optional(),
+});
+export type TextAlignSchema = z.infer<typeof textAlignSchema>;
+
+export const textAlign: StyleType<TextAlignSchema> = {
+  schema: textAlignSchema,
+  defaultValues: {
+    textAlign: undefined,
+  },
+  transform: (value: TextAlignSchema) => {
+    if (isEqual(value, textAlign.defaultValues)) return "";
+    return `text-${value.textAlign}`;
+  },
+};
+
 const style = [
   margin,
   padding,
@@ -1085,6 +1235,13 @@ const style = [
   position,
   x,
   y,
+  fontSize,
+  fontWeight,
+  fontFamily,
+  fontStyle,
+  leading,
+  tracking,
+  textAlign,
 ];
 
 export const styleSchema = z.object({
@@ -1114,6 +1271,13 @@ export const styleSchema = z.object({
   ...positionSchema.shape,
   ...xSchema.shape,
   ...ySchema.shape,
+  ...fontSizeSchema.shape,
+  ...fontWeightSchema.shape,
+  ...fontFamilySchema.shape,
+  ...fontStyleSchema.shape,
+  ...leadingSchema.shape,
+  ...trackingSchema.shape,
+  ...textAlignSchema.shape,
 });
 export type StyleSchema = z.infer<typeof styleSchema>;
 
@@ -1148,6 +1312,13 @@ export const getDefaultValues = () => ({
   ...position.defaultValues,
   ...x.defaultValues,
   ...y.defaultValues,
+  ...fontSize.defaultValues,
+  ...fontWeight.defaultValues,
+  ...fontFamily.defaultValues,
+  ...fontStyle.defaultValues,
+  ...leading.defaultValues,
+  ...tracking.defaultValues,
+  ...textAlign.defaultValues,
 });
 
 /*

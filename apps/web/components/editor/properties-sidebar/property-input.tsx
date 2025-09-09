@@ -34,6 +34,8 @@ type PropertyInputProps<T extends FieldValues> =
     rightElement?: React.ReactNode;
     upperLimit?: number;
     lowerLimit?: number;
+    increment?: number;
+    sensitivity?: number;
   };
 
 export const PropertyInput = <T extends FieldValues>({
@@ -47,6 +49,8 @@ export const PropertyInput = <T extends FieldValues>({
   rightElement,
   upperLimit,
   lowerLimit,
+  increment,
+  sensitivity,
   ...inputProps
 }: PropertyInputProps<T>) => {
   const { form, onSubmit } = useStyle();
@@ -55,14 +59,26 @@ export const PropertyInput = <T extends FieldValues>({
   const { inputRef } = useBlurOnEnter();
   const { handleMouseDown } = useResizeOnDrag({
     onDrag: (deltaX) => {
-      const value = Math.min(
-        Math.max(lowerLimit !== undefined ? lowerLimit : -Infinity, deltaX),
+      const currentValue = typeof field.value === "object" ? 0 : field.value;
+      const sensitivityFactor = sensitivity !== undefined ? sensitivity : 1;
+      const incrementFactor = increment !== undefined ? increment : 1;
+      const appliedValue = Number(
+        Number(
+          currentValue + deltaX * incrementFactor * sensitivityFactor
+        ).toFixed(1)
+      );
+
+      const finalValue = Math.min(
+        Math.max(
+          lowerLimit !== undefined ? lowerLimit : -Infinity,
+          appliedValue
+        ),
         upperLimit !== undefined ? upperLimit : Infinity
       );
       field.onChange(
         typeof field.value === "object"
-          ? setValuesInObject(field.value, value)
-          : value
+          ? setValuesInObject(field.value, finalValue)
+          : finalValue
       );
       form.handleSubmit(onSubmit)();
     },

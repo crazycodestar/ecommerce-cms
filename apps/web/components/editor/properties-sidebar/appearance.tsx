@@ -3,6 +3,10 @@ import {
   BorderLeftIcon,
   BorderRightIcon,
   BorderTopIcon,
+  BorderRadiusTopLeftIcon,
+  BorderRadiusTopRightIcon,
+  BorderRadiusBottomLeftIcon,
+  BorderRadiusBottomRightIcon,
 } from "@/components/icons";
 import { Minus, ScanIcon, SquareDashedIcon, SunMediumIcon } from "lucide-react";
 import { useState } from "react";
@@ -30,7 +34,7 @@ export function Appearance() {
           label="Opacity"
         />
         <PropertyInput
-          icon={SquareDashedIcon}
+          icon={ScanIcon}
           containerClassNames="col-span-2"
           control={form.control}
           name="borderRadius"
@@ -46,28 +50,28 @@ export function Appearance() {
         {isExpanded && (
           <>
             <PropertyInput
-              icon={BorderLeftIcon}
+              icon={BorderRadiusTopLeftIcon}
               containerClassNames="col-span-2"
               control={form.control}
               name="borderRadius.topLeft"
               label="Border top left"
             />
             <PropertyInput
-              icon={BorderTopIcon}
+              icon={BorderRadiusTopRightIcon}
               containerClassNames="col-span-2"
               control={form.control}
               name="borderRadius.topRight"
               label="Border top right"
             />
             <PropertyInput
-              icon={BorderRightIcon}
+              icon={BorderRadiusBottomRightIcon}
               containerClassNames="col-span-2"
               control={form.control}
               name="borderRadius.bottomLeft"
               label="Border bottom left"
             />
             <PropertyInput
-              icon={BorderBottomIcon}
+              icon={BorderRadiusBottomLeftIcon}
               containerClassNames="col-span-2"
               control={form.control}
               name="borderRadius.bottomRight"

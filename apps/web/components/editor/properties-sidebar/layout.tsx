@@ -718,9 +718,12 @@ const useClick = () => {
     onDoubleClick: (...args: unknown[]) => void
   ) => {
     const now = Date.now();
-    if (now - lastClick.current < 250) {
+    console.log(now - lastClick.current);
+    if (now - lastClick.current < 400) {
+      console.log("double click");
       onDoubleClick();
     } else {
+      console.log("single click");
       onClick();
     }
     lastClick.current = now;

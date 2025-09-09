@@ -8,8 +8,19 @@ import {
 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   AlignCenterIcon,
-  AlignJustifyIcon,
   AlignLeftIcon,
   AlignRightIcon,
   ArrowDownToLineIcon,
@@ -21,21 +32,9 @@ import {
   MoveHorizontalIcon,
   Settings2Icon,
 } from "lucide-react";
+import { PropertyButton } from "./property-button";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { PropertyButton } from "./property-button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function Position() {
   const { form, handleSetValue } = useStyle();
@@ -142,14 +141,12 @@ export function Position() {
   );
 }
 
-type ValTypes = "start" | "center" | "end" | "stretch";
-
 function RelativeOptions() {
   const { form, handleSetValue } = useStyle();
 
-  function getVal(value: string) {
+  function getVal<T>(value: string) {
     if (value === "") return undefined;
-    return value as ValTypes;
+    return value as T;
   }
 
   return (
@@ -181,9 +178,6 @@ function RelativeOptions() {
               </TabsTrigger>
               <TabsTrigger value="end" className="rounded-sm">
                 <AlignRightIcon size={14} />
-              </TabsTrigger>
-              <TabsTrigger value="stretch" className="rounded-sm">
-                <AlignJustifyIcon size={14} />
               </TabsTrigger>
             </TabsList>
           </Tabs>
