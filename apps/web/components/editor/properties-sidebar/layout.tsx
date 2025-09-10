@@ -46,6 +46,8 @@ import {
   ChevronsRightLeft,
   ChevronsUpDownIcon,
   Dot,
+  EyeClosedIcon,
+  EyeOffIcon,
   FoldHorizontal,
   FoldVertical,
   LaptopMinimal,
@@ -55,6 +57,7 @@ import {
   MoveVerticalIcon,
   PlusIcon,
   ScanIcon,
+  Settings2Icon,
   UnfoldHorizontal,
   UnfoldVertical,
   X,
@@ -70,6 +73,11 @@ import {
 import { PropertyButton } from "./property-button";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export function Layout() {
   // const marginForm = useMarginForm();
@@ -445,7 +453,7 @@ function WidthForm({ className }: { className?: string }) {
 }
 
 function HeightForm({ className }: { className?: string }) {
-  const { form, onSubmit, handleSetValue } = useStyle();
+  const { form, handleSetValue } = useStyle();
   const [showMinHeight, setShowMinHeight] = useState(false);
   const [showMaxHeight, setShowMaxHeight] = useState(false);
 
@@ -667,70 +675,81 @@ function DisplayForm({ className }: { className?: string }) {
           </TabsTrigger>
         </TabsList>
       </Tabs>
-      {form.watch("display.type") !== "inline" && (
-        <>
-          <div className="col-span-2">
-            {form.watch("display.type") !== "grid" && (
-              <FlexLayoutControl
-                form={form}
-                onSubmit={onSubmit}
-                className="col-span-2"
-              />
-            )}
-            {form.watch("display.type") === "grid" && (
-              <GridLayoutControl
-                name="display.gridCols"
-                control={form.control}
-                className="col-span-2"
-              />
-            )}
-          </div>
-          <div className="col-span-2 flex flex-col gap-2">
-            <PropertyInput
-              icon={
-                form.watch("display.type") === "flex-col"
-                  ? VerticalGapIcon
-                  : HorizontalGapIcon
-              }
-              control={form.control}
-              defaultValue={0}
-              name="display.gapX"
-              label={
-                form.watch("display.type") === "flex-col"
-                  ? "Vertical gap"
-                  : "Horizontal gap"
-              }
-            />
-            {form.watch("display.type") === "grid" && (
+      <PropertyButton
+        onClick={() => handleSetValue("display.type", "hidden")}
+        className={cn(form.watch("display.type") === "hidden" && "bg-muted")}
+        label="Hidden"
+      >
+        <EyeOffIcon size={14} />
+      </PropertyButton>
+      {form.watch("display.type") !== "inline" &&
+        form.watch("display.type") !== "hidden" && (
+          <>
+            <div className="col-span-2">
+              {form.watch("display.type") !== "grid" && (
+                <FlexLayoutControl
+                  form={form}
+                  onSubmit={onSubmit}
+                  className="col-span-2"
+                />
+              )}
+              {form.watch("display.type") === "grid" && (
+                <GridLayoutControl
+                  name="display.gridCols"
+                  control={form.control}
+                  className="col-span-2"
+                />
+              )}
+            </div>
+            <div className="col-span-2 flex flex-col gap-2">
               <PropertyInput
-                icon={VerticalGapIcon}
+                icon={
+                  form.watch("display.type") === "flex-col"
+                    ? VerticalGapIcon
+                    : HorizontalGapIcon
+                }
                 control={form.control}
                 defaultValue={0}
-                name="display.gapY"
-                label="Vertical gap"
+                name="display.gapX"
+                label={
+                  form.watch("display.type") === "flex-col"
+                    ? "Vertical gap"
+                    : "Horizontal gap"
+                }
               />
-            )}
-          </div>
-          {form.watch("display.type") === "flex-row" && (
-            <PropertyButton
-              onClick={() =>
-                handleSetValue(
-                  "display.flexWrap",
-                  form.watch("display.flexWrap") === "wrap" ? "nowrap" : "wrap"
-                )
-              }
-              label={
-                form.watch("display.flexWrap") === "wrap" ? "No wrap" : "Wrap"
-              }
-              className={cn(
-                form.watch("display.flexWrap") === "wrap" && "bg-muted"
+              {form.watch("display.type") === "grid" && (
+                <PropertyInput
+                  icon={VerticalGapIcon}
+                  control={form.control}
+                  defaultValue={0}
+                  name="display.gapY"
+                  label="Vertical gap"
+                />
               )}
-            >
-              <WrapIcon width={14} height={14} />
-            </PropertyButton>
-          )}
-        </>
-      )}
+            </div>
+            {form.watch("display.type") === "flex-row" && (
+              <PropertyButton
+                onClick={() =>
+                  handleSetValue(
+                    "display.flexWrap",
+                    form.watch("display.flexWrap") === "wrap"
+                      ? "nowrap"
+                      : "wrap"
+                  )
+                }
+                label={
+                  form.watch("display.flexWrap") === "wrap" ? "No wrap" : "Wrap"
+                }
+                className={cn(
+                  form.watch("display.flexWrap") === "wrap" && "bg-muted"
+                )}
+              >
+                <WrapIcon width={14} height={14} />
+              </PropertyButton>
+            )}
+            {form.watch("display.type") === "grid" && <GridLayoutOptions />}
+          </>
+        )}
       <div className="col-span-4 flex items-center gap-2">
         <Checkbox
           checked={form.watch("overflow") === "hidden"}
@@ -967,5 +986,34 @@ function GridLayoutControl<T extends FieldValues>({
         </button>
       </div>
     </div>
+  );
+}
+
+function GridLayoutOptions() {
+  const { form, onSubmit } = useStyle();
+
+  function getVal<T>(value: string) {
+    if (value === "") return undefined;
+    return value as T;
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <PropertyButton label="Grid layout options">
+          <Settings2Icon size={14} />
+        </PropertyButton>
+      </PopoverTrigger>
+      <PopoverContent className="w-56" side="left" sideOffset={203}>
+        <div className="grid grid-cols-3 items-center gap-2">
+          <label className="text-sm">Place</label>
+          <FlexLayoutControl
+            form={form}
+            onSubmit={onSubmit}
+            className="col-span-2"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

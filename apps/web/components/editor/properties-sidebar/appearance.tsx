@@ -14,8 +14,19 @@ import { PropertyButton } from "./property-button";
 import { PropertyColorInput } from "./property-color-input";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
+import { useEditor } from "@/hooks/use-editor";
+import { layers } from "@/hooks/use-editor/elements";
+import { isTextElement } from "@/hooks/use-editor/properties";
 
 export function Appearance() {
+  const focusElementVal = useEditor(
+    (state) =>
+      state.focusElement &&
+      layers.find(state.pages[0].elements, state.focusElement)?.type
+  );
+  const isTextElementBoolean =
+    focusElementVal && !!isTextElement(focusElementVal);
+
   const [isExpanded, setIsExpanded] = useState(false);
   const { form, handleSetValue } = useStyle();
 
@@ -88,12 +99,14 @@ export function Appearance() {
               name="fill.value"
               label="Fill"
             />
-            <PropertyButton
-              className="col-span-1"
-              onClick={() => handleSetValue("fill", undefined)}
-            >
-              <Minus className="size-3.5" />
-            </PropertyButton>
+            {!isTextElementBoolean && (
+              <PropertyButton
+                className="col-span-1"
+                onClick={() => handleSetValue("fill", undefined)}
+              >
+                <Minus className="size-3.5" />
+              </PropertyButton>
+            )}
           </>
         ) : (
           <PropertyButton
