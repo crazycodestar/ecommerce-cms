@@ -1,6 +1,5 @@
 "use client";
 
-import { Form } from "@/components/ui/form";
 import {
   Sidebar,
   SidebarContent,
@@ -10,23 +9,15 @@ import {
 } from "@/components/ui/sidebar";
 import { useEditor } from "@/hooks/use-editor";
 import { layers } from "@/hooks/use-editor/elements";
-import {
-  getDefaultValues,
-  isTextElement,
-  styleSchema,
-  StyleSchema,
-} from "@/hooks/use-editor/properties";
 import { MousePointer } from "lucide-react";
 import * as React from "react";
-import { useForm } from "react-hook-form";
 import { Appearance } from "./appearance";
-import { Layout } from "./layout";
-import { StyleProvider } from "./style-context";
-import { Stroke } from "./stroke";
 import { Effects } from "./effects";
+import { Layout } from "./layout";
 import { Position } from "./position";
+import { Stroke } from "./stroke";
+import { StyleProvider } from "./style-context";
 import { Typography } from "./typography";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function PropertiesSidebar({
   ...props
@@ -34,7 +25,7 @@ export function PropertiesSidebar({
   const focusElement = useEditor((state) => state.focusElement);
   const pages = useEditor((state) => state.pages);
   const element = focusElement
-    ? layers.find(pages[0].elements, focusElement.id)
+    ? layers.find(pages[0].elements, focusElement)
     : null;
 
   return (

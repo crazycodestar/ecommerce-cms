@@ -1,10 +1,21 @@
 import { LetterSpacingIcon, LineHeightIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEditor } from "@/hooks/use-editor";
+import { layers } from "@/hooks/use-editor/elements";
+import { isTextElement } from "@/hooks/use-editor/properties";
+import { cn } from "@/lib/utils";
 import {
   ALargeSmallIcon,
   AlignCenterIcon,
@@ -16,7 +27,6 @@ import {
   MinusIcon,
   Settings2Icon,
 } from "lucide-react";
-import { useState } from "react";
 import { PropertyButton } from "./property-button";
 import { PropertyInput } from "./property-input";
 import {
@@ -27,16 +37,6 @@ import {
   PropertySelectValue,
 } from "./property-select";
 import { useStyle } from "./style-context";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useEditor } from "@/hooks/use-editor";
-import { isTextElement } from "@/hooks/use-editor/properties";
-import { cn } from "@/lib/utils";
 
 const fontFamilyOptions = [
   ["System UI", "system-ui"],
@@ -59,8 +59,12 @@ const fontFamilyOptions = [
 
 export function Typography() {
   const focusElement = useEditor((state) => state.focusElement);
+  const focusElementVal = useEditor(
+    (state) =>
+      focusElement && layers.find(state.pages[0].elements, focusElement)?.type
+  );
   const isTextElementBoolean =
-    focusElement && !!isTextElement(focusElement.type);
+    focusElementVal && !!isTextElement(focusElementVal);
 
   const { form, handleSetValue } = useStyle();
 

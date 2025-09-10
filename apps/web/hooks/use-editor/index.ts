@@ -162,8 +162,8 @@ interface EditorState {
   setContent: (content: Content[]) => void;
 
   // focus element
-  focusElement: Element | null;
-  setFocusElement: (focusElement: Element | null) => void;
+  focusElement: Element["id"] | null;
+  setFocusElement: (focusElement: Element["id"] | null) => void;
 
   // properties
   // styles: Style[];
@@ -234,7 +234,6 @@ export const useEditor = create<EditorState>()(
           return { content: newContent };
         }),
       setContent: (content) => set({ content }),
-      setFocusElement: (focusElement) => set({ focusElement }),
       updateElement: (id, element) =>
         set((state) => ({
           pages: state.pages.map((page) => ({
@@ -242,6 +241,8 @@ export const useEditor = create<EditorState>()(
             elements: layers.update(page.elements, id, element),
           })) as Pages,
         })),
+
+      setFocusElement: (focusElement) => set({ focusElement }),
       // addStyle: (style) =>
       //   set((state) => ({
       //     styles: styles.add(state.styles, style),

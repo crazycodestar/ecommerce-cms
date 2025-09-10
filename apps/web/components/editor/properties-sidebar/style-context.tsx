@@ -35,7 +35,7 @@ export const StyleProvider = ({ children }: { children: ReactNode }) => {
 
   const form = useForm<StyleSchema>({
     values: focusElement
-      ? layers.find(elements, focusElement?.id)?.style
+      ? layers.find(elements, focusElement)?.style
       : undefined,
   });
 
@@ -43,9 +43,8 @@ export const StyleProvider = ({ children }: { children: ReactNode }) => {
     if (!focusElement) return;
 
     const { success, data: result, error } = styleSchema.safeParse(data);
-    if (success) return updateElement(focusElement.id, { style: result });
+    if (success) return updateElement(focusElement, { style: result });
 
-    console.log(focusElement.type, error);
     form.reset();
   };
 

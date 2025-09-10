@@ -254,7 +254,7 @@ const useInspector = (elements: Element[]) => {
       const id = validEl.dataset.id;
 
       const focusElement = layers.find(elements, id);
-      if (focusElement) setFocusElement(focusElement);
+      if (focusElement) setFocusElement(focusElement.id);
 
       setFocusElementPreview({
         left: rect.left + window.scrollX,
