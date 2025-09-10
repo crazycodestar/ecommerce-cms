@@ -20,8 +20,8 @@ import {
 import { useBlurOnEnter } from "@/hooks/use-blur-on-enter";
 import { useDebouncedCallback } from "@/hooks/use-debouncer";
 import {
-  background,
-  BackgroundSchema,
+  fill,
+  FillSchema,
   ColorSchema,
   colorSchema,
   GradientValueSchema,
@@ -733,7 +733,7 @@ function ColorIndicator({ color, ...props }: ColorIndicatorProps) {
 }
 
 function transformFillToStyle(
-  background: NonNullable<BackgroundSchema["background"]>["value"]
+  background: NonNullable<FillSchema["fill"]>["value"]
 ) {
   function parseGradientValue(value: GradientValueSchema) {
     let style: string[] = [];

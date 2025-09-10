@@ -12,6 +12,7 @@ import { useEditor } from "@/hooks/use-editor";
 import { layers } from "@/hooks/use-editor/elements";
 import {
   getDefaultValues,
+  isTextElement,
   styleSchema,
   StyleSchema,
 } from "@/hooks/use-editor/properties";

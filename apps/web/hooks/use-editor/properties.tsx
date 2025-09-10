@@ -1,9 +1,9 @@
+import { opacityPercentToHex } from "@/lib/opacity-to-hex";
+import { cn } from "@/lib/utils";
+import { isEqual } from "es-toolkit";
 import { useEffect } from "react";
 import { z } from "zod";
-import { useEditor } from ".";
-import { isEqual } from "es-toolkit";
-import { cn } from "@/lib/utils";
-import { opacityPercentToHex } from "@/lib/opacity-to-hex";
+import { Element } from "./elements";
 
 /*
  * This is a singleton object that contains the methods for adding,
@@ -53,6 +53,10 @@ import { opacityPercentToHex } from "@/lib/opacity-to-hex";
 //   },
 // };
 
+export function isTextElement(type: Element["type"]) {
+  return type === "text" || type === "link";
+}
+
 function generateOpacityHex(opacity: number) {
   return opacity !== 100 ? opacityPercentToHex(opacity) : "";
 }
@@ -90,10 +94,22 @@ function threeBlueOneBrown<T extends string | number>(
   return threeBlue && oneBrown ? [threeBlue, oneBrown] : null;
 }
 
-type StyleType<T extends {}> = {
+type StyleType<
+  T extends {},
+  U extends ((arg: Element["type"]) => T) | (() => T),
+> = {
   schema: z.ZodObject<any>;
-  defaultValues: T;
-  transform: (value: T) => string;
+  defaultValues: U;
+  defaultTransform: U extends (arg: infer V) => T
+    ? V extends Element["type"]
+      ? (arg: Element["type"]) => string
+      : () => string
+    : () => string;
+  transform: U extends (arg: infer V) => T
+    ? V extends Element["type"]
+      ? (value: T, arg: Element["type"]) => string
+      : (value: T) => string
+    : (value: T) => string;
 };
 
 /*
@@ -106,34 +122,39 @@ export const marginShape = z.union([z.coerce.number(), z.literal("auto")]);
 export type MarginShape = z.infer<typeof marginShape>;
 
 export const marginSchema = z.object({
-  margin: z.object({
-    top: marginShape,
-    right: marginShape,
-    bottom: marginShape,
-    left: marginShape,
-  }),
+  margin: z
+    .object({
+      top: marginShape,
+      right: marginShape,
+      bottom: marginShape,
+      left: marginShape,
+    })
+    .optional(),
 });
 export type MarginSchema = z.infer<typeof marginSchema>;
 
-export const margin: StyleType<MarginSchema> = {
+export const margin: StyleType<MarginSchema, () => MarginSchema> = {
   schema: marginSchema,
-  defaultValues: {
+  defaultValues: () => ({
     margin: {
-      top: "auto",
-      right: "auto",
-      bottom: "auto",
-      left: "auto",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
     },
-  },
+  }),
+  defaultTransform: () => "m-0",
   transform: (value: MarginSchema) => {
     function formatMargin(value: number | "auto") {
       if (typeof value === "number") return `[${value}px]`;
       return value;
     }
-    if (isEqual(value, margin.defaultValues)) return "";
+    if (value.margin === undefined) return margin.defaultTransform();
+    if (isEqual(value, margin.defaultValues()))
+      return margin.defaultTransform();
 
     const isSame = Object.values(value.margin).every(
-      (v) => v === value.margin.top
+      (v) => v === value.margin?.top
     );
     if (isSame) return `m-${formatMargin(value.margin.top)}`;
 
@@ -159,11 +180,11 @@ export const margin: StyleType<MarginSchema> = {
 
     const isVertical = value.margin.top === value.margin.bottom;
     const isVerticalDefault =
-      value.margin.top === margin.defaultValues.margin.top;
+      value.margin.top === margin.defaultValues().margin?.top;
 
     const isHorizontal = value.margin.left === value.margin.right;
     const isHorizontalDefault =
-      value.margin.left === margin.defaultValues.margin.left;
+      value.margin.left === margin.defaultValues().margin?.left;
 
     if (isVertical && isHorizontal)
       return `mx-${formatMargin(value.margin.left)} my-${formatMargin(value.margin.top)}`;
@@ -177,30 +198,34 @@ export const margin: StyleType<MarginSchema> = {
 };
 
 export const paddingSchema = z.object({
-  padding: z.object({
-    top: z.coerce.number(),
-    right: z.coerce.number(),
-    bottom: z.coerce.number(),
-    left: z.coerce.number(),
-  }),
+  padding: z
+    .object({
+      top: z.coerce.number(),
+      right: z.coerce.number(),
+      bottom: z.coerce.number(),
+      left: z.coerce.number(),
+    })
+    .optional(),
 });
 export type PaddingSchema = z.infer<typeof paddingSchema>;
 
-export const padding: StyleType<PaddingSchema> = {
+export const padding: StyleType<PaddingSchema, () => PaddingSchema> = {
   schema: paddingSchema,
-  defaultValues: {
+  defaultValues: () => ({
     padding: {
       top: 0,
       right: 0,
       bottom: 0,
       left: 0,
     },
-  },
-  transform: (value: PaddingSchema) => {
-    if (isEqual(value, padding.defaultValues)) return "";
+  }),
+  defaultTransform: () => "p-0",
+  transform: (value) => {
+    if (value.padding === undefined || isEqual(value, padding.defaultValues()))
+      return padding.defaultTransform();
 
     const isSame = Object.values(value.padding).every(
-      (v) => v === value.padding.top
+      (v) => v === value.padding?.top
     );
     if (isSame) return `p-[${value.padding.top}px]`;
 
@@ -226,11 +251,11 @@ export const padding: StyleType<PaddingSchema> = {
 
     const isVertical = value.padding.top === value.padding.bottom;
     const isVerticalDefault =
-      value.padding.top === padding.defaultValues.padding.top;
+      value.padding.top === padding.defaultValues().padding?.top;
 
     const isHorizontal = value.padding.left === value.padding.right;
     const isHorizontalDefault =
-      value.padding.left === padding.defaultValues.padding.left;
+      value.padding.left === padding.defaultValues().padding?.left;
 
     if (isVertical && isHorizontal)
       return `px-[${value.padding.left}px] py-[${value.padding.top}px]`;
@@ -252,21 +277,22 @@ export const widthObjectShape = z.union([
 ]);
 
 export const widthSchema = z.object({
-  width: widthObjectShape,
+  width: widthObjectShape.optional(),
   // maxWidth: auxWidthObjectShape,
   // minWidth: auxWidthObjectShape,
 });
 export type WidthSchema = z.infer<typeof widthSchema>;
 
-export const width: StyleType<WidthSchema> = {
+export const width: StyleType<WidthSchema, () => WidthSchema> = {
   schema: widthSchema,
-  defaultValues: {
+  defaultValues: () => ({
     width: "auto",
-  },
+  }),
+  defaultTransform: () => "w-auto",
   transform: (value: WidthSchema) => {
-    if (isEqual(value, width.defaultValues)) return "";
+    if (value.width === undefined || isEqual(value, width.defaultValues()))
+      return width.defaultTransform();
 
-    if (value.width === "auto") return "w-auto";
     if (value.width === "fill-container") return "w-full";
     if (value.width === "hug-content") return "w-fit";
     if (value.width === "fill-screen") return "w-screen";
@@ -289,13 +315,14 @@ export const maxWidthSchema = z.object({
 });
 export type MaxWidthSchema = z.infer<typeof maxWidthSchema>;
 
-export const maxWidth: StyleType<MaxWidthSchema> = {
+export const maxWidth: StyleType<MaxWidthSchema, () => MaxWidthSchema> = {
   schema: maxWidthSchema,
-  defaultValues: {
+  defaultValues: () => ({
     maxWidth: undefined,
-  },
+  }),
+  defaultTransform: () => "max-w-none",
   transform: (value: MaxWidthSchema) => {
-    if (value.maxWidth === undefined) return "";
+    if (value.maxWidth === undefined) return maxWidth.defaultTransform();
 
     if (value.maxWidth === "fill-container") return "max-w-full";
     if (value.maxWidth === "hug-content") return "max-w-fit";
@@ -306,17 +333,18 @@ export const maxWidth: StyleType<MaxWidthSchema> = {
 };
 
 export const minWidthSchema = z.object({
-  minWidth: auxWidthObjectShape,
+  minWidth: auxWidthObjectShape.optional(),
 });
 export type MinWidthSchema = z.infer<typeof minWidthSchema>;
 
-export const minWidth: StyleType<MinWidthSchema> = {
+export const minWidth: StyleType<MinWidthSchema, () => MinWidthSchema> = {
   schema: minWidthSchema,
-  defaultValues: {
+  defaultValues: () => ({
     minWidth: undefined,
-  },
+  }),
+  defaultTransform: () => "min-w-none",
   transform: (value: MinWidthSchema) => {
-    if (value.minWidth === undefined) return "";
+    if (value.minWidth === undefined) return minWidth.defaultTransform();
 
     if (value.minWidth === "fill-container") return "min-w-full";
     if (value.minWidth === "hug-content") return "min-w-fit";
@@ -339,13 +367,15 @@ export const heightSchema = z.object({
 });
 export type HeightSchema = z.infer<typeof heightSchema>;
 
-export const height: StyleType<HeightSchema> = {
+export const height: StyleType<HeightSchema, () => HeightSchema> = {
   schema: heightSchema,
-  defaultValues: {
+  defaultValues: () => ({
     height: "auto",
-  },
+  }),
+  defaultTransform: () => "h-auto",
   transform: (value: HeightSchema) => {
-    if (isEqual(value, height.defaultValues)) return "";
+    if (isEqual(value, height.defaultValues()))
+      return height.defaultTransform();
 
     if (value.height === "auto") return "h-auto";
     if (value.height === "fill-container") return "h-full";
@@ -370,13 +400,14 @@ export const maxHeightSchema = z.object({
 });
 export type MaxHeightSchema = z.infer<typeof maxHeightSchema>;
 
-export const maxHeight: StyleType<MaxHeightSchema> = {
+export const maxHeight: StyleType<MaxHeightSchema, () => MaxHeightSchema> = {
   schema: maxHeightSchema,
-  defaultValues: {
+  defaultValues: () => ({
     maxHeight: undefined,
-  },
+  }),
+  defaultTransform: () => "max-h-none",
   transform: (value: MaxHeightSchema) => {
-    if (value.maxHeight === undefined) return "";
+    if (value.maxHeight === undefined) return maxHeight.defaultTransform();
 
     if (value.maxHeight === "fill-container") return "max-h-full";
     if (value.maxHeight === "hug-content") return "max-h-fit";
@@ -391,13 +422,14 @@ export const minHeightSchema = z.object({
 });
 export type MinHeightSchema = z.infer<typeof minHeightSchema>;
 
-export const minHeight: StyleType<MinHeightSchema> = {
+export const minHeight: StyleType<MinHeightSchema, () => MinHeightSchema> = {
   schema: minHeightSchema,
-  defaultValues: {
+  defaultValues: () => ({
     minHeight: undefined,
-  },
+  }),
+  defaultTransform: () => "min-h-none",
   transform: (value: MinHeightSchema) => {
-    if (value.minHeight === undefined) return "";
+    if (value.minHeight === undefined) return minHeight.defaultTransform();
 
     if (value.minHeight === "fill-container") return "min-h-full";
     if (value.minHeight === "hug-content") return "min-h-fit";
@@ -414,68 +446,7 @@ export const displayObjectShape = z.union([
   z.literal("inline"),
 ]);
 
-export const displaySchema = z.object({
-  display: displayObjectShape,
-});
-export type DisplaySchema = z.infer<typeof displaySchema>;
-
-export const display: StyleType<DisplaySchema> = {
-  schema: displaySchema,
-  defaultValues: {
-    display: "flex-col",
-  },
-  transform: (value: DisplaySchema) => {
-    if (isEqual(value, display.defaultValues)) return "";
-
-    switch (value.display) {
-      case "flex-col":
-        // return "flex flex-col";
-        return "";
-      case "flex-row":
-        return "flex flex-row";
-      case "grid":
-        return "grid";
-      case "inline":
-        return "inline";
-      default:
-        return "";
-    }
-  },
-};
-
-export const gapXSchema = z.object({
-  gapX: z.coerce.number().optional(),
-});
-export type GapXSchema = z.infer<typeof gapXSchema>;
-
-export const gapX: StyleType<GapXSchema> = {
-  schema: gapXSchema,
-  defaultValues: {
-    gapX: undefined,
-  },
-  transform: (value: GapXSchema) => {
-    if (value.gapX === undefined || value.gapX === 0) return "";
-    return `gap-[${value.gapX}px]`;
-  },
-};
-
-export const gapYSchema = z.object({
-  gapY: z.coerce.number().optional(),
-});
-export type GapYSchema = z.infer<typeof gapYSchema>;
-
-export const gapY: StyleType<GapYSchema> = {
-  schema: gapYSchema,
-  defaultValues: {
-    gapY: undefined,
-  },
-  transform: (value: GapYSchema) => {
-    if (value.gapY === undefined || value.gapY === 0) return "";
-    return `gap-y-[${value.gapY}px]`;
-  },
-};
-
-export const justifyContentSchema = z.object({
+export const placeShape = z.object({
   justifyContent: z
     .union([
       z.literal("start"),
@@ -484,133 +455,186 @@ export const justifyContentSchema = z.object({
       z.literal("space-between"),
     ])
     .optional(),
-});
-export type JustifyContentSchema = z.infer<typeof justifyContentSchema>;
-
-export const justifyContent: StyleType<JustifyContentSchema> = {
-  schema: justifyContentSchema,
-  defaultValues: {
-    justifyContent: "start",
-  },
-  transform: (value: JustifyContentSchema) => {
-    if (
-      value.justifyContent === undefined ||
-      isEqual(value, justifyContent.defaultValues)
-    )
-      return "";
-
-    switch (value.justifyContent) {
-      case "start":
-        return "justify-start";
-      case "end":
-        return "justify-end";
-      case "center":
-        return "justify-center";
-      case "space-between":
-        return "justify-between";
-      default:
-        return "";
-    }
-  },
-};
-
-export const alignItemsSchema = z.object({
   alignItems: z
-    .union([
-      z.literal("start"),
-      z.literal("end"),
-      z.literal("center"),
-      z.literal("space-between"),
-    ])
+    .union([z.literal("start"), z.literal("end"), z.literal("center")])
     .optional(),
 });
-export type AlignItemsSchema = z.infer<typeof alignItemsSchema>;
 
-export const alignItems: StyleType<AlignItemsSchema> = {
-  schema: alignItemsSchema,
-  defaultValues: {
-    alignItems: "start",
-  },
-  transform: (value: AlignItemsSchema) => {
-    if (
-      value.alignItems === undefined ||
-      isEqual(value, alignItems.defaultValues)
-    )
-      return "";
+export type PlaceShape = z.infer<typeof placeShape>;
 
-    switch (value.alignItems) {
-      case "start":
-        return "items-start";
-      case "end":
-        return "items-end";
-      case "center":
-        return "items-center";
-      case "space-between":
-        return "items-stretch";
-      default:
-        return "";
-    }
-  },
-};
+export const gapXShape = z.object({
+  gapX: z.coerce.number().optional(),
+});
 
-export const flexWrapSchema = z.object({
+export const gapYShape = z.object({
+  gapY: z.coerce.number().optional(),
+});
+
+export const flexColSchema = z.object({
+  type: z.literal("flex-col"),
+  ...placeShape.shape,
+  ...gapXShape.shape,
+});
+
+export const flexRowSchema = z.object({
+  type: z.literal("flex-row"),
   flexWrap: z.union([z.literal("nowrap"), z.literal("wrap")]).optional(),
+  ...placeShape.shape,
+  ...gapXShape.shape,
 });
-export type FlexWrapSchema = z.infer<typeof flexWrapSchema>;
 
-export const flexWrap: StyleType<FlexWrapSchema> = {
-  schema: flexWrapSchema,
-  defaultValues: {
-    flexWrap: undefined,
-  },
-  transform: (value: FlexWrapSchema) => {
-    if (value.flexWrap === undefined) return "";
+export const gridSchema = z.object({
+  type: z.literal("grid"),
+  gridCols: z.coerce.number(),
+  ...placeShape.shape,
+  ...gapXShape.shape,
+  ...gapYShape.shape,
+});
 
-    switch (value.flexWrap) {
-      case "nowrap":
-        return "flex-nowrap";
-      case "wrap":
-        return "flex-wrap";
-      default:
-        return "";
+export const inlineSchema = z.object({
+  type: z.literal("inline"),
+});
+
+export const hiddenSchema = z.object({
+  type: z.literal("hidden"),
+});
+
+export const displaySchema = z.object({
+  display: z.discriminatedUnion("type", [
+    flexColSchema,
+    flexRowSchema,
+    gridSchema,
+    inlineSchema,
+    hiddenSchema,
+  ]),
+});
+export type DisplaySchema = z.infer<typeof displaySchema>;
+
+export const display: StyleType<DisplaySchema, () => DisplaySchema> = {
+  schema: displaySchema,
+  defaultValues: () => ({
+    display: {
+      type: "flex-col",
+      justifyContent: "start",
+      alignItems: "start",
+      gapX: 0,
+    },
+  }),
+  defaultTransform: () =>
+    "flex flex-col justify-start items-start gap-0 gap-y-0 grid-cols-1",
+  transform: (value: DisplaySchema) => {
+    if (isEqual(value, display.defaultValues()))
+      return display.defaultTransform();
+
+    let style: string[] = [];
+
+    function resolveJusitifyContent(
+      justifyContent: PlaceShape["justifyContent"]
+    ) {
+      if (justifyContent === "start") return "justify-start";
+
+      if (justifyContent === "end") return "justify-end";
+
+      if (justifyContent === "center") return "justify-center";
+
+      if (justifyContent === "space-between") return "justify-between";
+
+      return "";
     }
-  },
-};
 
-export const gridColsSchema = z.object({
-  gridCols: z.coerce.number().optional(),
-});
-export type GridColsSchema = z.infer<typeof gridColsSchema>;
+    function resolveAlignItems(alignItems: PlaceShape["alignItems"]) {
+      if (alignItems === "start") return "items-start";
 
-export const gridCols: StyleType<GridColsSchema> = {
-  schema: gridColsSchema,
-  defaultValues: {
-    gridCols: undefined,
-  },
-  transform: (value: GridColsSchema) => {
-    if (value.gridCols === undefined) return "";
-    return `grid-cols-${value.gridCols}`;
+      if (alignItems === "end") return "items-end";
+
+      if (alignItems === "center") return "items-center";
+
+      return "";
+    }
+
+    function resolveFlexWrap(
+      flexWrap: (DisplaySchema["display"] & { type: "flex-row" })["flexWrap"]
+    ) {
+      if (flexWrap === "nowrap") return "flex-nowrap";
+
+      if (flexWrap === "wrap") return "flex-wrap";
+
+      return "";
+    }
+
+    function resolveGridCols(
+      gridCols: (DisplaySchema["display"] & { type: "grid" })["gridCols"]
+    ) {
+      if (gridCols === undefined) return "grid-cols-1";
+
+      return `grid-cols-${gridCols}`;
+    }
+
+    switch (value.display.type) {
+      case "flex-col":
+        style.push("flex", "flex-col");
+        style.push(resolveJusitifyContent(value.display.justifyContent));
+        style.push(resolveAlignItems(value.display.alignItems));
+        if (value.display.gapX === 0) style.push("gap-0");
+        else style.push(`gap-[${value.display.gapX}px]`);
+        break;
+      case "flex-row":
+        style.push("flex", "flex-row");
+        style.push(resolveJusitifyContent(value.display.justifyContent));
+        style.push(resolveAlignItems(value.display.alignItems));
+        if (value.display.gapX === 0) style.push("gap-0");
+        else style.push(`gap-[${value.display.gapX}px]`);
+        style.push(resolveFlexWrap(value.display.flexWrap));
+        break;
+      case "grid":
+        style.push("grid");
+        style.push(resolveJusitifyContent(value.display.justifyContent));
+        style.push(resolveAlignItems(value.display.alignItems));
+        if (value.display.gapX === 0) style.push("gap-0");
+        else style.push(`gap-[${value.display.gapX}px]`);
+        if (value.display.gapY === 0) style.push("gap-y-0");
+        else style.push(`gap-y-[${value.display.gapY}px]`);
+        style.push(resolveGridCols(value.display.gridCols));
+        break;
+      case "inline":
+        style.push("inline");
+        break;
+      case "hidden":
+        style.push("hidden");
+        break;
+    }
+
+    return style.join(" ");
   },
 };
 
 export const overflowSchema = z.object({
-  overflow: z.union([z.literal("hidden"), z.literal("auto")]).optional(),
+  overflow: z
+    .union([z.literal("hidden"), z.literal("auto"), z.literal("visible")])
+    .optional(),
 });
 export type OverflowSchema = z.infer<typeof overflowSchema>;
 
-export const overflow: StyleType<OverflowSchema> = {
+export const overflow: StyleType<OverflowSchema, () => OverflowSchema> = {
   schema: overflowSchema,
-  defaultValues: {
-    overflow: undefined,
-  },
+  defaultValues: () => ({
+    overflow: "visible",
+  }),
+  defaultTransform: () => "overflow-visible",
   transform: (value: OverflowSchema) => {
-    if (value.overflow === undefined) return "";
+    if (
+      value.overflow === undefined ||
+      isEqual(value, overflow.defaultValues())
+    )
+      return overflow.defaultTransform();
 
     switch (value.overflow) {
       case "hidden":
         return "overflow-hidden";
       case "auto":
         return "overflow-auto";
+      case "visible":
+        return "overflow-visible";
       default:
         return "";
     }
@@ -628,14 +652,15 @@ export const opacitySchema = z.object({
 });
 export type OpacitySchema = z.infer<typeof opacitySchema>;
 
-export const opacity: StyleType<OpacitySchema> = {
+export const opacity: StyleType<OpacitySchema, () => OpacitySchema> = {
   schema: opacitySchema,
-  defaultValues: {
+  defaultValues: () => ({
     opacity: 100,
-  },
+  }),
+  defaultTransform: () => "opacity-100",
   transform: (value: OpacitySchema) => {
-    if (isEqual(value, opacity.defaultValues) || value.opacity === undefined)
-      return "";
+    if (isEqual(value, opacity.defaultValues()) || value.opacity === undefined)
+      return opacity.defaultTransform();
     if (value.opacity % 5) return `opacity-[${value.opacity / 100}]`;
     return `opacity-${value.opacity}`;
   },
@@ -653,22 +678,26 @@ export const borderRadiusSchema = z.object({
 });
 export type BorderRadiusSchema = z.infer<typeof borderRadiusSchema>;
 
-export const borderRadius: StyleType<BorderRadiusSchema> = {
+export const borderRadius: StyleType<
+  BorderRadiusSchema,
+  () => BorderRadiusSchema
+> = {
   schema: borderRadiusSchema,
-  defaultValues: {
+  defaultValues: () => ({
     borderRadius: {
       topLeft: 0,
       topRight: 0,
       bottomRight: 0,
       bottomLeft: 0,
     },
-  },
+  }),
+  defaultTransform: () => "rounded-none",
   transform: (value: BorderRadiusSchema) => {
     if (
-      isEqual(value, borderRadius.defaultValues) ||
+      isEqual(value, borderRadius.defaultValues()) ||
       value.borderRadius === undefined
     )
-      return "";
+      return borderRadius.defaultTransform();
 
     const { topLeft, topRight, bottomRight, bottomLeft } = value.borderRadius;
 
@@ -786,8 +815,8 @@ export const colorSchema = z.discriminatedUnion("type", [
   colorValueSchema,
 ]);
 
-export const backgroundSchema = z.object({
-  background: z
+export const FillSchema = z.object({
+  fill: z
     .object({
       value: colorSchema,
       // clipToText: z.boolean().optional(),
@@ -795,16 +824,42 @@ export const backgroundSchema = z.object({
     .optional(),
 });
 
-export const background: StyleType<BackgroundSchema> = {
-  schema: backgroundSchema,
-  defaultValues: {
-    background: undefined,
-  },
-  transform: (value: BackgroundSchema) => {
-    if (value.background === undefined) return "";
+export type FillSchema = z.infer<typeof FillSchema>;
 
-    const background = value.background.value;
-    // const clipToText = value.background.clipToText;
+export const fill: StyleType<
+  FillSchema,
+  (element: Element["type"]) => FillSchema
+> = {
+  schema: FillSchema,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        fill: {
+          value: {
+            type: "color",
+            value: "#000000",
+            opacity: 100,
+          },
+        },
+      };
+    } else {
+      return {
+        fill: undefined,
+      };
+    }
+  },
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "text-[#000000]";
+    } else {
+      return "bg-transparent";
+    }
+  },
+  transform: (value, type) => {
+    if (value.fill === undefined) return fill.defaultTransform(type);
+
+    const fillValue = value.fill.value;
+    // const clipToText = value.fill.clipToText;
 
     function parseGradientValue(value: GradientValueSchema) {
       let style: string[] = [];
@@ -822,29 +877,37 @@ export const background: StyleType<BackgroundSchema> = {
     }
 
     let style: string[] = [];
-    switch (background.type) {
+    switch (fillValue.type) {
       case "image":
-        style.push(`bg-[url(${background.value})]`);
-        if (background.objectFit && background.objectFit !== "tile") {
-          style.push(`bg-${background.objectFit}`);
-        } else if (background.objectFit) {
+        style.push(
+          `bg-[url(${fillValue.value})] ${isTextElement(type) && "bg-clip-text text-transparent"}`
+        );
+        if (fillValue.objectFit && fillValue.objectFit !== "tile") {
+          style.push(`bg-${fillValue.objectFit}`);
+        } else if (fillValue.objectFit) {
           style.push(`bg-repeat`);
         }
         break;
       case "linear-gradient":
-        style.push(`bg-linear-[${parseGradientValue(background)}]`);
+        style.push(
+          `bg-linear-[${parseGradientValue(fillValue)}] ${isTextElement(type) && "bg-clip-text text-transparent"}`
+        );
 
         break;
       case "radial-gradient":
-        style.push(`bg-radial-[${parseGradientValue(background)}]`);
+        style.push(
+          `bg-radial-[${parseGradientValue(fillValue)}] ${isTextElement(type) && "bg-clip-text text-transparent"}`
+        );
 
         break;
       case "conic-gradient":
-        style.push(`bg-conic-[${parseGradientValue(background)}]`);
+        style.push(
+          `bg-conic-[${parseGradientValue(fillValue)}] ${isTextElement(type) && "bg-clip-text text-transparent"}`
+        );
         break;
       case "color":
         style.push(
-          `bg-[${background.value}${generateOpacityHex(background.opacity)}]`
+          `${isTextElement(type) ? "text" : "bg"}-[${fillValue.value}${generateOpacityHex(fillValue.opacity)}]`
         );
         break;
     }
@@ -853,11 +916,10 @@ export const background: StyleType<BackgroundSchema> = {
     //   style.push(`bg-clip-text`);
     // }
 
-    return style.join(" ");
+    const result = style.join(" ");
+    return result;
   },
 };
-
-export type BackgroundSchema = z.infer<typeof backgroundSchema>;
 
 export const strokeSchema = z.object({
   stroke: z
@@ -876,13 +938,14 @@ export const strokeSchema = z.object({
 
 export type StrokeSchema = z.infer<typeof strokeSchema>;
 
-export const stroke: StyleType<StrokeSchema> = {
+export const stroke: StyleType<StrokeSchema, () => StrokeSchema> = {
   schema: strokeSchema,
-  defaultValues: {
+  defaultValues: () => ({
     stroke: undefined,
-  },
+  }),
+  defaultTransform: () => "border-[0px] border-solid border-[#000000]",
   transform: (value: StrokeSchema) => {
-    if (value.stroke === undefined) return "";
+    if (value.stroke === undefined) return stroke.defaultTransform();
 
     let style: string[] = [];
     style.push(
@@ -906,15 +969,16 @@ export const dropShadowSchema = z.object({
 });
 export type DropShadowSchema = z.infer<typeof dropShadowSchema>;
 
-export const dropShadow: StyleType<DropShadowSchema> = {
+export const dropShadow: StyleType<DropShadowSchema, () => DropShadowSchema> = {
   schema: dropShadowSchema,
-  defaultValues: {
+  defaultValues: () => ({
     dropShadow: undefined,
-  },
-  transform: ({ dropShadow }: DropShadowSchema) => {
-    if (dropShadow === undefined) return "";
+  }),
+  defaultTransform: () => "drop-shadow-[0px_0px_0px_#000000]",
+  transform: ({ dropShadow: dropShadowValue }: DropShadowSchema) => {
+    if (dropShadowValue === undefined) return dropShadow.defaultTransform();
 
-    return `drop-shadow-[${dropShadow.x}px_${dropShadow.y}px_${dropShadow.spread}px_${dropShadow.color.value}${generateOpacityHex(dropShadow.color.opacity)}]`;
+    return `drop-shadow-[${dropShadowValue.x}px_${dropShadowValue.y}px_${dropShadowValue.spread}px_${dropShadowValue.color.value}${generateOpacityHex(dropShadowValue.color.opacity)}]`;
   },
 };
 
@@ -923,14 +987,15 @@ export const blurSchema = z.object({
 });
 export type BlurSchema = z.infer<typeof blurSchema>;
 
-export const blur: StyleType<BlurSchema> = {
+export const blur: StyleType<BlurSchema, () => BlurSchema> = {
   schema: blurSchema,
-  defaultValues: {
+  defaultValues: () => ({
     blur: undefined,
-  },
-  transform: ({ blur }: BlurSchema) => {
-    if (blur === undefined) return "";
-    return `blur-[${blur}px]`;
+  }),
+  defaultTransform: () => "blur-[0px]",
+  transform: ({ blur: blurValue }: BlurSchema) => {
+    if (blurValue === undefined) return blur.defaultTransform();
+    return `blur-[${blurValue}px]`;
   },
 };
 
@@ -939,14 +1004,18 @@ export const backdropBlurSchema = z.object({
 });
 export type BackdropBlurSchema = z.infer<typeof backdropBlurSchema>;
 
-export const backdropBlur: StyleType<BackdropBlurSchema> = {
+export const backdropBlur: StyleType<
+  BackdropBlurSchema,
+  () => BackdropBlurSchema
+> = {
   schema: backdropBlurSchema,
-  defaultValues: {
+  defaultValues: () => ({
     backdropBlur: undefined,
-  },
-  transform: ({ backdropBlur }: BackdropBlurSchema) => {
-    if (backdropBlur === undefined) return "";
-    return `backdrop-blur-[${backdropBlur}px]`;
+  }),
+  defaultTransform: () => "backdrop-blur-[0px]",
+  transform: ({ backdropBlur: backdropBlurValue }: BackdropBlurSchema) => {
+    if (backdropBlurValue === undefined) return backdropBlur.defaultTransform();
+    return `backdrop-blur-[${backdropBlurValue}px]`;
   },
 };
 
@@ -985,20 +1054,22 @@ export const positionSchema = z.object({
 });
 export type PositionSchema = z.infer<typeof positionSchema>;
 
-export const position: StyleType<PositionSchema> = {
+export const position: StyleType<PositionSchema, () => PositionSchema> = {
   schema: positionSchema,
-  defaultValues: {
+  defaultValues: () => ({
     position: {
       type: "relative",
       colSpan: 1,
     },
-  },
+  }),
+  defaultTransform: () => "relative self-auto m-0 col-span-1",
   transform: (value: PositionSchema) => {
-    if (isEqual(value, position.defaultValues)) return "";
+    if (isEqual(value, position.defaultValues()))
+      return position.defaultTransform();
 
     switch (value.position.type) {
       case "relative":
-        let style = `relative ${value.position.alignSelf ? `self-${value.position.alignSelf}` : ""} ${value.position.colSpan && value.position.colSpan !== 1 ? `col-span-${value.position.colSpan}` : ""}`;
+        let style = `relative ${value.position.alignSelf ? `self-${value.position.alignSelf}` : "self-auto"} ${value.position.colSpan && value.position.colSpan !== 1 ? `col-span-${value.position.colSpan}` : "col-span-1"}`;
         switch (value.position.justifySelf) {
           case "start":
             style += ` mr-auto`;
@@ -1008,6 +1079,9 @@ export const position: StyleType<PositionSchema> = {
             break;
           case "end":
             style += ` ml-auto`;
+            break;
+          default:
+            style += ` m-0`;
             break;
         }
         return style;
@@ -1031,20 +1105,22 @@ export const xSchema = z.object({
 });
 export type XSchema = z.infer<typeof xSchema>;
 
-export const x: StyleType<XSchema> = {
+export const x: StyleType<XSchema, () => XSchema> = {
   schema: xSchema,
-  defaultValues: {
+  defaultValues: () => ({
     x: {
       pos: 0,
       isFlipped: false,
     },
-  },
-  transform: ({ x }: XSchema) => {
-    if (x === undefined) return "";
+  }),
+  defaultTransform: () => "left-[0px] right-[0px]",
+  transform: (value: XSchema) => {
+    const xValue = value.x;
+    if (isEqual(xValue, x.defaultValues())) return x.defaultTransform();
 
-    if (x.pos === 0) return "";
-    if (x.isFlipped) return `right-[${x.pos}px]`;
-    return `left-[${x.pos}px]`;
+    if (xValue.pos === 0) return "";
+    if (xValue.isFlipped) return `right-[${xValue.pos}px]`;
+    return `left-[${xValue.pos}px]`;
   },
 };
 
@@ -1053,20 +1129,22 @@ export const ySchema = z.object({
 });
 export type YSchema = z.infer<typeof ySchema>;
 
-export const y: StyleType<YSchema> = {
+export const y: StyleType<YSchema, () => YSchema> = {
   schema: ySchema,
-  defaultValues: {
+  defaultValues: () => ({
     y: {
       pos: 0,
       isFlipped: false,
     },
-  },
-  transform: ({ y }: YSchema) => {
-    if (y === undefined) return "";
+  }),
+  defaultTransform: () => "top-[0px] bottom-[0px]",
+  transform: (value: YSchema) => {
+    const yValue = value.y;
+    if (isEqual(yValue, y.defaultValues())) return y.defaultTransform();
 
-    if (y.pos === 0) return "";
-    if (y.isFlipped) return `bottom-[${y.pos}px]`;
-    return `top-[${y.pos}px]`;
+    if (yValue.pos === 0) return "";
+    if (yValue.isFlipped) return `bottom-[${yValue.pos}px]`;
+    return `top-[${yValue.pos}px]`;
   },
 };
 
@@ -1075,14 +1153,34 @@ export const fontSizeSchema = z.object({
 });
 export type FontSizeSchema = z.infer<typeof fontSizeSchema>;
 
-export const fontSize: StyleType<FontSizeSchema> = {
+export const fontSize: StyleType<
+  FontSizeSchema,
+  (element: Element["type"]) => FontSizeSchema
+> = {
   schema: fontSizeSchema,
-  defaultValues: {
-    fontSize: undefined,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        fontSize: 16,
+      };
+    } else {
+      return {
+        fontSize: undefined,
+      };
+    }
   },
-  transform: ({ fontSize }: FontSizeSchema) => {
-    if (fontSize === undefined) return "";
-    return `text-[${fontSize}px]`;
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "text-[16px]";
+    } else {
+      return "";
+    }
+  },
+  transform: (value, type) => {
+    const fontSizeValue = value.fontSize;
+    if (fontSizeValue === undefined || !isTextElement(type))
+      return fontSize.defaultTransform(type);
+    return `text-[${fontSizeValue}px]`;
   },
 };
 
@@ -1103,13 +1201,32 @@ export const fontWeightSchema = z.object({
 });
 export type FontWeightSchema = z.infer<typeof fontWeightSchema>;
 
-export const fontWeight: StyleType<FontWeightSchema> = {
+export const fontWeight: StyleType<
+  FontWeightSchema,
+  (element: Element["type"]) => FontWeightSchema
+> = {
   schema: fontWeightSchema,
-  defaultValues: {
-    fontWeight: undefined,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        fontWeight: "normal",
+      };
+    } else {
+      return {
+        fontWeight: undefined,
+      };
+    }
   },
-  transform: (value: FontWeightSchema) => {
-    if (isEqual(value, fontWeight.defaultValues)) return "";
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "font-normal";
+    } else {
+      return "";
+    }
+  },
+  transform: (value, type) => {
+    if (isEqual(value, fontWeight.defaultValues(type)) || !isTextElement(type))
+      return fontWeight.defaultTransform(type);
     if (value.fontWeight === "normal") return "";
     return `font-${value.fontWeight}`;
   },
@@ -1120,13 +1237,32 @@ export const fontFamilySchema = z.object({
 });
 export type FontFamilySchema = z.infer<typeof fontFamilySchema>;
 
-export const fontFamily: StyleType<FontFamilySchema> = {
+export const fontFamily: StyleType<
+  FontFamilySchema,
+  (element: Element["type"]) => FontFamilySchema
+> = {
   schema: fontFamilySchema,
-  defaultValues: {
-    fontFamily: undefined,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        fontFamily: "system-ui",
+      };
+    } else {
+      return {
+        fontFamily: undefined,
+      };
+    }
   },
-  transform: (value: FontFamilySchema) => {
-    if (isEqual(value, fontFamily.defaultValues)) return "";
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "system-ui";
+    } else {
+      return "";
+    }
+  },
+  transform: (value, type) => {
+    if (isEqual(value, fontFamily.defaultValues(type)) || !isTextElement(type))
+      return fontFamily.defaultTransform(type);
     if (value.fontFamily === "system-ui") return "";
     return `font-[${value.fontFamily}]`;
   },
@@ -1137,13 +1273,32 @@ export const fontStyleSchema = z.object({
 });
 export type FontStyleSchema = z.infer<typeof fontStyleSchema>;
 
-export const fontStyle: StyleType<FontStyleSchema> = {
+export const fontStyle: StyleType<
+  FontStyleSchema,
+  (element: Element["type"]) => FontStyleSchema
+> = {
   schema: fontStyleSchema,
-  defaultValues: {
-    fontStyle: undefined,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        fontStyle: "normal",
+      };
+    } else {
+      return {
+        fontStyle: undefined,
+      };
+    }
   },
-  transform: (value: FontStyleSchema) => {
-    if (isEqual(value, fontStyle.defaultValues)) return "";
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "font-normal";
+    } else {
+      return "";
+    }
+  },
+  transform: (value, type) => {
+    if (isEqual(value, fontStyle.defaultValues(type)) || !isTextElement(type))
+      return fontStyle.defaultTransform(type);
     if (value.fontStyle === "normal") return "";
     return `italic`;
   },
@@ -1154,14 +1309,32 @@ export const leadingSchema = z.object({
 });
 export type LeadingSchema = z.infer<typeof leadingSchema>;
 
-export const leading: StyleType<LeadingSchema> = {
+export const leading: StyleType<
+  LeadingSchema,
+  (element: Element["type"]) => LeadingSchema
+> = {
   schema: leadingSchema,
-  defaultValues: {
-    leading: undefined,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        leading: 1.5,
+      };
+    } else {
+      return {
+        leading: undefined,
+      };
+    }
   },
-  transform: (value: LeadingSchema) => {
-    if (isEqual(value, leading.defaultValues)) return "";
-    if (value.leading === 1.5) return "";
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "leading-[1.5em]";
+    } else {
+      return "";
+    }
+  },
+  transform: (value, type) => {
+    if (isEqual(value, leading.defaultValues(type)) || !isTextElement(type))
+      return leading.defaultTransform(type);
 
     return `leading-[${value.leading}em]`;
   },
@@ -1172,14 +1345,32 @@ export const trackingSchema = z.object({
 });
 export type TrackingSchema = z.infer<typeof trackingSchema>;
 
-export const tracking: StyleType<TrackingSchema> = {
+export const tracking: StyleType<
+  TrackingSchema,
+  (element: Element["type"]) => TrackingSchema
+> = {
   schema: trackingSchema,
-  defaultValues: {
-    tracking: undefined,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        tracking: 0,
+      };
+    } else {
+      return {
+        tracking: undefined,
+      };
+    }
   },
-  transform: (value: TrackingSchema) => {
-    if (isEqual(value, tracking.defaultValues)) return "";
-    if (value.tracking === 1.5) return "";
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "tracking-[0em]";
+    } else {
+      return "";
+    }
+  },
+  transform: (value, type) => {
+    if (isEqual(value, tracking.defaultValues(type)) || !isTextElement(type))
+      return tracking.defaultTransform(type);
 
     return `tracking-[${value.tracking}em]`;
   },
@@ -1197,13 +1388,32 @@ export const textAlignSchema = z.object({
 });
 export type TextAlignSchema = z.infer<typeof textAlignSchema>;
 
-export const textAlign: StyleType<TextAlignSchema> = {
+export const textAlign: StyleType<
+  TextAlignSchema,
+  (element: Element["type"]) => TextAlignSchema
+> = {
   schema: textAlignSchema,
-  defaultValues: {
-    textAlign: undefined,
+  defaultValues: (type) => {
+    if (isTextElement(type)) {
+      return {
+        textAlign: "left",
+      };
+    } else {
+      return {
+        textAlign: undefined,
+      };
+    }
   },
-  transform: (value: TextAlignSchema) => {
-    if (isEqual(value, textAlign.defaultValues)) return "";
+  defaultTransform: (type) => {
+    if (isTextElement(type)) {
+      return "text-left";
+    } else {
+      return "";
+    }
+  },
+  transform: (value, type) => {
+    if (isEqual(value, textAlign.defaultValues(type)) || !isTextElement(type))
+      return textAlign.defaultTransform(type);
     return `text-${value.textAlign}`;
   },
 };
@@ -1218,16 +1428,10 @@ const style = [
   maxHeight,
   minHeight,
   display,
-  gapX,
-  gapY,
-  justifyContent,
-  alignItems,
-  flexWrap,
-  gridCols,
   overflow,
   opacity,
   borderRadius,
-  background,
+  fill,
   stroke,
   dropShadow,
   blur,
@@ -1254,16 +1458,10 @@ export const styleSchema = z.object({
   ...maxHeightSchema.shape,
   ...minHeightSchema.shape,
   ...displaySchema.shape,
-  ...gapXSchema.shape,
-  ...gapYSchema.shape,
-  ...justifyContentSchema.shape,
-  ...alignItemsSchema.shape,
-  ...flexWrapSchema.shape,
-  ...gridColsSchema.shape,
   ...overflowSchema.shape,
   ...opacitySchema.shape,
   ...borderRadiusSchema.shape,
-  ...backgroundSchema.shape,
+  ...FillSchema.shape,
   ...strokeSchema.shape,
   ...dropShadowSchema.shape,
   ...blurSchema.shape,
@@ -1285,40 +1483,34 @@ export type StyleSchema = z.infer<typeof styleSchema>;
  * and provides the default values for each property type
  */
 
-export const getDefaultValues = () => ({
-  ...margin.defaultValues,
-  ...padding.defaultValues,
-  ...width.defaultValues,
-  ...maxWidth.defaultValues,
-  ...minWidth.defaultValues,
-  ...height.defaultValues,
-  ...maxHeight.defaultValues,
-  ...minHeight.defaultValues,
-  ...display.defaultValues,
-  ...gapX.defaultValues,
-  ...gapY.defaultValues,
-  ...justifyContent.defaultValues,
-  ...alignItems.defaultValues,
-  ...flexWrap.defaultValues,
-  ...gridCols.defaultValues,
-  ...overflow.defaultValues,
-  ...opacity.defaultValues,
-  ...borderRadius.defaultValues,
-  ...background.defaultValues,
-  ...stroke.defaultValues,
-  ...dropShadow.defaultValues,
-  ...blur.defaultValues,
-  ...backdropBlur.defaultValues,
-  ...position.defaultValues,
-  ...x.defaultValues,
-  ...y.defaultValues,
-  ...fontSize.defaultValues,
-  ...fontWeight.defaultValues,
-  ...fontFamily.defaultValues,
-  ...fontStyle.defaultValues,
-  ...leading.defaultValues,
-  ...tracking.defaultValues,
-  ...textAlign.defaultValues,
+export const getDefaultValues = (type: Element["type"]) => ({
+  ...margin.defaultValues(),
+  ...padding.defaultValues(),
+  ...width.defaultValues(),
+  ...maxWidth.defaultValues(),
+  ...minWidth.defaultValues(),
+  ...height.defaultValues(),
+  ...maxHeight.defaultValues(),
+  ...minHeight.defaultValues(),
+  ...display.defaultValues(),
+  ...overflow.defaultValues(),
+  ...opacity.defaultValues(),
+  ...borderRadius.defaultValues(),
+  ...fill.defaultValues(type),
+  ...stroke.defaultValues(),
+  ...dropShadow.defaultValues(),
+  ...blur.defaultValues(),
+  ...backdropBlur.defaultValues(),
+  ...position.defaultValues(),
+  ...x.defaultValues(),
+  ...y.defaultValues(),
+  ...fontSize.defaultValues(type),
+  ...fontWeight.defaultValues(type),
+  ...fontFamily.defaultValues(type),
+  ...fontStyle.defaultValues(type),
+  ...leading.defaultValues(type),
+  ...tracking.defaultValues(type),
+  ...textAlign.defaultValues(type),
 });
 
 /*
@@ -1326,10 +1518,10 @@ export const getDefaultValues = () => ({
  */
 
 export const parseJSONToTailwindCSS = <T extends StyleSchema>(
-  styleObj: T | undefined
+  styleObj: T | undefined,
+  elementType: Element["type"]
 ): string => {
   if (styleObj === undefined) return "";
-
   return cn(
     Object.entries(styleObj)
       .map(([type, value]) => {
@@ -1337,8 +1529,11 @@ export const parseJSONToTailwindCSS = <T extends StyleSchema>(
           Object.keys(style.schema.shape).includes(type)
         );
 
-        // @ts-expect-error
-        return styleType!.transform(Object.fromEntries([[type, value]]));
+        return styleType!.transform(
+          // @ts-expect-error
+          Object.fromEntries([[type, value]]),
+          elementType
+        );
       })
       .join(" ")
   );

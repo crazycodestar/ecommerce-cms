@@ -11,6 +11,7 @@ import {
   AlignJustifyIcon,
   AlignLeftIcon,
   AlignRightIcon,
+  ChevronDownIcon,
   ItalicIcon,
   MinusIcon,
   Settings2Icon,
@@ -26,6 +27,16 @@ import {
   PropertySelectValue,
 } from "./property-select";
 import { useStyle } from "./style-context";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useEditor } from "@/hooks/use-editor";
+import { isTextElement } from "@/hooks/use-editor/properties";
+import { cn } from "@/lib/utils";
 
 const fontFamilyOptions = [
   ["System UI", "system-ui"],
@@ -47,29 +58,45 @@ const fontFamilyOptions = [
 ];
 
 export function Typography() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const focusElement = useEditor((state) => state.focusElement);
+  const isTextElementBoolean =
+    focusElement && !!isTextElement(focusElement.type);
+
   const { form, handleSetValue } = useStyle();
 
   function FontSizeOptions() {
     return (
-      <PropertySelect control={form.control} name="fontSize">
-        <PropertySelectTrigger className="size-7 border-none flex items-center justify-center" />
-        <PropertySelectContent className="max-h-56">
+      <DropdownMenu>
+        <DropdownMenuTrigger>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-7 hover:bg-transparent"
+          >
+            <ChevronDownIcon size={14} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="max-h-56">
           {[
             10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72,
             84, 96, 128,
-          ].map((size) => (
-            <PropertySelectItem value={size.toString()}>
+          ].map((size, index) => (
+            <DropdownMenuCheckboxItem
+              key={index}
+              checked={form.watch("fontSize") === size}
+              onClick={() => handleSetValue("fontSize", size)}
+            >
               {size}
-            </PropertySelectItem>
+            </DropdownMenuCheckboxItem>
           ))}
-        </PropertySelectContent>
-      </PropertySelect>
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
   return (
-    <div className="p-2 pb-3 border-t">
+    <div className={cn("p-2 pb-3 border-t", !isTextElementBoolean && "hidden")}>
       <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-1.5 h-7 items-center">
         <h3 className="text-sm font-medium col-span-4">Typography</h3>
       </div>
@@ -85,8 +112,10 @@ export function Typography() {
             <PropertySelectValue />
           </PropertySelectTrigger>
           <PropertySelectContent className="max-h-56">
-            {fontFamilyOptions.map(([label, value]) => (
-              <PropertySelectItem value={value}>{label}</PropertySelectItem>
+            {fontFamilyOptions.map(([label, value], index) => (
+              <PropertySelectItem key={index} value={value}>
+                {label}
+              </PropertySelectItem>
             ))}
           </PropertySelectContent>
         </PropertySelect>
@@ -143,7 +172,7 @@ export function Typography() {
         />
         <TypographyOptions />
         {/* <pre className="col-span-4">
-          {JSON.stringify(form.watch("fontWeight"), null, 2)}
+          {JSON.stringify(form.watch("fontFamily"), null, 2)}
         </pre> */}
       </div>
     </div>
@@ -203,9 +232,6 @@ function TypographyOptions() {
             className="col-span-2"
           >
             <TabsList className="w-full h-7">
-              <TabsTrigger value="" className="rounded-sm">
-                <MinusIcon size={14} />
-              </TabsTrigger>
               <TabsTrigger value="normal" className="rounded-sm">
                 <ALargeSmallIcon size={14} />
               </TabsTrigger>

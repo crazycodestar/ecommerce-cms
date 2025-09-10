@@ -80,17 +80,17 @@ export function Appearance() {
           </>
         )}
 
-        {form.watch("background.value") ? (
+        {form.watch("fill.value") ? (
           <>
             <PropertyColorInput
               containerClassNames="col-span-4"
               control={form.control}
-              name="background.value"
-              label="Background"
+              name="fill.value"
+              label="Fill"
             />
             <PropertyButton
               className="col-span-1"
-              onClick={() => handleSetValue("background", undefined)}
+              onClick={() => handleSetValue("fill", undefined)}
             >
               <Minus className="size-3.5" />
             </PropertyButton>
@@ -98,7 +98,7 @@ export function Appearance() {
         ) : (
           <PropertyButton
             onClick={() =>
-              handleSetValue("background.value", {
+              handleSetValue("fill.value", {
                 type: "color",
                 value: "#ffffff",
                 opacity: 100,
@@ -108,11 +108,11 @@ export function Appearance() {
             className="col-span-4 text-xs w-full border-0"
           >
             {/* <PlusIcon className="size-3.5 mr-2" /> */}
-            Add Background Color
+            Add Fill
           </PropertyButton>
         )}
         {/* <pre className="col-span-4">
-          {JSON.stringify(form.watch("background.value"), null, 2)}
+          {JSON.stringify(form.watch("opacity"), null, 2)}
         </pre> */}
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
 import { Path, PathValue, useForm, UseFormReturn } from "react-hook-form";
 import { useEditor } from "@/hooks/use-editor";
 import { Form } from "@/components/ui/form";
+import { layers } from "@/hooks/use-editor/elements";
 
 interface StyleContextType {
   form: UseFormReturn<StyleSchema>;
@@ -28,11 +29,14 @@ export const useStyle = () => {
 };
 
 export const StyleProvider = ({ children }: { children: ReactNode }) => {
+  const elements = useEditor((state) => state.pages[0].elements);
   const focusElement = useEditor((state) => state.focusElement);
   const updateElement = useEditor((state) => state.updateElement);
 
   const form = useForm<StyleSchema>({
-    values: focusElement?.style ?? getDefaultValues(),
+    values: focusElement
+      ? layers.find(elements, focusElement?.id)?.style
+      : undefined,
   });
 
   const onSubmit = (data: StyleSchema) => {
@@ -41,7 +45,7 @@ export const StyleProvider = ({ children }: { children: ReactNode }) => {
     const { success, data: result, error } = styleSchema.safeParse(data);
     if (success) return updateElement(focusElement.id, { style: result });
 
-    console.log(error);
+    console.log(focusElement.type, error);
     form.reset();
   };
 

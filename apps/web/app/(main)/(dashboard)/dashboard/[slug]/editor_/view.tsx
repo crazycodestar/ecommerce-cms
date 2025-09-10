@@ -493,7 +493,8 @@ function Body({ element }: { element: BodyElement }) {
       ref={ref}
       data-id={element.id}
       className={cn(
-        parseJSONToTailwindCSS(element.style),
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
         "min-h-screen",
         editModeClassNames
       )}
@@ -527,7 +528,8 @@ function Section({ element }: { element: SectionElement }) {
       data-id={element.id}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        parseJSONToTailwindCSS(element.style),
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
         editModeClassNames
       )}
     >
@@ -540,7 +542,11 @@ function Text({ element }: { element: TextElement }) {
   return (
     <p
       data-id={element.id}
-      className={cn(parseJSONToTailwindCSS(element.style), editModeClassNames)}
+      className={cn(
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
+        editModeClassNames
+      )}
     >
       {element.text}
     </p>
@@ -571,7 +577,8 @@ function Container({ element }: { element: ContainerElement }) {
       data-id={element.id}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        parseJSONToTailwindCSS(element.style),
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
         editModeClassNames
       )}
     >
@@ -588,7 +595,8 @@ function Image({ element }: { element: ImageElement }) {
       alt={element.alt}
       className={cn(
         !element.hasBeenEdited && "size-[200px] object-cover",
-        parseJSONToTailwindCSS(element.style),
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
         editModeClassNames
       )}
     />
@@ -600,7 +608,11 @@ function Link({ element }: { element: LinkElement }) {
     <a
       data-id={element.id}
       href={element.href}
-      className={cn(parseJSONToTailwindCSS(element.style), editModeClassNames)}
+      className={cn(
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
+        editModeClassNames
+      )}
       onClick={(e) => e.preventDefault()}
     >
       {element.text}
@@ -633,7 +645,8 @@ function LinkBlock({ element }: { element: LinkBlockElement }) {
       href={element.href}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        parseJSONToTailwindCSS(element.style),
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
         editModeClassNames
       )}
       onClick={(e) => e.preventDefault()}
@@ -651,7 +664,8 @@ function CodeEmbed({ element }: { element: CodeEmbedElement }) {
       data-id={element.id}
       className={cn(
         !element.hasBeenEdited && emptyClassNames,
-        parseJSONToTailwindCSS(element.style),
+        element.hasBeenEdited &&
+          parseJSONToTailwindCSS(element.style, element.type),
         editModeClassNames
       )}
       dangerouslySetInnerHTML={{

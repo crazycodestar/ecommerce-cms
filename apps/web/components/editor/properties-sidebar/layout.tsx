@@ -603,19 +603,53 @@ function HeightForm({ className }: { className?: string }) {
 function DisplayForm({ className }: { className?: string }) {
   const { form, onSubmit, handleSetValue } = useStyle();
 
+  function handleSetDisplay(value: StyleSchema["display"]["type"]) {
+    switch (value) {
+      case "flex-col":
+        handleSetValue("display", {
+          type: "flex-col",
+          justifyContent: "start",
+          alignItems: "start",
+          gapX: 0,
+        });
+        break;
+      case "flex-row":
+        handleSetValue("display", {
+          type: "flex-row",
+          justifyContent: "start",
+          alignItems: "start",
+          gapX: 0,
+        });
+        break;
+      case "grid":
+        handleSetValue("display", {
+          type: "grid",
+          justifyContent: "start",
+          alignItems: "start",
+          gapX: 0,
+          gapY: 0,
+          gridCols: 3,
+        });
+        break;
+      case "inline":
+        handleSetValue("display", { type: "inline" });
+        break;
+      case "hidden":
+        handleSetValue("display", { type: "hidden" });
+        break;
+    }
+  }
+
   return (
     <div
       className={cn("grid grid-cols-[repeat(4,2fr)_28px] gap-2", className)}
       onSubmit={form.handleSubmit(onSubmit)}
     >
       <Tabs
-        value={form.watch("display")}
-        onValueChange={(value) => {
-          handleSetValue("display", value as StyleSchema["display"]);
-          if (value === "grid" && form.watch("gridCols") === undefined) {
-            handleSetValue("gridCols", 3);
-          }
-        }}
+        value={form.watch("display.type")}
+        onValueChange={(value) =>
+          handleSetDisplay(value as StyleSchema["display"]["type"])
+        }
         className="col-span-4"
       >
         <TabsList className="w-full h-7">
@@ -633,33 +667,19 @@ function DisplayForm({ className }: { className?: string }) {
           </TabsTrigger>
         </TabsList>
       </Tabs>
-      {form.watch("display") === "flex-row" && (
-        <PropertyButton
-          onClick={() =>
-            handleSetValue(
-              "flexWrap",
-              form.watch("flexWrap") === "wrap" ? "nowrap" : "wrap"
-            )
-          }
-          label={form.watch("flexWrap") === "wrap" ? "No wrap" : "Wrap"}
-          className={cn(form.watch("flexWrap") === "wrap" && "bg-muted")}
-        >
-          <WrapIcon width={14} height={14} />
-        </PropertyButton>
-      )}
-      {form.watch("display") !== "inline" && (
+      {form.watch("display.type") !== "inline" && (
         <>
           <div className="col-span-2">
-            {form.watch("display") !== "grid" && (
+            {form.watch("display.type") !== "grid" && (
               <FlexLayoutControl
                 form={form}
                 onSubmit={onSubmit}
                 className="col-span-2"
               />
             )}
-            {form.watch("display") === "grid" && (
+            {form.watch("display.type") === "grid" && (
               <GridLayoutControl
-                name="gridCols"
+                name="display.gridCols"
                 control={form.control}
                 className="col-span-2"
               />
@@ -668,29 +688,47 @@ function DisplayForm({ className }: { className?: string }) {
           <div className="col-span-2 flex flex-col gap-2">
             <PropertyInput
               icon={
-                form.watch("display") === "flex-col"
+                form.watch("display.type") === "flex-col"
                   ? VerticalGapIcon
                   : HorizontalGapIcon
               }
               control={form.control}
               defaultValue={0}
-              name="gapX"
+              name="display.gapX"
               label={
-                form.watch("display") === "flex-col"
+                form.watch("display.type") === "flex-col"
                   ? "Vertical gap"
                   : "Horizontal gap"
               }
             />
-            {form.watch("display") === "grid" && (
+            {form.watch("display.type") === "grid" && (
               <PropertyInput
                 icon={VerticalGapIcon}
                 control={form.control}
                 defaultValue={0}
-                name="gapY"
+                name="display.gapY"
                 label="Vertical gap"
               />
             )}
           </div>
+          {form.watch("display.type") === "flex-row" && (
+            <PropertyButton
+              onClick={() =>
+                handleSetValue(
+                  "display.flexWrap",
+                  form.watch("display.flexWrap") === "wrap" ? "nowrap" : "wrap"
+                )
+              }
+              label={
+                form.watch("display.flexWrap") === "wrap" ? "No wrap" : "Wrap"
+              }
+              className={cn(
+                form.watch("display.flexWrap") === "wrap" && "bg-muted"
+              )}
+            >
+              <WrapIcon width={14} height={14} />
+            </PropertyButton>
+          )}
         </>
       )}
       <div className="col-span-4 flex items-center gap-2">
@@ -741,11 +779,11 @@ function FlexLayoutControl({
   onSubmit: (data: StyleSchema) => void;
   className?: string;
 }) {
-  const display = form.watch("display");
+  const display = form.watch("display.type");
   const isFlexCol = display === "flex-col";
 
-  const justifyContent = form.watch("justifyContent") ?? "start";
-  const alignItems = form.watch("alignItems") ?? "start";
+  const justifyContent = form.watch("display.justifyContent") ?? "start";
+  const alignItems = form.watch("display.alignItems") ?? "start";
 
   function columnPos(index: number): "start" | "center" | "end" {
     const mod = (index + 1) % 3;
@@ -773,13 +811,13 @@ function FlexLayoutControl({
 
   function handleSetValue(index: number, isDoubleClick?: boolean) {
     if (isDoubleClick) {
-      form.setValue("justifyContent", "space-between");
-      form.setValue("alignItems", iconAlign(index));
+      form.setValue("display.justifyContent", "space-between");
+      form.setValue("display.alignItems", iconAlign(index));
       return form.handleSubmit(onSubmit)();
     }
 
-    form.setValue("justifyContent", iconJustify(index));
-    form.setValue("alignItems", iconAlign(index));
+    form.setValue("display.justifyContent", iconJustify(index));
+    form.setValue("display.alignItems", iconAlign(index));
     form.handleSubmit(onSubmit)();
   }
 

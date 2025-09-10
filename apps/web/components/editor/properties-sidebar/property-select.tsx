@@ -19,6 +19,7 @@ import {
   type Path,
 } from "react-hook-form";
 import { useStyle } from "./style-context";
+import { useState } from "react";
 
 interface PropertySelectInputProps<T extends FieldValues> {
   control: Control<T>;
@@ -35,6 +36,8 @@ export const PropertySelect = <T extends FieldValues>({
   containerClassNames,
   children,
 }: PropertySelectInputProps<T>) => {
+  const [open, onOpenChange] = useState(false);
+
   const { form, onSubmit } = useStyle();
   const { field } = useController({ control, name });
 
@@ -51,10 +54,15 @@ export const PropertySelect = <T extends FieldValues>({
         <Tooltip>
           <TooltipTrigger asChild>
             <FormItem className={cn("grid", containerClassNames)}>
-              <Select onValueChange={handleChange} value={field.value}>
+              <Select
+                onValueChange={handleChange}
+                value={field.value}
+                open={open}
+                onOpenChange={onOpenChange}
+              >
                 {children}
               </Select>
-              {label && (
+              {label && !open && (
                 <TooltipContent className="pointer-events-none">
                   <p>{label}</p>
                 </TooltipContent>
