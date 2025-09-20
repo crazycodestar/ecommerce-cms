@@ -12,7 +12,7 @@ import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { useEditor } from "@/hooks/use-editor";
-import { Element } from "@/hooks/use-editor/elements";
+import { Element, layers } from "@/hooks/use-editor/elements";
 import {
   BoxIcon,
   CodeXmlIcon,
@@ -77,10 +77,18 @@ export function AddElementSidebar({
 }: {
   setIsOpen: (open: boolean) => void;
 }) {
-  const addContentToPage = useEditor((state) => state.addElementToPage);
+  const pages = useEditor((state) => state.pages);
+  const homePage = pages[0];
+  const insertElementToPage = useEditor((state) => state.insertElementToPage);
 
   const handleAddElement = (element: AddElement) => {
-    addContentToPage("home", undefined, element.type);
+    const newItem = layers.newItem(element.type);
+    insertElementToPage(
+      "home",
+      homePage.body.children[0].id,
+      undefined,
+      newItem
+    );
     setIsOpen(false);
   };
 

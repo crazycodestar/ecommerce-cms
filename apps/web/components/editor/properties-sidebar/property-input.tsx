@@ -59,7 +59,13 @@ export const PropertyInput = <T extends FieldValues>({
   const { inputRef } = useBlurOnEnter();
   const { handleMouseDown } = useResizeOnDrag({
     onDrag: (deltaX) => {
-      const currentValue = typeof field.value === "object" ? 0 : field.value;
+      const currentValue = (
+        typeof field.value === "object"
+          ? getValueFromObject(field.value) === "Mixed"
+            ? 0
+            : getValueFromObject(field.value)
+          : field.value
+      ) as number;
       const sensitivityFactor = sensitivity !== undefined ? sensitivity : 1;
       const incrementFactor = increment !== undefined ? increment : 1;
       const appliedValue = Number(

@@ -1,25 +1,31 @@
 "use client";
 
 import { useEditor, useSync } from "@/hooks/use-editor";
-import { layers } from "@/hooks/use-editor/elements";
 import {
   BodyElement,
   CodeEmbedElement,
+  ContainerElement,
+  Element,
+  ImageElement,
+  layers,
   LinkBlockElement,
   LinkElement,
-  ImageElement,
-  ContainerElement,
-  TextElement,
   SectionElement,
-  Element,
+  TextElement,
   type ElementType,
   type Page,
 } from "@/hooks/use-editor/elements";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 // drag and drop
-import invariant from "tiny-invariant";
+import {
+  isTextElement,
+  parseJSONToTailwindCSS,
+  useBaseStyles,
+  useTailwindCSS,
+} from "@/hooks/use-editor/properties";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
+import { DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
 import {
   dropTargetForElements,
   monitorForElements,
@@ -28,12 +34,11 @@ import {
   dropTargetForExternal,
   monitorForExternal,
 } from "@atlaskit/pragmatic-drag-and-drop/external/adapter";
-import { DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types";
-import {
-  parseJSONToTailwindCSS,
-  useBaseStyles,
-  useTailwindCSS,
-} from "@/hooks/use-editor/properties";
+import invariant from "tiny-invariant";
+import { useHotkeys } from "react-hotkeys-hook";
+import { useQuery } from "convex/react";
+import { api } from "@packages/backend/convex/_generated/api";
+import { Id } from "@packages/backend/convex/_generated/dataModel";
 
 type HighlightBox = {
   left: number;
@@ -48,7 +53,6 @@ type HighlightBox = {
 
 const useMonitor = (page: Page) => {
   const insertElementToPage = useEditor((state) => state.insertElementToPage);
-  const addElementToPage = useEditor((state) => state.addElementToPage);
 
   const [isDragging, setIsDragging] = useState(false);
   const [activeElement, setActiveElement] = useState<HighlightBox | null>(null);
@@ -57,7 +61,13 @@ const useMonitor = (page: Page) => {
     "type" | "bottom" | "id" | "name"
   > | null>(null);
 
-  function closestEdge(
+  function closestEdge({
+    element,
+    mousePosition,
+    windowScroll,
+    canDrop = true,
+    directions,
+  }: {
     element: {
       top: number;
       left: number;
@@ -65,13 +75,73 @@ const useMonitor = (page: Page) => {
       right: number;
       width: number;
       height: number;
-    },
-    mousePosition: { clientX: number; clientY: number },
-    windowScroll: { scrollX: number; scrollY: number }
-  ) {
+    };
+    mousePosition: { clientX: number; clientY: number };
+    windowScroll: { scrollX: number; scrollY: number };
+    canDrop: boolean;
+    directions: ("top" | "right" | "left" | "bottom")[];
+  }) {
+    if (!canDrop) {
+      const distanceFromArray: [number, number, number, number] = [
+        Math.abs(element.top - mousePosition.clientY),
+        Math.abs(element.right - mousePosition.clientX),
+        Math.abs(element.left - mousePosition.clientX),
+        Math.abs(element.bottom - mousePosition.clientY),
+      ];
+      const minDistance = Math.min(...distanceFromArray);
+      if (minDistance === distanceFromArray[0] && directions.includes("top")) {
+        return {
+          edge: "top" as const,
+          instruction: "before" as const,
+          top: element.top + windowScroll.scrollY,
+          left: element.left + windowScroll.scrollX,
+          width: element.width,
+          height: 0,
+        };
+      }
+      if (
+        minDistance === distanceFromArray[1] &&
+        directions.includes("right")
+      ) {
+        return {
+          edge: "right" as const,
+          instruction: "after" as const,
+          top: element.top + windowScroll.scrollY,
+          left: element.left + element.width + windowScroll.scrollX,
+          width: 0,
+          height: element.height,
+        };
+      }
+      if (minDistance === distanceFromArray[2] && directions.includes("left")) {
+        return {
+          edge: "left" as const,
+          instruction: "before" as const,
+          top: element.top + windowScroll.scrollY,
+          left: element.left + windowScroll.scrollX,
+          width: 0,
+          height: element.height,
+        };
+      }
+      if (
+        minDistance === distanceFromArray[3] &&
+        directions.includes("bottom")
+      ) {
+        return {
+          edge: "bottom" as const,
+          instruction: "after" as const,
+          top: element.top + element.height + windowScroll.scrollY,
+          left: element.left + windowScroll.scrollX,
+          width: element.width,
+          height: 0,
+        };
+      }
+    }
     const THRESHOLD = 10;
 
-    if (mousePosition.clientX < element.left + THRESHOLD) {
+    if (
+      mousePosition.clientX < element.left + THRESHOLD &&
+      directions.includes("left")
+    ) {
       return {
         edge: "left" as const,
         instruction: "before" as const,
@@ -81,7 +151,10 @@ const useMonitor = (page: Page) => {
         height: element.height,
       };
     }
-    if (mousePosition.clientX > element.right - THRESHOLD) {
+    if (
+      mousePosition.clientX > element.right - THRESHOLD &&
+      directions.includes("right")
+    ) {
       return {
         edge: "right" as const,
         instruction: "after" as const,
@@ -91,7 +164,10 @@ const useMonitor = (page: Page) => {
         height: element.height,
       };
     }
-    if (mousePosition.clientY < element.top + THRESHOLD) {
+    if (
+      mousePosition.clientY < element.top + THRESHOLD &&
+      directions.includes("top")
+    ) {
       return {
         edge: "top" as const,
         instruction: "before" as const,
@@ -101,7 +177,10 @@ const useMonitor = (page: Page) => {
         height: 0,
       };
     }
-    if (mousePosition.clientY > element.bottom - THRESHOLD) {
+    if (
+      mousePosition.clientY > element.bottom - THRESHOLD &&
+      directions.includes("bottom")
+    ) {
       return {
         edge: "bottom" as const,
         instruction: "after" as const,
@@ -118,10 +197,38 @@ const useMonitor = (page: Page) => {
     const dropTarget = location.current.dropTargets[0]?.element as
       | globalThis.Element
       | undefined;
+    const parentElement = location.current.dropTargets[1]?.element as
+      | globalThis.Element
+      | undefined;
     const dropTargetRect = dropTarget?.getBoundingClientRect();
 
+    const dropTargetDataSetId = (dropTarget as HTMLElement)?.dataset.id;
+    const dropTargetDataSetElement = dropTargetDataSetId
+      ? layers.find(page.body, dropTargetDataSetId)
+      : undefined;
+
+    const isFlexRow = parentElement?.className.includes("flex-row");
+    const isGrid = parentElement?.className.includes("grid");
+
+    const parentElementDataSetId = (parentElement as HTMLElement)?.dataset.id;
+    const parentElementDataSetElement = parentElementDataSetId
+      ? layers.find(page.body, parentElementDataSetId)
+      : undefined;
+
     const closest = dropTargetRect
-      ? closestEdge(dropTargetRect, location.current.input, window)
+      ? closestEdge({
+          element: dropTargetRect,
+          mousePosition: location.current.input,
+          windowScroll: window,
+          canDrop: dropTargetDataSetElement
+            ? !isTextElement(dropTargetDataSetElement.type)
+            : true,
+          directions: isFlexRow
+            ? ["left", "right"]
+            : isGrid
+              ? ["top", "bottom", "left", "right"]
+              : ["top", "bottom"],
+        })
       : null;
 
     const parentEl = location.current.dropTargets[1]?.element as
@@ -140,8 +247,8 @@ const useMonitor = (page: Page) => {
               bottom: rect.bottom + window.scrollY,
               width: rect.width,
               height: rect.height,
-              type: layers.find(page.elements, el.id)?.type,
-              name: layers.find(page.elements, el.id)?.name ?? "",
+              type: layers.find(page.body, el.id)?.type,
+              name: layers.find(page.body, el.id)?.name ?? "",
               id: (el as HTMLElement).id,
             }
           : null,
@@ -167,17 +274,18 @@ const useMonitor = (page: Page) => {
           );
           if (!validDropTarget) return;
 
-          const element = source.getStringData("text/plain") as Element["type"];
+          const elementType = source.getStringData(
+            "text/plain"
+          ) as Element["type"];
           const instruction = closest?.instruction;
 
-          if (instruction)
-            insertElementToPage(
-              page.id,
-              validDropTarget.dataset.id,
-              instruction,
-              element
-            );
-          else addElementToPage(page.id, validDropTarget.dataset.id, element);
+          const newItem = layers.newItem(elementType);
+          insertElementToPage(
+            page.id,
+            validDropTarget.dataset.id,
+            instruction,
+            newItem
+          );
 
           setIsDragging(false);
           setActiveElement(null);
@@ -199,7 +307,8 @@ const recursivelyFindNearestElement = (el: HTMLElement) => {
   return null;
 };
 
-const useInspector = (elements: Element[]) => {
+const useInspector = (elements: Element & { children: Element[] }) => {
+  const focusElement = useEditor((state) => state.focusElement);
   const setFocusElement = useEditor((state) => state.setFocusElement);
 
   const [highlight, setHighlight] = useState<HighlightBox | null>(null);
@@ -236,6 +345,8 @@ const useInspector = (elements: Element[]) => {
       });
     }
 
+    const handleMouseLeave = () => setHighlight(null);
+
     function handleClick(e: MouseEvent) {
       const el = document.elementFromPoint(e.clientX, e.clientY);
 
@@ -248,42 +359,50 @@ const useInspector = (elements: Element[]) => {
       }
 
       const validEl = recursivelyFindNearestElement(el as HTMLElement);
-      if (!validEl) return;
-
-      const rect = validEl.getBoundingClientRect();
-      const id = validEl.dataset.id;
-
-      const focusElement = layers.find(elements, id);
-      if (focusElement) setFocusElement(focusElement.id);
-
-      setFocusElementPreview({
-        left: rect.left + window.scrollX,
-        top: rect.top + window.scrollY,
-        bottom: rect.bottom + window.scrollY,
-        width: rect.width,
-        height: rect.height,
-        type: layers.find(elements, id)?.type,
-        id,
-        name: layers.find(elements, id)?.name ?? "",
-      });
+      setFocusElement(validEl?.dataset.id ?? null);
     }
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("click", handleClick);
+    document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("click", handleClick);
+      document.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [elements]);
 
+  useEffect(() => {
+    if (!focusElement) return setFocusElementPreview(null);
+    const el = document.querySelector(`[data-id="${focusElement}"]`);
+    if (!el) return setFocusElementPreview(null);
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const rect = entry.target.getBoundingClientRect();
+        setFocusElementPreview({
+          left: rect.left + window.scrollX,
+          top: rect.top + window.scrollY,
+          bottom: rect.bottom + window.scrollY,
+          width: rect.width,
+          height: rect.height,
+          type: layers.find(elements, focusElement)?.type,
+          id: focusElement,
+          name: layers.find(elements, focusElement)?.name ?? "",
+        });
+      }
+    });
+
+    observer.observe(el);
+
+    return () => {
+      if (el) observer.unobserve(el);
+    };
+  }, [focusElement]);
+
   const handlePlaceInspectorLabel = (highlight: HighlightBox) => {
-    if (highlight.type) {
-      // adjust for when the element is at the top of the page
-      return highlight.top ? highlight.top - 20 : highlight.bottom;
-    }
-    // No type means type is body element
-    return highlight.top;
+    return highlight.top ? highlight.top - 20 : window.scrollY;
   };
 
   return { highlight, handlePlaceInspectorLabel, focusElementPreview };
@@ -292,7 +411,7 @@ const useInspector = (elements: Element[]) => {
 function Indicator({ page }: { page: Page }) {
   const { isDragging, activeElement, dropIndicator } = useMonitor(page);
   const { highlight, handlePlaceInspectorLabel, focusElementPreview } =
-    useInspector(page.elements);
+    useInspector(page.body);
 
   function DragIndicator() {
     return (
@@ -426,13 +545,18 @@ export function View() {
   useBaseStyles();
   useTailwindCSS();
 
+  const setFocusElement = useEditor((state) => state.setFocusElement);
+  useHotkeys("esc", () => setFocusElement(null), {
+    enableOnFormTags: false,
+  });
+
   const pages = useEditor((state) => state.pages);
   const page = pages.find((page) => page.id === "home")!;
 
   return (
     <>
       <Indicator page={page} />
-      {page.elements.map((element) => routeToElement(element))}
+      {[page.body].map((element) => routeToElement(element))}
     </>
   );
 }
@@ -539,8 +663,26 @@ function Section({ element }: { element: SectionElement }) {
 }
 
 function Text({ element }: { element: TextElement }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    invariant(element);
+
+    return combine(
+      dropTargetForExternal({
+        element,
+        getData: () => ({ elementType: Element.text.type }),
+      }),
+      dropTargetForElements({
+        element,
+      })
+    );
+  }, []);
+
   return (
     <p
+      ref={ref}
       data-id={element.id}
       className={cn(
         element.hasBeenEdited &&
@@ -588,9 +730,19 @@ function Container({ element }: { element: ContainerElement }) {
 }
 
 function Image({ element }: { element: ImageElement }) {
+  const imageUrl = useQuery(
+    api.images.getImageUrl,
+    element.src
+      ? {
+          imageId: element.src as Id<"_storage">,
+        }
+      : "skip"
+  );
+
   return (
     <img
-      src={element.src}
+      src={imageUrl ? imageUrl : "/placeholder.svg"}
+      // src={"/placeholder.svg"}
       data-id={element.id}
       alt={element.alt}
       className={cn(
@@ -604,8 +756,26 @@ function Image({ element }: { element: ImageElement }) {
 }
 
 function Link({ element }: { element: LinkElement }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    invariant(element);
+
+    return combine(
+      dropTargetForExternal({
+        element,
+        getData: () => ({ elementType: Element.link.type }),
+      }),
+      dropTargetForElements({
+        element,
+      })
+    );
+  }, []);
+
   return (
     <a
+      ref={ref}
       data-id={element.id}
       href={element.href}
       className={cn(

@@ -1,28 +1,24 @@
 import {
-  BorderBottomIcon,
-  BorderLeftIcon,
-  BorderRightIcon,
-  BorderTopIcon,
-  BorderRadiusTopLeftIcon,
-  BorderRadiusTopRightIcon,
   BorderRadiusBottomLeftIcon,
   BorderRadiusBottomRightIcon,
+  BorderRadiusTopLeftIcon,
+  BorderRadiusTopRightIcon,
 } from "@/components/icons";
-import { Minus, ScanIcon, SquareDashedIcon, SunMediumIcon } from "lucide-react";
+import { useEditor } from "@/hooks/use-editor";
+import { layers } from "@/hooks/use-editor/elements";
+import { isTextElement } from "@/hooks/use-editor/properties";
+import { Minus, ScanIcon, SunMediumIcon } from "lucide-react";
 import { useState } from "react";
 import { PropertyButton } from "./property-button";
 import { PropertyColorInput } from "./property-color-input";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
-import { useEditor } from "@/hooks/use-editor";
-import { layers } from "@/hooks/use-editor/elements";
-import { isTextElement } from "@/hooks/use-editor/properties";
 
 export function Appearance() {
   const focusElementVal = useEditor(
     (state) =>
       state.focusElement &&
-      layers.find(state.pages[0].elements, state.focusElement)?.type
+      layers.find(state.pages[0].body, state.focusElement)?.type
   );
   const isTextElementBoolean =
     focusElementVal && !!isTextElement(focusElementVal);
@@ -91,39 +87,40 @@ export function Appearance() {
           </>
         )}
 
-        {form.watch("fill.value") ? (
-          <>
-            <PropertyColorInput
-              containerClassNames="col-span-4"
-              control={form.control}
-              name="fill.value"
-              label="Fill"
-            />
-            {!isTextElementBoolean && (
-              <PropertyButton
-                className="col-span-1"
-                onClick={() => handleSetValue("fill", undefined)}
-              >
-                <Minus className="size-3.5" />
-              </PropertyButton>
-            )}
-          </>
-        ) : (
-          <PropertyButton
-            onClick={() =>
-              handleSetValue("fill.value", {
-                type: "color",
-                value: "#ffffff",
-                opacity: 100,
-              })
-            }
-            variant="outline"
-            className="col-span-4 text-xs w-full border-0"
-          >
-            {/* <PlusIcon className="size-3.5 mr-2" /> */}
-            Add Fill
-          </PropertyButton>
-        )}
+        {focusElementVal !== "image" &&
+          (form.watch("fill.value") ? (
+            <>
+              <PropertyColorInput
+                containerClassNames="col-span-4"
+                control={form.control}
+                name="fill.value"
+                label="Fill"
+              />
+              {!isTextElementBoolean && (
+                <PropertyButton
+                  className="col-span-1"
+                  onClick={() => handleSetValue("fill", undefined)}
+                >
+                  <Minus className="size-3.5" />
+                </PropertyButton>
+              )}
+            </>
+          ) : (
+            <PropertyButton
+              onClick={() =>
+                handleSetValue("fill.value", {
+                  type: "color",
+                  value: "#ffffff",
+                  opacity: 100,
+                })
+              }
+              variant="outline"
+              className="col-span-4 text-xs w-full border-0"
+            >
+              {/* <PlusIcon className="size-3.5 mr-2" /> */}
+              Add Fill
+            </PropertyButton>
+          ))}
         {/* <pre className="col-span-4">
           {JSON.stringify(form.watch("opacity"), null, 2)}
         </pre> */}

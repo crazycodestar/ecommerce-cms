@@ -25,19 +25,28 @@ import {
   ColorSchema,
   colorSchema,
   GradientValueSchema,
+  ImageSchema,
 } from "@/hooks/use-editor/properties";
 import { useResizeOnDrag } from "@/hooks/use-resize-on-drag";
 import { cn } from "@/lib/utils";
 import {
   ArrowRightToLineIcon,
   ImageIcon,
+  Loader2,
   MinusIcon,
   PaintBucketIcon,
   PercentIcon,
   PlusIcon,
   RotateCcwIcon,
 } from "lucide-react";
-import { CSSProperties, ElementType, useEffect, useRef, useState } from "react";
+import {
+  CSSProperties,
+  ElementType,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { HexColorPicker } from "react-colorful";
 import {
   useController,
@@ -47,6 +56,11 @@ import {
 } from "react-hook-form";
 import { PropertyButton } from "./property-button";
 import { useStyle } from "./style-context";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@packages/backend/convex/_generated/api";
+import { Id } from "@packages/backend/convex/_generated/dataModel";
 
 const mapping: Record<Exclude<ColorSchema["type"], "color">, string> = {
   "linear-gradient": "Linear",
@@ -74,14 +88,15 @@ export const PropertyColorInput = <T extends FieldValues>({
   rightElement,
   noOptions,
 }: PropertyColorInputProps<T>) => {
-  const { form, onSubmit } = useStyle();
+  // const { form, onSubmit } = useStyle();
 
   const { field } = useController({ control, name });
   const { success, data } = colorSchema.safeParse(field.value);
 
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const handleChange = (data: ColorSchema) => {
     field.onChange(data);
-    form.handleSubmit(onSubmit)();
+    buttonRef.current?.click();
   };
 
   if (!success) return null;
@@ -117,13 +132,16 @@ export const PropertyColorInput = <T extends FieldValues>({
           <TooltipContent className="pointer-events-none">
             <p>{label}</p>
           </TooltipContent>
+          <button ref={buttonRef} className="hidden" type="submit">
+            save
+          </button>
         </div>
       </TooltipTrigger>
     </Tooltip>
   );
 };
 
-function ColorPicker({
+export function ColorPicker({
   data,
   onChange,
   noOptions = false,
@@ -164,7 +182,7 @@ function ColorPicker({
     },
     image: {
       type: "image",
-      value: "https://via.placeholder.com/150",
+      value: "",
       objectFit: "cover",
     },
   };
@@ -232,9 +250,9 @@ function ColorPicker({
           handleChangeType={handleChangeType}
         />
       )}
-      {/* {data.type === "image" && (
+      {data.type === "image" && (
         <ImageValuePicker image={data} onChange={onChange} />
-      )} */}
+      )}
     </div>
   );
 }
@@ -273,7 +291,7 @@ interface ColorValueInputProps {
   containerClassNames?: string;
 }
 
-function ColorValueInput({
+export function ColorValueInput({
   color,
   onChange,
   className,
@@ -711,7 +729,7 @@ interface ColorIndicatorProps
   color: ColorSchema;
 }
 
-function ColorIndicator({ color, ...props }: ColorIndicatorProps) {
+export function ColorIndicator({ color, ...props }: ColorIndicatorProps) {
   let value = color;
 
   if (isGradientType(color))
@@ -770,4 +788,95 @@ function transformFillToStyle(
   }
 
   return style;
+}
+
+function ImageValuePicker({
+  image,
+  onChange,
+}: {
+  image: ColorSchema & { type: "image" };
+  onChange: (image: ColorSchema & { type: "image" }) => void;
+}) {
+  const imageUrl = useQuery(
+    api.images.getImageUrl,
+    image.value
+      ? {
+          imageId: image.value as Id<"_storage">,
+        }
+      : "skip"
+  );
+
+  const generateUploadUrl = useMutation(api.images.generateUploadUrl);
+  const [isUploading, startUploading] = useTransition();
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  async function uploadImage(fileList: FileList | null) {
+    if (!fileList) return;
+    const file = fileList[0];
+
+    startUploading(async () => {
+      const postUrl = await generateUploadUrl();
+      const res = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await res.json();
+      onChange({ ...image, value: storageId });
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Select
+        value={image.objectFit}
+        onValueChange={(value) =>
+          onChange({ ...image, objectFit: value as ImageSchema["objectFit"] })
+        }
+      >
+        <SelectTrigger className="max-h-7" size="sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="fill">Fill</SelectItem>
+          <SelectItem value="cover">Cover</SelectItem>
+          <SelectItem value="contain">Contain</SelectItem>
+          <SelectItem value="tile">Tile</SelectItem>
+        </SelectContent>
+      </Select>
+      {isUploading ? (
+        <div className="relative w-full aspect-square group">
+          <Loader2 className="animate-spin size-4" />
+        </div>
+      ) : (
+        <div className="relative w-full aspect-square group">
+          <Image
+            src={imageUrl ?? "/placeholder.svg"}
+            alt="image"
+            fill
+            className="object-contain rounded-md"
+          />
+          <div className="absolute inset-0 bg-black/20 rounded-md hidden justify-center items-center group-hover:flex">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              multiple={false}
+              onChange={(e) => uploadImage(e.currentTarget.files)}
+              className="hidden"
+            />
+            <Button
+              onClick={() => inputRef.current?.click()}
+              type="button"
+              size="sm"
+              className="h-7"
+              disabled={isUploading}
+            >
+              Upload image
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

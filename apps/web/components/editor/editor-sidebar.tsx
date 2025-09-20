@@ -17,11 +17,11 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { AddElementSidebar } from "./add-element-sidebar";
 import ChatInput from "./chat-input";
 import ChatMessage from "./chat-message";
 import { ContentController } from "./content-controller";
-import { AddElementSidebar } from "./add-element-sidebar";
-import { useEditor } from "@/hooks/use-editor";
+import { LayersSidebar } from "./layers-sidebar";
 
 // Define message types
 type MessageRole = "user" | "assistant";
@@ -122,31 +122,6 @@ export function EditorSidebar() {
       )}
       {activeItem === "pages" && <PagesSidebar />}
     </div>
-  );
-}
-
-function LayersSidebar() {
-  const pages = useEditor((state) => state.pages);
-
-  return (
-    <Sidebar
-      collapsible="none"
-      variant="floating"
-      className="hidden flex-1 md:flex absolute top-0 left-[calc(var(--sidebar-width-icon)+1.1px)] z-50"
-    >
-      <SidebarHeader className="gap-3.5 border-b p-4">
-        <div className="flex w-full items-center justify-between">
-          <div className="text-foreground text-base font-medium">Layers</div>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup className="px-0">
-          <SidebarGroupContent>
-            <pre>{JSON.stringify(pages, null, 2)}</pre>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
   );
 }
 

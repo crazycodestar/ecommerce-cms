@@ -61,7 +61,7 @@ export function Typography() {
   const focusElement = useEditor((state) => state.focusElement);
   const focusElementVal = useEditor(
     (state) =>
-      focusElement && layers.find(state.pages[0].elements, focusElement)?.type
+      focusElement && layers.find(state.pages[0].body, focusElement)?.type
   );
   const isTextElementBoolean =
     focusElementVal && !!isTextElement(focusElementVal);

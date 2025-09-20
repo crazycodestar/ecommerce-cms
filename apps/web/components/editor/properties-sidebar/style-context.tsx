@@ -29,7 +29,7 @@ export const useStyle = () => {
 };
 
 export const StyleProvider = ({ children }: { children: ReactNode }) => {
-  const elements = useEditor((state) => state.pages[0].elements);
+  const elements = useEditor((state) => state.pages[0].body);
   const focusElement = useEditor((state) => state.focusElement);
   const updateElement = useEditor((state) => state.updateElement);
 

@@ -22,12 +22,14 @@ export type SectionElement = BaseElement & {
 export type TextElement = BaseElement & {
   type: "text";
   text: string;
+  children?: undefined;
 };
 
 export type ImageElement = BaseElement & {
   type: "image";
   src: string;
   alt?: string;
+  children?: undefined;
 };
 
 export type ContainerElement = BaseElement & {
@@ -39,6 +41,7 @@ export type LinkElement = BaseElement & {
   type: "link";
   href: string;
   text: string;
+  children?: undefined;
 };
 
 export type LinkBlockElement = BaseElement & {
@@ -50,6 +53,7 @@ export type LinkBlockElement = BaseElement & {
 export type CodeEmbedElement = BaseElement & {
   type: "codeEmbed";
   code: string;
+  children?: undefined;
 };
 
 // Union type of all possible elements
@@ -62,6 +66,8 @@ export type Element =
   | LinkElement
   | LinkBlockElement
   | CodeEmbedElement;
+
+export type ElementWithChildren = Element & { children: Element[] };
 
 // Factory object with proper typing
 export const Element = {
@@ -90,7 +96,7 @@ export const Element = {
     id: "",
     name: "Image",
     type: "image" as const,
-    src: "/placeholder.svg",
+    src: "",
     alt: "",
     style: getDefaultValues("image"),
   },
@@ -131,7 +137,7 @@ export type ElementType = (typeof Element)[keyof typeof Element]["type"];
 export type Page = {
   id: string;
   name: string;
-  elements: Element[];
+  body: BodyElement;
 };
 
 export function getDefaultElement(
@@ -144,13 +150,19 @@ export type Pages = [Page & { id: "home" }, ...Page[]];
 
 export const layers = {
   add: (
-    data: Element[],
+    root: Element & { children: Element[] },
     parentId: string,
-    newItemType: Element["type"]
-  ): Element[] => {
-    const newItem = layers.newItem(newItemType);
-    return data.map((item) => {
-      if (item.id === parentId && "children" in item) {
+    newItem: Element
+  ): Element & { children: Element[] } => {
+    if (root.id === parentId) {
+      return {
+        ...root,
+        children: [...root.children, newItem],
+      };
+    }
+
+    const children = root.children.map((item) => {
+      if (item.id === parentId && item.children) {
         return {
           ...item,
           children: [...item.children, newItem],
@@ -159,47 +171,117 @@ export const layers = {
       if (layers.hasChildren(item)) {
         return {
           ...item,
-          children: layers.add(item.children, parentId, newItemType),
-        };
-      }
-      return item;
-    });
-  },
-  insert(
-    pos: "before" | "after",
-    data: Element[],
-    siblingId: string,
-    newItemType: Element["type"]
-  ): Element[] {
-    return data.flatMap((item) => {
-      if (item.id === siblingId) {
-        const newItem = layers.newItem(newItemType);
-        return pos === "before" ? [newItem, item] : [item, newItem];
-      }
-      if (layers.hasChildren(item)) {
-        return {
-          ...item,
-          children: layers.insert(pos, item.children, siblingId, newItemType),
-        };
-      }
-      return item;
-    });
-  },
-  update: (
-    data: Element[],
-    id: string,
-    element: Partial<Element>
-  ): Element[] => {
-    return data.map((item) => {
-      if (item.id === id) return { ...item, ...element, hasBeenEdited: true };
-      if (layers.hasChildren(item)) {
-        return {
-          ...item,
-          children: layers.update(item.children, id, element),
+          children: layers.add(item, parentId, newItem).children,
         };
       }
       return item;
     }) as Element[];
+
+    return {
+      ...root,
+      children,
+    };
+  },
+  insert(
+    pos: "before" | "after" | "start" | "end",
+    root: Element & { children: Element[] },
+    parentOrSiblingId: string,
+    newItem: Element
+  ): Element & { children: Element[] } {
+    const children = root.children.flatMap((item) => {
+      console.log("item", item.id, parentOrSiblingId, pos);
+      if (!!item.children) {
+        if (item.id === parentOrSiblingId && pos === "start") {
+          console.log("found");
+          return {
+            ...item,
+            children: [newItem, ...item.children],
+          };
+        }
+
+        if (item.id === parentOrSiblingId && pos === "end") {
+          return {
+            ...item,
+            children: [...item.children, newItem],
+          };
+        }
+      }
+
+      if (item.id === parentOrSiblingId && pos === "before") {
+        return [newItem, item];
+      }
+
+      if (item.id === parentOrSiblingId && pos === "after") {
+        return [item, newItem];
+      }
+
+      if (layers.hasChildren(item)) {
+        return {
+          ...item,
+          children: layers.insert(pos, item, parentOrSiblingId, newItem)
+            .children,
+        };
+      }
+      return item;
+    }) as Element[];
+
+    return {
+      ...root,
+      children,
+    };
+  },
+  update: (
+    root: Element & { children: Element[] },
+    id: string,
+    element: Partial<Element>
+  ): Element & { children: Element[] } => {
+    if (root.id === id)
+      return { ...root, ...element, hasBeenEdited: true } as Element & {
+        children: Element[];
+      };
+
+    const children = root.children.map((item) => {
+      if (item.id === id) return { ...item, ...element, hasBeenEdited: true };
+      if (layers.hasChildren(item)) {
+        return {
+          ...item,
+          children: layers.update(item, id, element).children,
+        };
+      }
+      return item;
+    }) as Element[];
+
+    return {
+      ...root,
+      children,
+    };
+  },
+  delete: (
+    root: Element & { children: Element[] },
+    id: string
+  ): Element & { children: Element[] } => {
+    if (root.id === id) return { ...root, children: [] };
+
+    const children = root.children
+      .map((item) => {
+        if (item.id === id) return null;
+        if (layers.hasChildren(item)) {
+          return { ...item, children: layers.delete(item, id).children };
+        }
+        return item;
+      })
+      .filter((item) => item !== null) as Element[];
+
+    return {
+      ...root,
+      children,
+    };
+  },
+  reorder: (
+    root: Element & { children: Element[] },
+    newChildrenIds: Element["id"][]
+  ): Element[] => {
+    return newChildrenIds.map((id) => layers.find(root, id)!);
   },
   // utilities
   newItem: (type: Element["type"]): Element => {
@@ -209,17 +291,58 @@ export const layers = {
       id: crypto.randomUUID(),
     } as Element;
   },
-  find: (data: Element[], id: string): Element | undefined => {
-    for (const element of data) {
+  find: (
+    root: Element & { children: Element[] },
+    id: string
+  ): Element | undefined => {
+    if (root.id === id) return root;
+    for (const element of root.children) {
       if (element.id === id) return element;
       if (layers.hasChildren(element)) {
-        const found = layers.find(element.children, id);
+        const found = layers.find(element, id);
         if (found) return found;
       }
     }
   },
   hasChildren: (data: Element): data is Element & { children: Element[] } => {
-    if (!("children" in data)) return false;
+    if (!data.children) return false;
     return data.children.length > 0;
+  },
+  findParentOrSiblingId: (
+    root: Element & { children: Element[] },
+    id: string
+  ):
+    | { id: string; instruction: "before" | "after" | undefined }
+    | undefined => {
+    const parentId = root.id;
+    const index = root.children.findIndex((child) => child.id === id);
+
+    if (index !== -1) {
+      if (root.children.length === 1)
+        return { id: parentId, instruction: undefined };
+      const previousChild = root.children[index - 1];
+      if (previousChild) return { id: previousChild.id, instruction: "before" };
+      else return { id: root.children[index + 1].id, instruction: "after" };
+    }
+
+    for (const child of root.children) {
+      if (!layers.hasChildren(child)) continue;
+
+      const found = layers.findParentOrSiblingId(child, id);
+      if (found) return found;
+    }
+
+    return undefined;
+  },
+  getPath: (data: Element, id: Element["id"]): Element["id"][] => {
+    if (data.id === id) return [data.id];
+    if (!layers.hasChildren(data)) return [];
+
+    for (const child of data.children) {
+      const path = layers.getPath(child, id);
+      if (path.length > 0) return [data.id, ...path];
+    }
+
+    return [];
   },
 };

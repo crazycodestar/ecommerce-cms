@@ -768,6 +768,8 @@ const imageSchema = z.object({
     .optional(),
 });
 
+export type ImageSchema = z.infer<typeof imageSchema>;
+
 const colorValuseShape = z.object({
   value: z.string(),
   opacity: z.coerce.number().min(0).max(100),

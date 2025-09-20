@@ -13,9 +13,9 @@ import { useMutation, useQuery } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { View } from "./view";
-import { useTailwindCSS } from "@/hooks/use-editor/properties";
 
 export default function ContentPage() {
   const [shouldRender, setShouldRender] = useState(false);
@@ -27,6 +27,17 @@ export default function ContentPage() {
     setShouldRender(true);
     setIsInIframe(window.self !== window.top);
   }, []);
+
+  const deleteElement = useEditor((state) => state.deleteElement);
+  const focusElement = useEditor((state) => state.focusElement);
+
+  useHotkeys(
+    "delete, backspace",
+    () => focusElement && deleteElement(focusElement),
+    {
+      enableOnFormTags: false,
+    }
+  );
 
   if (!shouldRender) return null;
   return isInIframe ? <View /> : <PageContent />;
@@ -76,7 +87,6 @@ const PageContent = () => {
 
       toast.success("Content updated successfully");
 
-      console.log(isFromOnboarding);
       if (isFromOnboarding) {
         return router.push(`/dashboard/${slug}/products/add-product`);
       }

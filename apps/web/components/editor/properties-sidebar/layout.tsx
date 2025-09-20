@@ -83,7 +83,7 @@ export function Layout() {
   // const marginForm = useMarginForm();
 
   return (
-    <div className="p-2 pb-3">
+    <div className="p-2 pb-3 border-t">
       <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-1 h-7 items-center">
         <h3 className="text-sm font-medium col-span-4">Layout</h3>
         {/* <AlignOptions onAlign={marginForm.handleAlign} /> */}
@@ -775,12 +775,9 @@ const useClick = () => {
     onDoubleClick: (...args: unknown[]) => void
   ) => {
     const now = Date.now();
-    console.log(now - lastClick.current);
     if (now - lastClick.current < 400) {
-      console.log("double click");
       onDoubleClick();
     } else {
-      console.log("single click");
       onClick();
     }
     lastClick.current = now;

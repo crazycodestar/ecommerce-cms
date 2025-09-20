@@ -18,6 +18,8 @@ import { Position } from "./position";
 import { Stroke } from "./stroke";
 import { StyleProvider } from "./style-context";
 import { Typography } from "./typography";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings } from "./settings";
 
 export function PropertiesSidebar({
   ...props
@@ -25,7 +27,7 @@ export function PropertiesSidebar({
   const focusElement = useEditor((state) => state.focusElement);
   const pages = useEditor((state) => state.pages);
   const element = focusElement
-    ? layers.find(pages[0].elements, focusElement)
+    ? layers.find(pages[0].body, focusElement)
     : null;
 
   return (
@@ -41,23 +43,42 @@ export function PropertiesSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="flex flex-col gap-6 h-full overflow-y-auto">
-        {focusElement ? (
-          <StyleProvider>
-            <Position />
-            <Layout />
-            <Appearance />
-            <Typography />
-            <Stroke />
-            <Effects />
-          </StyleProvider>
-        ) : (
-          <div className="h-[200px] flex items-center justify-center border border-muted-foreground/50 border-dashed rounded-md">
-            <div className="flex flex-col items-center gap-2">
-              <MousePointer className="h-6 w-6 text-muted-foreground" />
-              <p className="text-muted-foreground">Select an element</p>
-            </div>
+        <Tabs defaultValue="style">
+          <div className="w-full p-2 pb-0">
+            <TabsList className="w-full h-7 rounded-sm">
+              <TabsTrigger value="style" className="rounded-sm">
+                Style
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="rounded-sm">
+                Settings
+              </TabsTrigger>
+            </TabsList>
           </div>
-        )}
+          <TabsContent value="style">
+            {focusElement ? (
+              <StyleProvider>
+                <Position />
+                <Layout />
+                <Appearance />
+                <Typography />
+                <Stroke />
+                <Effects />
+              </StyleProvider>
+            ) : (
+              <div className="p-2">
+                <div className="h-[200px] flex items-center justify-center border border-muted-foreground/50 border-dashed rounded-md">
+                  <div className="flex flex-col items-center gap-2">
+                    <MousePointer className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-muted-foreground">Select an element</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="settings">
+            <Settings />
+          </TabsContent>
+        </Tabs>
       </SidebarContent>
     </Sidebar>
   );
