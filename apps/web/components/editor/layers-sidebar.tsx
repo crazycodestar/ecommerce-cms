@@ -82,19 +82,32 @@ export function LayersSidebar() {
     if (
       placeInstruction.instruction === "place-in-folder-at-bottom" &&
       !highlightedItemId
-    )
-      return tree.reorder({
-        instruction: "place-in-folder-at-bottom",
-        elementId: placeInstruction.elementId,
-        parentId: highlightedItemId ?? undefined,
-      });
+    ) {
+      const dropElementIndex = items.findIndex(
+        (item) => item.getId() === placeInstruction.dropElementId
+      );
+      if (dropElementIndex === -1) return;
 
-    if (placeInstruction.instruction === "place-in-folder-at-bottom")
+      const itemWithHighlightedIndent = items[dropElementIndex + 1];
+      if (!itemWithHighlightedIndent)
+        return tree.reorder({
+          instruction: "place-in-folder-at-bottom",
+          elementId: placeInstruction.elementId,
+        });
+
       return tree.reorder({
         instruction: "place-in-folder-at-sibling",
         elementId: placeInstruction.elementId,
-        siblingId: highlightedItemId!,
-        position: "after",
+        siblingId: itemWithHighlightedIndent.getId(),
+        position: "before",
+      });
+    }
+
+    if (placeInstruction.instruction === "place-in-folder-at-bottom")
+      return tree.reorder({
+        instruction: "place-in-folder-at-bottom",
+        elementId: placeInstruction.elementId,
+        parentId: highlightedItemId!,
       });
 
     if (placeInstruction.instruction === "place-in-folder-at-sibling")

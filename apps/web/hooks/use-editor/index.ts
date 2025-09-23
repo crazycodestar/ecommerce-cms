@@ -155,7 +155,7 @@ export type PlaceInFolderAtSibling = {
   instruction: "place-in-folder-at-sibling";
   elementId: Element["id"];
   siblingId: Element["id"];
-  position: "before" | "after";
+  position: "before" | "after" | undefined;
 };
 
 export type PlaceInFolderAtTop = {
@@ -174,7 +174,7 @@ interface EditorState {
   pages: Pages;
   insertElementToPage: (
     pageId: string,
-    siblingId: string,
+    siblingOrParentId: string,
     instruction: "before" | "after" | undefined,
     newItem: Element
   ) => void;
@@ -271,6 +271,8 @@ export const useEditor = create<EditorState>()(
             placementInstruction.instruction === "place-in-folder-at-bottom"
           ) {
             const parentId = placementInstruction.parentId ?? body.id;
+            if (element.id === parentId) return state;
+
             const bodyWithoutElement = layers.delete(body, element.id);
             const pageWithElementInserted = layers.insert(
               "end",
@@ -300,13 +302,22 @@ export const useEditor = create<EditorState>()(
           if (
             placementInstruction.instruction === "place-in-folder-at-sibling"
           ) {
+            if (element.id === placementInstruction.siblingId) return state;
+
             const bodyWithoutElement = layers.delete(body, element.id);
-            const pageWithElementInserted = layers.insert(
-              placementInstruction.position,
-              bodyWithoutElement,
-              placementInstruction.siblingId,
-              element
-            );
+
+            const pageWithElementInserted = placementInstruction.position
+              ? layers.insert(
+                  placementInstruction.position,
+                  bodyWithoutElement,
+                  placementInstruction.siblingId,
+                  element
+                )
+              : layers.add(
+                  bodyWithoutElement,
+                  placementInstruction.siblingId,
+                  element
+                );
 
             state.pages[0].body = pageWithElementInserted as BodyElement;
 
@@ -328,6 +339,8 @@ export const useEditor = create<EditorState>()(
 
           if (placementInstruction.instruction === "place-in-folder-at-top") {
             const parentId = placementInstruction.parentId;
+            if (element.id === parentId) return state;
+
             const bodyWithoutElement = layers.delete(body, element.id);
             const pageWithElementInserted = layers.insert(
               "start",

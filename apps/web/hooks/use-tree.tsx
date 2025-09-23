@@ -75,13 +75,15 @@ export const useTree = (tree: TreeObj) => {
   const focusElement = useEditor((state) => state.focusElement);
   const setFocusElement = useEditor((state) => state.setFocusElement);
   const moveElement = useEditor((state) => state.moveElement);
+  const historyIndex = useEditor((state) => state.historyIndex);
 
   const body = pages[0].body;
 
   const [expandedItems, setExpandedItems] = useState<
     ElementWithChildren["id"][]
   >([]);
-  useEffect(() => {
+
+  function setExpanded() {
     if (focusElement) {
       const path = layers.getPath(pages[0].body, focusElement);
       if (!path.length) return;
@@ -89,6 +91,10 @@ export const useTree = (tree: TreeObj) => {
       // path.slice(1, -1) omits the focusElement
       setExpandedItems((init) => [...init, ...path.slice(1, -1)]);
     }
+  }
+
+  useEffect(() => {
+    setExpanded();
   }, [focusElement]);
 
   const expand = (id: string) => {
@@ -101,11 +107,11 @@ export const useTree = (tree: TreeObj) => {
     setExpandedItems((init) => init.filter((id) => id !== collapseId));
   const focus = (id: string) => setFocusElement(id);
 
+  const [items, setItems] = useState<ItemInstance[]>([]);
+
   function getItems(id: string) {
     const el = layers.find(body, id);
     if (!el || !el.children) return [];
-
-    console.log("getItems");
 
     return FlatMap({
       element: el as ElementWithChildren,
@@ -117,10 +123,17 @@ export const useTree = (tree: TreeObj) => {
     });
   }
 
+  useEffect(() => {
+    setItems(getItems(tree.rootId));
+  }, [historyIndex, expandedItems, focusElement]);
+
   return {
     tree: {
-      getItems: () => getItems(tree.rootId),
-      reorder: moveElement,
+      getItems: () => items,
+      reorder: (...args: Parameters<typeof moveElement>) => {
+        moveElement(...args);
+        setExpanded();
+      },
     },
   };
 };

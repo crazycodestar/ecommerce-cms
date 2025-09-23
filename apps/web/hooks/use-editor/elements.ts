@@ -134,6 +134,10 @@ export const Element = {
 
 export type ElementType = (typeof Element)[keyof typeof Element]["type"];
 
+export function canHaveChildren(element: Element) {
+  return !!element.children;
+}
+
 export type Page = {
   id: string;
   name: string;
@@ -188,11 +192,16 @@ export const layers = {
     parentOrSiblingId: string,
     newItem: Element
   ): Element & { children: Element[] } {
+    if (root.id === parentOrSiblingId) {
+      return {
+        ...root,
+        children: [...root.children, newItem],
+      };
+    }
+
     const children = root.children.flatMap((item) => {
-      console.log("item", item.id, parentOrSiblingId, pos);
       if (!!item.children) {
         if (item.id === parentOrSiblingId && pos === "start") {
-          console.log("found");
           return {
             ...item,
             children: [newItem, ...item.children],

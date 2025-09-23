@@ -90,7 +90,7 @@ function getClosestEdgeAndIndent({
 export type StepType = Record<"top" | "bottom", [number, number] | undefined>;
 
 export type PartialPlaceInstruction =
-  | Omit<PlaceInFolderAtBottom, "parentId">
+  | (Omit<PlaceInFolderAtBottom, "parentId"> & { dropElementId: string })
   | Omit<PlaceInFolderAtSibling, "parentId">
   | PlaceInFolderAtTop;
 
@@ -154,14 +154,6 @@ export function TreeItem({
       }),
       dropTargetForElements({
         element: el,
-        canDrop({ source }) {
-          // not allowing dropping on yourself
-          if (source.element === el) {
-            return false;
-          }
-          // only allowing tasks to be dropped on me
-          return true;
-        },
         getData({ input, element }) {
           const boundingClientRect = element.getBoundingClientRect();
           const closestEdgeAndIndent = getClosestEdgeAndIndent({
@@ -172,7 +164,11 @@ export function TreeItem({
             defaultIndent: item.indent,
             allowedSides: item.isFolder()
               ? item.isExpanded()
-                ? ["top", "center"]
+                ? [
+                    "top",
+                    "center",
+                    ...(step?.bottom ? ["bottom" as const] : []),
+                  ]
                 : ["top", "center", "bottom"]
               : ["top", "bottom"],
             step,
@@ -257,6 +253,7 @@ export function TreeItem({
             onPlace({
               instruction: "place-in-folder-at-bottom",
               elementId: sourceItem.getId(),
+              dropElementId: formattedSelf.item.getId(),
             });
           else if (
             formattedSelf.edge === "top" ||
@@ -285,11 +282,13 @@ export function TreeItem({
     <div className="relative">
       <SidebarMenuButton
         isActive={item.isFocused()}
-        className="[&>svg]:size-[13px] h-7 relative"
+        className={cn(
+          "[&>svg]:size-[13px] h-7 relative",
+          dragging && "opacity-50"
+        )}
         style={indentStyle}
         onClick={item.focus}
         ref={ref}
-        disabled={dragging}
       >
         {item.isFolder() && (
           <button className="p-0.5" onClick={handleExpand}>
