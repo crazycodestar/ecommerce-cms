@@ -20,25 +20,66 @@ import { StyleProvider } from "./style-context";
 import { Typography } from "./typography";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings } from "./settings";
+import { isTextElement, StyleKey } from "@/hooks/use-editor/properties";
+import { Size } from "@/hooks/use-view";
+import {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectItem,
+  SelectContent,
+} from "@/components/ui/select";
+
+const styleKeyMapping: Record<Size, StyleKey> = {
+  desktop: "default",
+  tablet: "md",
+  mobile: "sm",
+};
 
 export function PropertiesSidebar({
+  view,
   ...props
-}: React.ComponentProps<typeof Sidebar>) {
+}: React.ComponentProps<typeof Sidebar> & { view: Size }) {
   const focusElement = useEditor((state) => state.focusElement);
   const pages = useEditor((state) => state.pages);
   const element = focusElement
     ? layers.find(pages[0].body, focusElement)
     : null;
 
+  const isTextElementBoolean = element && !!isTextElement(element.type);
+
+  const [styleKey, setStyleKey] = React.useState<StyleKey>("default");
+
+  React.useEffect(() => {
+    setStyleKey(styleKeyMapping[view]);
+  }, [view]);
+
   return (
     <Sidebar collapsible="none" className="min-h-svh max-h-svh" {...props}>
       <SidebarHeader className="border-b">
         <SidebarMenu>
-          <SidebarMenuItem className="font-medium">
-            <h3 className="text-sm font-medium capitalize">
-              {element?.type ?? "Select an element"}
-            </h3>
-            <p className="text-xs text-muted-foreground">Style</p>
+          <SidebarMenuItem className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium capitalize">
+                {element?.type ?? "Select an element"}
+              </h3>
+              <p className="text-xs text-muted-foreground">Style</p>
+            </div>
+            <Select
+              onValueChange={(value) => setStyleKey(value as StyleKey)}
+              value={styleKey}
+            >
+              <SelectTrigger className="w-fit">
+                <SelectValue placeholder="Select a style" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Desktop</SelectItem>
+                <SelectItem value="md">Tablet</SelectItem>
+                <SelectItem value="sm">Mobile</SelectItem>
+                <SelectItem value="hover">Hover</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+              </SelectContent>
+            </Select>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -56,11 +97,11 @@ export function PropertiesSidebar({
           </div>
           <TabsContent value="style">
             {focusElement ? (
-              <StyleProvider>
+              <StyleProvider styleKey={styleKey}>
                 <Position />
                 <Layout />
                 <Appearance />
-                <Typography />
+                {isTextElementBoolean && <Typography />}
                 <Stroke />
                 <Effects />
               </StyleProvider>

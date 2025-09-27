@@ -129,7 +129,7 @@ const PageContent = () => {
           />
         )}
       </SidebarInset>
-      <PropertiesSidebar side="right" />
+      <PropertiesSidebar view={view} side="right" />
     </SidebarProvider>
   );
 };

@@ -1,12 +1,11 @@
-import { ClassName, getDefaultValues, StyleSchema } from "./properties";
+import { StyleObject } from "./properties";
 
 // First, define the base element types
 export type BaseElement = {
   id: string;
   name: string;
   hasBeenEdited?: boolean;
-  className?: ClassName[];
-  style: StyleSchema;
+  style?: StyleObject;
 };
 
 export type BodyElement = BaseElement & {
@@ -75,14 +74,12 @@ export const Element = {
     id: "",
     name: "Body",
     type: "body" as const,
-    style: getDefaultValues("body"),
     children: [],
   },
   section: {
     id: "",
     name: "Section",
     type: "section" as const,
-    style: getDefaultValues("section"),
     children: [],
   },
   text: {
@@ -90,7 +87,6 @@ export const Element = {
     name: "Text",
     type: "text" as const,
     text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.",
-    style: getDefaultValues("text"),
   },
   image: {
     id: "",
@@ -98,14 +94,12 @@ export const Element = {
     type: "image" as const,
     src: "",
     alt: "",
-    style: getDefaultValues("image"),
   },
   container: {
     id: "",
     name: "Container",
     type: "container" as const,
     children: [],
-    style: getDefaultValues("container"),
   },
   link: {
     id: "",
@@ -113,7 +107,6 @@ export const Element = {
     type: "link" as const,
     href: "/",
     text: "Link",
-    style: getDefaultValues("link"),
   },
   linkBlock: {
     id: "",
@@ -121,14 +114,12 @@ export const Element = {
     type: "linkBlock" as const,
     href: "/",
     children: [],
-    style: getDefaultValues("linkBlock"),
   },
   codeEmbed: {
     id: "",
     name: "Code Embed",
     type: "codeEmbed" as const,
     code: "",
-    style: getDefaultValues("codeEmbed"),
   },
 } satisfies Record<Element["type"], Element>;
 

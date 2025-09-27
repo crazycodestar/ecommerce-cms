@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { RefObject, useEffect, useRef, useState } from "react";
 // drag and drop
-import { parseJSONToTailwindCSS } from "@/hooks/use-editor/properties";
+import { generateTailwindCSS } from "@/hooks/use-editor/properties";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import {
   draggable,
@@ -83,7 +83,7 @@ function Body({ element }: { element: BodyElement }) {
       data-id={element.id}
       className={cn(
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         "min-h-screen",
         editModeClassNames
       )}
@@ -136,7 +136,7 @@ function Section({ element }: { element: SectionElement }) {
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -155,7 +155,7 @@ function Text({ element }: { element: TextElement }) {
       data-id={element.id}
       className={cn(
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -175,7 +175,7 @@ function Container({ element }: { element: ContainerElement }) {
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -206,7 +206,7 @@ function Image({ element }: { element: ImageElement }) {
       className={cn(
         !element.hasBeenEdited && "size-[200px] object-cover",
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -224,7 +224,7 @@ function Link({ element }: { element: LinkElement }) {
       href={element.href}
       className={cn(
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -246,7 +246,7 @@ function LinkBlock({ element }: { element: LinkBlockElement }) {
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -269,7 +269,7 @@ function CodeEmbed({ element }: { element: CodeEmbedElement }) {
       className={cn(
         !element.hasBeenEdited && emptyClassNames,
         element.hasBeenEdited &&
-          parseJSONToTailwindCSS(element.style, element.type),
+          generateTailwindCSS(element.style, element.type),
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}

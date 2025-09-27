@@ -2,7 +2,7 @@ import { FormControl, FormField, FormItem } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { ElementType, useEffect, useRef, useState } from "react";
 import type { Control, FieldValues, Path } from "react-hook-form";
-import { useController } from "react-hook-form";
+import { useController, useWatch } from "react-hook-form";
 import {
   Tooltip,
   TooltipContent,
@@ -11,6 +11,9 @@ import {
 import { useStyle } from "./style-context";
 import { useBlurOnEnter } from "@/hooks/use-blur-on-enter";
 import { useResizeOnDrag } from "@/hooks/use-resize-on-drag";
+import { StyleSchema } from "@/hooks/use-editor/properties";
+import { Undo2 } from "lucide-react";
+import { isEqual } from "es-toolkit";
 
 function getValueFromObject<T extends object>(value: T): T[keyof T] | "Mixed" {
   const values = Object.values(value);
@@ -53,8 +56,13 @@ export const PropertyInput = <T extends FieldValues>({
   sensitivity,
   ...inputProps
 }: PropertyInputProps<T>) => {
-  const { form, onSubmit } = useStyle();
+  const { form, onSubmit, baseForm, styleKey } = useStyle();
   const { field } = useController({ control, name });
+
+  const value = useWatch({
+    control: baseForm.control,
+    name: name as Path<StyleSchema>,
+  }) as typeof field.value;
 
   const { inputRef } = useBlurOnEnter();
   const { handleMouseDown } = useResizeOnDrag({
@@ -90,6 +98,17 @@ export const PropertyInput = <T extends FieldValues>({
     },
   });
 
+  function handleReset() {
+    field.onChange(undefined);
+    form.handleSubmit(onSubmit)();
+  }
+
+  function isSame() {
+    if (styleKey === "default") return true;
+    if (typeof field.value === "object") return isEqual(field.value, value);
+    return field.value === value;
+  }
+
   return (
     <FormField
       control={control}
@@ -99,13 +118,25 @@ export const PropertyInput = <T extends FieldValues>({
           <TooltipTrigger asChild>
             <FormItem
               className={cn(
-                "flex items-center gap-1.5 bg-background pl-1.5 rounded-md border h-fit",
+                "relative flex items-center gap-1.5 bg-background pl-1.5 rounded-md border h-fit",
                 containerClassNames
               )}
             >
+              {!isSame() && (
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="absolute top-0 right-0 size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center -translate-y-1/2 translate-x-1/2"
+                >
+                  <Undo2 size={10} />
+                </button>
+              )}
               {Icon && (
                 <div
-                  className="text-muted-foreground/80 h-7 flex items-center justify-center peer-disabled:opacity-50 hover:cursor-col-resize"
+                  className={cn(
+                    "text-muted-foreground/80 h-7 flex items-center justify-center peer-disabled:opacity-50 hover:cursor-col-resize",
+                    field.value === null && "opacity-50 pointer-events-none"
+                  )}
                   onMouseDown={handleMouseDown}
                 >
                   <Icon size={14} width={14} height={14} aria-hidden="true" />
@@ -116,6 +147,7 @@ export const PropertyInput = <T extends FieldValues>({
                 <input
                   className={cn(
                     "peer text-sm w-full h-7 outline-none text-foreground/70",
+                    field.value === null && "opacity-50 pointer-events-none",
                     className
                   )}
                   {...field}
@@ -123,9 +155,11 @@ export const PropertyInput = <T extends FieldValues>({
                   onBlur={() => form.handleSubmit(onSubmit)()}
                   onFocus={(e) => e.target.select()}
                   value={
-                    typeof field.value === "object"
-                      ? getValueFromObject(field.value)
-                      : field.value
+                    field.value === null
+                      ? value
+                      : typeof field.value === "object"
+                        ? getValueFromObject(field.value)
+                        : field.value
                   }
                   onChange={(e) =>
                     field.onChange(
@@ -134,10 +168,17 @@ export const PropertyInput = <T extends FieldValues>({
                         : e.target.value
                     )
                   }
+                  disabled={field.value === null}
                   {...inputProps}
                 />
               </FormControl>
-              {rightElement}
+              <div
+                className={cn(
+                  field.value === null && "opacity-50 pointer-events-none"
+                )}
+              >
+                {rightElement}
+              </div>
               <TooltipContent className="pointer-events-none">
                 <p>{label}</p>
               </TooltipContent>

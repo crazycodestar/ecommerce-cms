@@ -308,12 +308,12 @@ function WidthForm({ className }: { className?: string }) {
 
   function handleRemoveAuxWidth(name: Path<StyleSchema>) {
     if (name === "maxWidth") {
-      handleSetValue("maxWidth", undefined);
+      handleSetValue("maxWidth", null);
       return setShowMaxWidth(false);
     }
 
     if (name === "minWidth") {
-      handleSetValue("minWidth", undefined);
+      handleSetValue("minWidth", null);
       return setShowMinWidth(false);
     }
   }
@@ -611,7 +611,9 @@ function HeightForm({ className }: { className?: string }) {
 function DisplayForm({ className }: { className?: string }) {
   const { form, onSubmit, handleSetValue } = useStyle();
 
-  function handleSetDisplay(value: StyleSchema["display"]["type"]) {
+  function handleSetDisplay(
+    value: NonNullable<StyleSchema["display"]>["type"]
+  ) {
     switch (value) {
       case "flex-col":
         handleSetValue("display", {
@@ -656,7 +658,7 @@ function DisplayForm({ className }: { className?: string }) {
       <Tabs
         value={form.watch("display.type")}
         onValueChange={(value) =>
-          handleSetDisplay(value as StyleSchema["display"]["type"])
+          handleSetDisplay(value as NonNullable<StyleSchema["display"]>["type"])
         }
         className="col-span-4"
       >
@@ -709,7 +711,7 @@ function DisplayForm({ className }: { className?: string }) {
                     : HorizontalGapIcon
                 }
                 control={form.control}
-                defaultValue={0}
+                // defaultValue={0}
                 name="display.gapX"
                 label={
                   form.watch("display.type") === "flex-col"
@@ -721,7 +723,7 @@ function DisplayForm({ className }: { className?: string }) {
                 <PropertyInput
                   icon={VerticalGapIcon}
                   control={form.control}
-                  defaultValue={0}
+                  // defaultValue={0}
                   name="display.gapY"
                   label="Vertical gap"
                 />

@@ -1,5 +1,4 @@
 import { Pages } from "./elements";
-import { getDefaultValues } from "./properties";
 
 export const template = [
   {
@@ -9,7 +8,6 @@ export const template = [
       name: "Body",
       type: "body",
       id: crypto.randomUUID(),
-      style: getDefaultValues("body"),
       children: [],
     },
   },

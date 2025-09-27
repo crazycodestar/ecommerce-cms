@@ -71,7 +71,7 @@ export function Typography() {
   function FontSizeOptions() {
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
           <Button
             type="button"
             size="icon"
@@ -202,7 +202,7 @@ function TypographyOptions() {
         <div className="grid grid-cols-3 items-center gap-2">
           <label className="text-sm">Text align</label>
           <Tabs
-            value={form.watch("textAlign")}
+            value={form.watch("textAlign") ?? undefined}
             onValueChange={(value) =>
               handleSetValue("textAlign", getVal(value))
             }
@@ -229,7 +229,7 @@ function TypographyOptions() {
 
           <label className="text-sm">Font Style</label>
           <Tabs
-            value={form.watch("fontStyle")}
+            value={form.watch("fontStyle") ?? undefined}
             onValueChange={(value) =>
               handleSetValue("fontStyle", getVal(value))
             }
