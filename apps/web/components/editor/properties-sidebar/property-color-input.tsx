@@ -21,12 +21,12 @@ import { useBlurOnEnter } from "@/hooks/use-blur-on-enter";
 import { useDebouncedCallback } from "@/hooks/use-debouncer";
 import {
   fill,
-  FillSchema,
+  fillSchema,
   ColorSchema,
   colorSchema,
-  GradientValueSchema,
   ImageSchema,
 } from "@/hooks/use-editor/properties";
+import { GradientValueSchema } from "@/hooks/use-editor/shared";
 import { useResizeOnDrag } from "@/hooks/use-resize-on-drag";
 import { cn } from "@/lib/utils";
 import {
@@ -55,12 +55,14 @@ import {
   type Path,
 } from "react-hook-form";
 import { PropertyButton } from "./property-button";
-import { useStyle } from "./style-context";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { Id } from "@packages/backend/convex/_generated/dataModel";
+import { Variable, vars } from "@/hooks/use-editor/variables";
+import { useEditor } from "@/hooks/use-editor";
+import { VariableItem, VariablePopover } from "./variable-library";
 
 const mapping: Record<Exclude<ColorSchema["type"], "color">, string> = {
   "linear-gradient": "Linear",
@@ -88,25 +90,60 @@ export const PropertyColorInput = <T extends FieldValues>({
   rightElement,
   noOptions,
 }: PropertyColorInputProps<T>) => {
+  const variables = useEditor((state) => state.variables);
   // const { form, onSubmit } = useStyle();
 
   const { field } = useController({ control, name });
-  const { success, data } = colorSchema.safeParse(field.value);
+  // const { success, data } = colorSchema.safeParse(field.value);
+  const { success, data: parsedData } = fillSchema.safeParse({
+    fill: field.value,
+  });
 
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const handleChange = (data: ColorSchema) => {
-    field.onChange(data);
+  const handleChange = (data: ColorSchema | { type: "preset"; id: string }) => {
+    if (data.type === "preset") {
+      field.onChange({
+        type: "variable",
+        id: data.id,
+      });
+    } else {
+      field.onChange({
+        type: "default",
+        value: data,
+      });
+    }
     buttonRef.current?.click();
   };
 
   if (!success) return null;
+
+  const parsedDataFill = parsedData.fill!;
+  const isVariable = parsedDataFill.type === "variable";
+  const value = isVariable
+    ? vars.getVariable(parsedDataFill, variables)
+    : parsedDataFill;
+
+  const data = isVariable
+    ? (value?.value ?? {
+        type: "color",
+        value: "#ffffff",
+        opacity: 100,
+      })
+    : parsedDataFill.value!;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <div className={containerClassNames}>
           <ColorValueInput
-            color={data}
+            color={
+              isVariable
+                ? {
+                    type: "preset",
+                    value: value! as Variable,
+                  }
+                : data
+            }
             onChange={handleChange}
             className={cn("w-full", className)}
             leftElement={
@@ -120,7 +157,7 @@ export const PropertyColorInput = <T extends FieldValues>({
                   sideOffset={16}
                 >
                   <ColorPicker
-                    data={field.value}
+                    data={data}
                     onChange={handleChange}
                     noOptions={noOptions}
                   />
@@ -264,6 +301,13 @@ function ColorValuePicker({
   color: ColorSchema & { type: "color" };
   onChange: (color: ColorSchema & { type: "color" }) => void;
 }) {
+  function handleChange(
+    color: Parameters<typeof onChange>[0] | { type: "preset"; id: string }
+  ) {
+    if (color.type === "preset") return;
+    onChange(color);
+  }
+
   return (
     <div className="color-picker-container flex flex-col gap-2">
       <HexColorPicker
@@ -274,7 +318,7 @@ function ColorValuePicker({
         opacity={[color.opacity]}
         onChange={([opacity]) => onChange({ ...color, opacity })}
       />
-      <ColorValueInput color={color} onChange={onChange} />
+      <ColorValueInput color={color} onChange={handleChange} />
     </div>
   );
 }
@@ -284,8 +328,15 @@ function isColorType(val: ColorSchema): val is ColorSchema & { type: "color" } {
 }
 
 interface ColorValueInputProps {
-  color: ColorSchema;
-  onChange: (color: ColorSchema & { type: "color" }) => void;
+  color:
+    | ColorSchema
+    | {
+        type: "preset";
+        value: Variable;
+      };
+  onChange: (
+    color: (ColorSchema & { type: "color" }) | { type: "preset"; id: string }
+  ) => void;
   className?: string;
   leftElement?: React.ReactNode;
   containerClassNames?: string;
@@ -301,13 +352,15 @@ export function ColorValueInput({
   const { inputRef } = useBlurOnEnter();
   const [opacity, setOpacity] = useState<number>();
 
+  const isColor = color.type !== "preset" && isColorType(color);
+
   useEffect(() => {
-    if (!isColorType(color)) return;
+    if (!isColor) return;
     setOpacity(color.opacity);
   }, [color]);
 
   function handleColorChange(value?: string, opacity?: number) {
-    if (!isColorType(color)) return;
+    if (color.type === "preset" || !isColorType(color)) return;
     onChange({
       ...color,
       ...(value !== undefined && { value }),
@@ -317,7 +370,7 @@ export function ColorValueInput({
 
   const { handleMouseDown } = useResizeOnDrag({
     onDrag: (deltaX) => {
-      if (!isColorType(color)) return;
+      if (!isColor) return;
 
       const value = Math.min(Math.max(0, color.opacity + deltaX), 100);
       handleColorChange(undefined, value);
@@ -328,25 +381,52 @@ export function ColorValueInput({
     <div className={cn("grid grid-cols-[1fr_60px]", containerClassNames)}>
       <div
         className={cn(
-          "flex items-center gap-1.5 bg-background pl-1.5 rounded-md border h-fit border-r-0 rounded-r-none",
-          !isColorType(color) && "rounded-r-md border-r col-span-2"
+          "flex items-center gap-1.5 bg-background rounded-md border h-fit border-r-0 rounded-r-none",
+          !isColor && "rounded-r-md border-r col-span-2",
+          color.type !== "preset" && "pl-1.5"
         )}
       >
-        {leftElement}
-        <input
-          className={cn(
-            "peer text-sm w-full h-7 outline-none text-foreground/70 uppercase",
-            !isColorType(color) && "capitalize",
-            className
-          )}
-          ref={inputRef}
-          onBlur={(e) => handleColorChange(e.target.value)}
-          onFocus={(e) => e.target.select()}
-          value={isColorType(color) ? color.value : mapping[color.type]}
-          onChange={(e) => handleColorChange(e.target.value)}
-        />
+        {color.type === "preset" ? (
+          <VariablePopover
+            varType="color"
+            defaultValue={{ value: color.value.value }}
+            state="library"
+            offset={7}
+            onComplete={(id) =>
+              onChange({
+                type: "preset",
+                id,
+              })
+            }
+          >
+            <VariableItem
+              variable={color.value}
+              className="hover:bg-transparent"
+            />
+          </VariablePopover>
+        ) : (
+          <>
+            {leftElement}
+            <input
+              className={cn(
+                "peer text-sm w-full h-7 outline-none text-foreground/70 uppercase",
+                !isColor && "capitalize",
+                className
+              )}
+              ref={inputRef}
+              onBlur={(e) => handleColorChange(e.target.value)}
+              onFocus={(e) => e.target.select()}
+              value={
+                isColor
+                  ? color.value
+                  : mapping[color.type as Exclude<ColorSchema["type"], "color">]
+              }
+              onChange={(e) => handleColorChange(e.target.value)}
+            />
+          </>
+        )}
       </div>
-      {isColorType(color) && (
+      {isColor && (
         <div className="rounded-l-none flex items-center bg-background pl-1.5 rounded-md border h-fit">
           <input
             className={
@@ -750,9 +830,7 @@ export function ColorIndicator({ color, ...props }: ColorIndicatorProps) {
   );
 }
 
-function transformFillToStyle(
-  background: NonNullable<FillSchema["fill"]>["value"]
-) {
+function transformFillToStyle(background: ColorSchema) {
   function parseGradientValue(value: GradientValueSchema) {
     let style: string[] = [];
     if (value.deg !== 180) style.push(`${value.deg}deg`);

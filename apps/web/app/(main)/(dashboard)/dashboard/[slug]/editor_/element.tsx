@@ -25,6 +25,7 @@ import { api } from "@packages/backend/convex/_generated/api";
 import { Id } from "@packages/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import invariant from "tiny-invariant";
+import { useEditor } from "@/hooks/use-editor";
 
 export function routeToElement(element: Element) {
   if (element.type === Element.body.type) {
@@ -61,6 +62,7 @@ const editModeClassNames = "cursor-default";
 
 function Body({ element }: { element: BodyElement }) {
   const ref = useRef<HTMLDivElement>(null);
+  const tailwindCSS = useTailwindCSS({ element });
 
   useEffect(() => {
     const element = ref.current;
@@ -82,8 +84,7 @@ function Body({ element }: { element: BodyElement }) {
       ref={ref}
       data-id={element.id}
       className={cn(
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         "min-h-screen",
         editModeClassNames
       )}
@@ -126,8 +127,15 @@ function useDragAndDrop({ data }: { data: Element }) {
   return { ref, isDragging };
 }
 
+function useTailwindCSS({ element }: { element: Element }) {
+  const variables = useEditor((state) => state.variables);
+
+  return generateTailwindCSS(element.style, element.type, variables);
+}
+
 function Section({ element }: { element: SectionElement }) {
   const { ref, isDragging } = useDragAndDrop({ data: element });
+  const tailwindCSS = useTailwindCSS({ element });
 
   return (
     <section
@@ -135,8 +143,7 @@ function Section({ element }: { element: SectionElement }) {
       data-id={element.id}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -148,14 +155,14 @@ function Section({ element }: { element: SectionElement }) {
 
 function Text({ element }: { element: TextElement }) {
   const { ref, isDragging } = useDragAndDrop({ data: element });
+  const tailwindCSS = useTailwindCSS({ element });
 
   return (
     <p
       ref={ref as RefObject<HTMLParagraphElement | null>}
       data-id={element.id}
       className={cn(
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -167,6 +174,7 @@ function Text({ element }: { element: TextElement }) {
 
 function Container({ element }: { element: ContainerElement }) {
   const { ref, isDragging } = useDragAndDrop({ data: element });
+  const tailwindCSS = useTailwindCSS({ element });
 
   return (
     <div
@@ -174,8 +182,7 @@ function Container({ element }: { element: ContainerElement }) {
       data-id={element.id}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -196,6 +203,7 @@ function Image({ element }: { element: ImageElement }) {
   );
 
   const { ref, isDragging } = useDragAndDrop({ data: element });
+  const tailwindCSS = useTailwindCSS({ element });
 
   return (
     <img
@@ -205,8 +213,7 @@ function Image({ element }: { element: ImageElement }) {
       alt={element.alt}
       className={cn(
         !element.hasBeenEdited && "size-[200px] object-cover",
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -216,6 +223,7 @@ function Image({ element }: { element: ImageElement }) {
 
 function Link({ element }: { element: LinkElement }) {
   const { ref, isDragging } = useDragAndDrop({ data: element });
+  const tailwindCSS = useTailwindCSS({ element });
 
   return (
     <a
@@ -223,8 +231,7 @@ function Link({ element }: { element: LinkElement }) {
       data-id={element.id}
       href={element.href}
       className={cn(
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -237,6 +244,7 @@ function Link({ element }: { element: LinkElement }) {
 
 function LinkBlock({ element }: { element: LinkBlockElement }) {
   const { ref, isDragging } = useDragAndDrop({ data: element });
+  const tailwindCSS = useTailwindCSS({ element });
 
   return (
     <a
@@ -245,8 +253,7 @@ function LinkBlock({ element }: { element: LinkBlockElement }) {
       href={element.href}
       className={cn(
         !(element.children.length || element.hasBeenEdited) && emptyClassNames,
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}
@@ -261,6 +268,7 @@ function CodeEmbed({ element }: { element: CodeEmbedElement }) {
   // FIXME: tailwind classnames colors are having a weird behaviour. bg-black, bg-white
   // and even bg-primary work fine. but bg-red-800 is not working.
   const { ref, isDragging } = useDragAndDrop({ data: element });
+  const tailwindCSS = useTailwindCSS({ element });
 
   return (
     <div
@@ -268,8 +276,7 @@ function CodeEmbed({ element }: { element: CodeEmbedElement }) {
       data-id={element.id}
       className={cn(
         !element.hasBeenEdited && emptyClassNames,
-        element.hasBeenEdited &&
-          generateTailwindCSS(element.style, element.type),
+        element.hasBeenEdited && tailwindCSS,
         editModeClassNames,
         isDragging && "opacity-50 pointer-events-none"
       )}

@@ -189,3 +189,129 @@ export const PropertyInput = <T extends FieldValues>({
     />
   );
 };
+
+type InputType = string | number | { [k: string]: any };
+interface PropertyInputPrimitiveProps<T extends InputType>
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    "value" | "onChange"
+  > {
+  value: T;
+  onChange: (arg: T) => void;
+  containerClassNames?: string;
+  Icon?: ElementType;
+  leftElement?: React.ReactNode;
+  rightElement?: React.ReactNode;
+  className?: string;
+  upperLimit?: number;
+  lowerLimit?: number;
+  increment?: number;
+  sensitivity?: number;
+}
+
+export const PropertyInputPrimitive = <T extends InputType>({
+  containerClassNames,
+  Icon,
+  leftElement,
+  rightElement,
+  className,
+  value,
+  onChange,
+  upperLimit,
+  lowerLimit,
+  increment,
+  sensitivity,
+  ...inputProps
+}: PropertyInputPrimitiveProps<T>) => {
+  const { inputRef } = useBlurOnEnter();
+  const { handleMouseDown } = useResizeOnDrag({
+    onDrag: (deltaX) => {
+      const currentValue = (
+        typeof value === "object"
+          ? getValueFromObject(value) === "Mixed"
+            ? 0
+            : getValueFromObject(value)
+          : value
+      ) as number;
+      const sensitivityFactor = sensitivity !== undefined ? sensitivity : 1;
+      const incrementFactor = increment !== undefined ? increment : 1;
+      const appliedValue = Number(
+        Number(
+          currentValue + deltaX * incrementFactor * sensitivityFactor
+        ).toFixed(1)
+      );
+
+      const finalValue = Math.min(
+        Math.max(
+          lowerLimit !== undefined ? lowerLimit : -Infinity,
+          appliedValue
+        ),
+        upperLimit !== undefined ? upperLimit : Infinity
+      );
+      onChange(
+        (typeof value === "object"
+          ? setValuesInObject(
+              value,
+              finalValue as (typeof value)[keyof typeof value]
+            )
+          : finalValue) as T
+      );
+    },
+  });
+
+  return (
+    <div
+      className={cn(
+        "relative flex items-center gap-1.5 bg-background pl-1.5 rounded-md border h-fit",
+        containerClassNames
+      )}
+    >
+      {Icon && (
+        <div
+          className={cn(
+            "text-muted-foreground/80 h-7 flex items-center justify-center peer-disabled:opacity-50 hover:cursor-col-resize",
+            value === null && "opacity-50 pointer-events-none"
+          )}
+          onMouseDown={handleMouseDown}
+        >
+          <Icon size={14} width={14} height={14} aria-hidden="true" />
+        </div>
+      )}
+      {leftElement}
+      <FormControl>
+        <input
+          className={cn(
+            "peer text-sm w-full h-7 outline-none text-foreground/70",
+            value === null && "opacity-50 pointer-events-none",
+            className
+          )}
+          ref={inputRef}
+          // onBlur={() => form.handleSubmit(onSubmit)()}
+          onFocus={(e) => e.target.select()}
+          value={
+            (value === null
+              ? value
+              : typeof value === "object"
+                ? getValueFromObject(value)
+                : value) as string | number
+          }
+          onChange={(e) =>
+            onChange(
+              (typeof value === "object"
+                ? setValuesInObject(
+                    value,
+                    e.target.value as (typeof value)[keyof typeof value]
+                  )
+                : e.target.value) as T
+            )
+          }
+          disabled={value === null}
+          {...inputProps}
+        />
+      </FormControl>
+      <div className={cn(value === null && "opacity-50 pointer-events-none")}>
+        {rightElement}
+      </div>
+    </div>
+  );
+};

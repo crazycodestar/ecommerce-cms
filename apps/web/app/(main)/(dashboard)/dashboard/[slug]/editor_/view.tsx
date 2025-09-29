@@ -16,11 +16,6 @@ export function View() {
   const page = pages.find((page) => page.id === "home")!;
   const { isDragging, activeElement, dropIndicator } = useMonitor(page);
 
-  const setFocusElement = useEditor((state) => state.setFocusElement);
-  useHotkeys("esc", () => setFocusElement(null), {
-    enableOnFormTags: false,
-  });
-
   return (
     <>
       <Indicator

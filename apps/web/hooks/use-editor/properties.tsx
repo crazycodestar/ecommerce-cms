@@ -5,6 +5,14 @@ import { useEffect } from "react";
 import { z } from "zod";
 import { Element } from "./elements";
 import { type FieldNamesMarkedBoolean } from "react-hook-form";
+import { Variable, vars } from "./variables";
+import {
+  colorValueSchema,
+  conicGradientSchema,
+  GradientValueSchema,
+  linearGradientSchema,
+  radialGradientSchema,
+} from "./shared";
 
 /*
  * This is a singleton object that contains the methods for adding,
@@ -773,45 +781,6 @@ const imageSchema = z.object({
 
 export type ImageSchema = z.infer<typeof imageSchema>;
 
-const colorValuseShape = z.object({
-  value: z.string(),
-  opacity: z.coerce.number().min(0).max(100),
-});
-
-const gradientValueSchema = z.object({
-  deg: z.coerce.number(),
-  colors: z.array(
-    z.object({
-      ...colorValuseShape.shape,
-      position: z.coerce.number().optional(),
-    })
-  ),
-});
-export type GradientValueSchema = z.infer<typeof gradientValueSchema>;
-
-const linearGradientSchema = z.object({
-  type: z.literal("linear-gradient"),
-  ...gradientValueSchema.shape,
-  // clipToText: z.boolean().optional(),
-});
-
-const radialGradientSchema = z.object({
-  type: z.literal("radial-gradient"),
-  ...gradientValueSchema.shape,
-});
-
-const conicGradientSchema = z.object({
-  type: z.literal("conic-gradient"),
-  ...gradientValueSchema.shape,
-});
-
-const colorValueSchema = z.object({
-  type: z.literal("color"),
-  ...colorValuseShape.shape,
-});
-
-export type ColorSchema = z.infer<typeof colorSchema>;
-
 export const colorSchema = z.discriminatedUnion("type", [
   imageSchema,
   linearGradientSchema,
@@ -820,27 +789,27 @@ export const colorSchema = z.discriminatedUnion("type", [
   colorValueSchema,
 ]);
 
-export const FillSchema = z.object({
-  fill: z
-    .object({
-      value: colorSchema,
-      // clipToText: z.boolean().optional(),
-    })
+export type ColorSchema = z.infer<typeof colorSchema>;
+
+export const fillSchema = z.object({
+  fill: vars
+    .createSchemaWithVariableType("color", colorSchema)
     .optional()
     .nullable(),
 });
 
-export type FillSchema = z.infer<typeof FillSchema>;
+export type FillSchema = z.infer<typeof fillSchema>;
 
 export const fill: StyleType<
   FillSchema,
   (element: Element["type"]) => FillSchema
 > = {
-  schema: FillSchema,
+  schema: fillSchema,
   defaultValues: (type) => {
     if (isTextElement(type)) {
       return {
         fill: {
+          type: "default",
           value: {
             type: "color",
             value: "#000000",
@@ -861,11 +830,15 @@ export const fill: StyleType<
       return "bg-transparent";
     }
   },
-  transform: (value, type) => {
-    if (value.fill === undefined) return;
-    if (value.fill === null) return fill.defaultTransform(type);
+  transform: (valueWithVariable, type) => {
+    if (valueWithVariable.fill === undefined) return;
+    if (valueWithVariable.fill === null) return fill.defaultTransform(type);
 
-    const fillValue = value.fill.value;
+    if (valueWithVariable.fill.type === "variable") return;
+
+    const fillValue = valueWithVariable.fill.value!;
+
+    // const fillValue = (value.fill.value);
     // const clipToText = value.fill.clipToText;
 
     function parseGradientValue(value: GradientValueSchema) {
@@ -1433,7 +1406,7 @@ export const styleSchema = z.object({
   ...overflowSchema.shape,
   ...opacitySchema.shape,
   ...borderRadiusSchema.shape,
-  ...FillSchema.shape,
+  ...fillSchema.shape,
   ...strokeSchema.shape,
   ...dropShadowSchema.shape,
   ...blurSchema.shape,
@@ -1648,9 +1621,17 @@ export function updateStyleValues({
  * This implements the stuctures into CSS styles for each property type
  */
 
+function assertIsVariable(
+  value: any
+): value is { type: "variable"; id: string } {
+  if (!value) return false;
+  return value.type === "variable";
+}
+
 export const parseJSONToTailwindCSS = (
   styleObj: StyleSchema | undefined,
   elementType: Element["type"],
+  variables: Variable[],
   prefix?: string
 ): string => {
   if (styleObj === undefined || !Object.keys(styleObj).length) return "";
@@ -1660,8 +1641,16 @@ export const parseJSONToTailwindCSS = (
       Object.keys(style.schema.shape).includes(type)
     );
 
+    function getValue<T>(value: T) {
+      if (assertIsVariable(value)) {
+        value;
+        return vars.getVariable(value, variables);
+      }
+      return value;
+    }
+
     const tailwindCSSStyle = styleType!.transform(
-      Object.fromEntries([[type, value]]),
+      Object.fromEntries([[type, getValue(value)]]),
       elementType
     );
 
@@ -1680,7 +1669,8 @@ function isValueEqual<T>(value1: T, value2: T) {
 
 export const generateTailwindCSS = (
   styleObj: StyleObject | undefined,
-  elementType: Element["type"]
+  elementType: Element["type"],
+  variables: Variable[]
 ): string | undefined => {
   if (!styleObj) return;
   // rough cut
@@ -1773,7 +1763,12 @@ export const generateTailwindCSS = (
   const breakpointsTailwindCSS = Object.entries(breakpointsStyles)
     .map(([breakpointKey, breakpointStyles], index) => {
       const prefix = index ? breakpointKey : undefined;
-      return parseJSONToTailwindCSS(breakpointStyles, elementType, prefix);
+      return parseJSONToTailwindCSS(
+        breakpointStyles,
+        elementType,
+        variables,
+        prefix
+      );
     })
     .join(" ");
 
@@ -1781,7 +1776,12 @@ export const generateTailwindCSS = (
     styleObjectReversedOnBreakPoints.attributes
   )
     .map(([attributeKey, attributeStyles]) => {
-      return parseJSONToTailwindCSS(attributeStyles, elementType, attributeKey);
+      return parseJSONToTailwindCSS(
+        attributeStyles,
+        elementType,
+        variables,
+        attributeKey
+      );
     })
     .join(" ");
 

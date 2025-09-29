@@ -30,6 +30,7 @@ export default function ContentPage() {
 
   const deleteElement = useEditor((state) => state.deleteElement);
   const focusElement = useEditor((state) => state.focusElement);
+  const setFocusElement = useEditor((state) => state.setFocusElement);
 
   useHotkeys(
     "delete, backspace",
@@ -38,6 +39,10 @@ export default function ContentPage() {
       enableOnFormTags: false,
     }
   );
+
+  useHotkeys("esc", () => setFocusElement(null), {
+    enableOnFormTags: false,
+  });
 
   if (!shouldRender) return null;
   return isInIframe ? <View /> : <PageContent />;

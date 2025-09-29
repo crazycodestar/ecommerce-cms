@@ -5,6 +5,7 @@ import { persist } from "zustand/middleware";
 import { template } from "./template";
 import { Pages, Element, layers, BodyElement } from "./elements";
 import { useHotkeys } from "react-hotkeys-hook";
+import { Variable } from "./variables";
 
 const CarouselSchema = z.object({
   type: z.literal("carousel"),
@@ -203,6 +204,12 @@ interface EditorState {
   historyIndex: number;
   undo: () => void;
   redo: () => void;
+
+  // variables
+  variables: Variable[];
+  addVariable: (variable: Variable) => void;
+  updateVariable: (id: Variable["id"], variable: Variable) => void;
+  removeVariable: (id: Variable["id"]) => void;
 
   // properties
   // styles: Style[];
@@ -481,6 +488,19 @@ export const useEditor = create<EditorState>()(
             historyIndex: state.historyIndex + 1,
           };
         }),
+
+      // variables
+      variables: [],
+      addVariable: (variable) =>
+        set((state) => ({ variables: [...state.variables, variable] })),
+      updateVariable: (id, variable) =>
+        set((state) => ({
+          variables: state.variables.map((v) => (v.id === id ? variable : v)),
+        })),
+      removeVariable: (id) =>
+        set((state) => ({
+          variables: state.variables.filter((v) => v.id !== id),
+        })),
       // addStyle: (style) =>
       //   set((state) => ({
       //     styles: styles.add(state.styles, style),
@@ -506,6 +526,7 @@ export const useEditor = create<EditorState>()(
         pages: state.pages,
         history: state.history,
         historyIndex: state.historyIndex,
+        variables: state.variables,
         // styles: state.styles,
       }),
     }

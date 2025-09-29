@@ -285,7 +285,7 @@ function SettingsSrcInput<T extends FieldValues>({
     objectFit: "cover",
   };
 
-  function handleChange(color: ColorSchema) {
+  function handleChange(color: ColorSchema | { type: "preset"; id: string }) {
     if (color.type !== "image") return;
     field.onChange(color.value);
     buttonRef.current?.click();

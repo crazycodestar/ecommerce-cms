@@ -29,6 +29,7 @@ import {
   SelectItem,
   SelectContent,
 } from "@/components/ui/select";
+import { VariableLibrary } from "./variable-library";
 
 const styleKeyMapping: Record<Size, StyleKey> = {
   desktop: "default",
@@ -69,7 +70,7 @@ export function PropertiesSidebar({
               onValueChange={(value) => setStyleKey(value as StyleKey)}
               value={styleKey}
             >
-              <SelectTrigger className="w-fit">
+              <SelectTrigger size="sm" className="w-fit max-h-7">
                 <SelectValue placeholder="Select a style" />
               </SelectTrigger>
               <SelectContent>
@@ -84,19 +85,19 @@ export function PropertiesSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="flex flex-col gap-6 h-full overflow-y-auto">
-        <Tabs defaultValue="style">
-          <div className="w-full p-2 pb-0">
-            <TabsList className="w-full h-7 rounded-sm">
-              <TabsTrigger value="style" className="rounded-sm">
-                Style
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="rounded-sm">
-                Settings
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value="style">
-            {focusElement ? (
+        {focusElement ? (
+          <Tabs defaultValue="style">
+            <div className="w-full p-2 pb-0">
+              <TabsList className="w-full h-7 rounded-sm">
+                <TabsTrigger value="style" className="rounded-sm">
+                  Style
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="rounded-sm">
+                  Settings
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="style">
               <StyleProvider styleKey={styleKey}>
                 <Position />
                 <Layout />
@@ -105,21 +106,17 @@ export function PropertiesSidebar({
                 <Stroke />
                 <Effects />
               </StyleProvider>
-            ) : (
-              <div className="p-2">
-                <div className="h-[200px] flex items-center justify-center border border-muted-foreground/50 border-dashed rounded-md">
-                  <div className="flex flex-col items-center gap-2">
-                    <MousePointer className="h-6 w-6 text-muted-foreground" />
-                    <p className="text-muted-foreground">Select an element</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-          <TabsContent value="settings">
-            <Settings />
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+            <TabsContent value="settings">
+              <Settings />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="p-2">
+            <h3 className="text-sm font-medium mb-2">Variables</h3>
+            <VariableLibrary />
+          </div>
+        )}
       </SidebarContent>
     </Sidebar>
   );
