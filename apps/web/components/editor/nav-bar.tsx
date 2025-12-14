@@ -1,28 +1,26 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import type { Size } from "@/hooks/use-view";
 import {
-  Loader2,
-  Monitor,
-  Smartphone,
-  Tablet,
+  ChevronDown,
   Eye,
   Globe,
+  Loader2,
+  Monitor,
   Play,
-  ChevronDown,
-  Undo2,
   Redo2,
+  Smartphone,
+  Tablet,
+  Undo2,
 } from "lucide-react";
 import Link from "next/link";
-import type { Size } from "@/hooks/use-view";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { useEditor } from "@/hooks/use-editor";
 
 export function Navbar({
   url,
@@ -37,7 +35,11 @@ export function Navbar({
   view: Size;
   setView: (view: Size) => void;
 }) {
-  const { undo, redo, historyIndex, history } = useEditor();
+  // FIXME: Implement undo and redo
+  const undo = () => {};
+  const redo = () => {};
+  const historyIndex = 0;
+  const history = [];
   const canUndo = historyIndex > -1;
   const canRedo = historyIndex < history.length - 1;
 

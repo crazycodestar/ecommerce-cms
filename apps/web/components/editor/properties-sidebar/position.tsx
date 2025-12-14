@@ -35,9 +35,13 @@ import {
 import { PropertyButton } from "./property-button";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
+import { StyleSchema } from "@/db/types/style";
 
 export function Position() {
-  const { form, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
+
+  const isXFlipped = !!getValue("bottom");
+  const isYFlipped = !!getValue("right");
 
   function XPosSwitch() {
     return (
@@ -46,11 +50,17 @@ export function Position() {
         size="icon"
         variant="ghost"
         className="size-7 hover:bg-transparent"
-        onClick={() =>
-          handleSetValue("x.isFlipped", !form.watch("x.isFlipped"))
-        }
+        onClick={() => {
+          if (isXFlipped) {
+            setValue({ top: getValue("bottom") });
+            setValue({ bottom: 0 });
+          } else {
+            setValue({ bottom: getValue("top") });
+            setValue({ top: 0 });
+          }
+        }}
       >
-        {form.watch("x.isFlipped") ? (
+        {isXFlipped ? (
           <ArrowLeftToLineIcon size={14} />
         ) : (
           <ArrowRightToLineIcon size={14} />
@@ -66,11 +76,17 @@ export function Position() {
         size="icon"
         variant="ghost"
         className="size-7 hover:bg-transparent"
-        onClick={() =>
-          handleSetValue("y.isFlipped", !form.watch("y.isFlipped"))
-        }
+        onClick={() => {
+          if (isYFlipped) {
+            setValue({ left: getValue("right") });
+            setValue({ right: 0 });
+          } else {
+            setValue({ right: getValue("left") });
+            setValue({ left: 0 });
+          }
+        }}
       >
-        {form.watch("y.isFlipped") ? (
+        {isYFlipped ? (
           <ArrowUpToLineIcon size={14} />
         ) : (
           <ArrowDownToLineIcon size={14} />
@@ -91,26 +107,26 @@ export function Position() {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuCheckboxItem
-              checked={form.watch("position.type") === "relative"}
-              onClick={() => handleSetValue("position.type", "relative")}
+              checked={getValue("position") === "relative"}
+              onClick={() => setValue({ position: "relative" })}
             >
               Relative
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
-              checked={form.watch("position.type") === "absolute"}
-              onClick={() => handleSetValue("position.type", "absolute")}
+              checked={getValue("position") === "absolute"}
+              onClick={() => setValue({ position: "absolute" })}
             >
               Absolute
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
-              checked={form.watch("position.type") === "fixed"}
-              onClick={() => handleSetValue("position.type", "fixed")}
+              checked={getValue("position") === "fixed"}
+              onClick={() => setValue({ position: "fixed" })}
             >
               Fixed
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
-              checked={form.watch("position.type") === "sticky"}
-              onClick={() => handleSetValue("position.type", "sticky")}
+              checked={getValue("position") === "sticky"}
+              onClick={() => setValue({ position: "sticky" })}
             >
               Sticky
             </DropdownMenuCheckboxItem>
@@ -122,27 +138,25 @@ export function Position() {
         <PropertyInput
           icon={XIcon}
           containerClassNames="col-span-2"
-          control={form.control}
-          name="x.pos"
+          name={isXFlipped ? "bottom" : "top"}
           label="X"
           rightElement={<XPosSwitch />}
         />
         <PropertyInput
           icon={YIcon}
           containerClassNames="col-span-2"
-          control={form.control}
-          name="y.pos"
+          name={isYFlipped ? "right" : "left"}
           label="Y"
           rightElement={<YPosSwitch />}
         />
-        {form.watch("position.type") === "relative" && <RelativeOptions />}
+        {getValue("position") === "relative" && <RelativeOptions />}
       </div>
     </div>
   );
 }
 
 function RelativeOptions() {
-  const { form, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
 
   function getVal<T>(value: string) {
     if (value === "") return undefined;
@@ -160,14 +174,16 @@ function RelativeOptions() {
         <div className="grid grid-cols-3 items-center gap-2">
           <label className="text-sm">Justify self</label>
           <Tabs
-            value={form.watch("position.justifySelf")}
+            value={getValue("justifySelf")}
             onValueChange={(value) =>
-              handleSetValue("position.justifySelf", getVal(value))
+              setValue({
+                justifySelf: getVal(value) as StyleSchema["justifySelf"],
+              })
             }
             className="col-span-2"
           >
             <TabsList className="w-full h-7">
-              <TabsTrigger value="" className="rounded-sm">
+              <TabsTrigger value="auto" className="rounded-sm">
                 <MinusIcon size={14} />
               </TabsTrigger>
               <TabsTrigger value="start" className="rounded-sm">
@@ -183,14 +199,16 @@ function RelativeOptions() {
           </Tabs>
           <label className="text-sm">Align self</label>
           <Tabs
-            value={form.watch("position.alignSelf")}
+            value={getValue("alignSelf")}
             onValueChange={(value) =>
-              handleSetValue("position.alignSelf", getVal(value))
+              setValue({
+                alignSelf: getVal(value) as StyleSchema["alignSelf"],
+              })
             }
             className="col-span-2"
           >
             <TabsList className="w-full h-7">
-              <TabsTrigger value="" className="rounded-sm">
+              <TabsTrigger value="auto" className="rounded-sm">
                 <MinusIcon size={14} />
               </TabsTrigger>
               <TabsTrigger value="start" className="rounded-sm">
@@ -211,8 +229,7 @@ function RelativeOptions() {
           <PropertyInput
             icon={MoveHorizontalIcon}
             containerClassNames="col-span-2"
-            control={form.control}
-            name="position.colSpan"
+            name="colSpan"
             label="Col span"
           />
         </div>

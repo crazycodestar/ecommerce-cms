@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StyleSchema } from "@/hooks/use-editor/properties";
+import { StyleSchema } from "@/db/types/style";
 import { cn } from "@/lib/utils";
 import {
   ALargeSmallIcon,
@@ -78,6 +78,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { MultiPropertyInput } from "./multi-property-input";
+import { useEditor } from "@/context/editor";
 
 export function Layout() {
   // const marginForm = useMarginForm();
@@ -245,17 +247,15 @@ export function Layout() {
 // }
 
 function PaddingForm() {
-  const { form } = useStyle();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2">
-      <PropertyInput
+      <MultiPropertyInput
+        names={["paddingLeft", "paddingTop", "paddingRight", "paddingBottom"]}
+        label="Padding"
         icon={PaddingIcon}
         containerClassNames="col-span-4"
-        control={form.control}
-        name="padding"
-        label="Padding"
       />
       <PropertyButton onClick={() => setIsExpanded(!isExpanded)} label="Expand">
         <ScanIcon size={14} className="size-3.5" />
@@ -265,29 +265,25 @@ function PaddingForm() {
           <PropertyInput
             icon={PaddingLeftIcon}
             containerClassNames="col-span-2"
-            control={form.control}
-            name="padding.left"
+            name="paddingLeft"
             label="Padding left"
           />
           <PropertyInput
             icon={PaddingTopIcon}
             containerClassNames="col-span-2"
-            control={form.control}
-            name="padding.top"
+            name="paddingTop"
             label="Padding top"
           />
           <PropertyInput
             icon={PaddingRightIcon}
             containerClassNames="col-span-2"
-            control={form.control}
-            name="padding.right"
+            name="paddingRight"
             label="Padding right"
           />
           <PropertyInput
             icon={PaddingBottomIcon}
             containerClassNames="col-span-2"
-            control={form.control}
-            name="padding.bottom"
+            name="paddingBottom"
             label="Padding bottom"
           />
         </>
@@ -297,23 +293,29 @@ function PaddingForm() {
 }
 
 function WidthForm({ className }: { className?: string }) {
-  const { form, onSubmit, handleSetValue } = useStyle();
+  const { focusElementId } = useEditor();
+  const { getValue, getPreviousValue, setValue } = useStyle();
   const [showMinWidth, setShowMinWidth] = useState(false);
   const [showMaxWidth, setShowMaxWidth] = useState(false);
 
   useEffect(() => {
     setShowMinWidth(false);
     setShowMaxWidth(false);
-  }, [form.watch("width"), form.watch("minWidth"), form.watch("maxWidth")]);
+  }, [
+    getValue("width"),
+    getValue("minWidth"),
+    getValue("maxWidth"),
+    focusElementId,
+  ]);
 
   function handleRemoveAuxWidth(name: Path<StyleSchema>) {
     if (name === "maxWidth") {
-      handleSetValue("maxWidth", null);
+      setValue({ maxWidth: "none" });
       return setShowMaxWidth(false);
     }
 
     if (name === "minWidth") {
-      handleSetValue("minWidth", null);
+      setValue({ minWidth: "auto" });
       return setShowMinWidth(false);
     }
   }
@@ -333,39 +335,49 @@ function WidthForm({ className }: { className?: string }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuCheckboxItem
-            checked={form.watch("width") === "auto"}
-            onClick={() => handleSetValue("width", "auto")}
+            checked={getValue("width") === "auto"}
+            onClick={() => setValue({ width: "auto" })}
           >
             <BaselineIcon size={16} />
             <span>Auto</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch("width") === "fill-container"}
-            onClick={() => handleSetValue("width", "fill-container")}
+            checked={getValue("width") === "fill-container"}
+            onClick={() => setValue({ width: "fill-container" })}
           >
             <MoveHorizontalIcon size={16} />
             <span>Fill Container</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch("width") === "hug-content"}
-            onClick={() => handleSetValue("width", "hug-content")}
+            checked={getValue("width") === "hug-content"}
+            onClick={() => setValue({ width: "hug-content" })}
           >
             <ChevronsRightLeft size={16} />
             <span>Hug Content</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch("width") === "fill-screen"}
-            onClick={() => handleSetValue("width", "fill-screen")}
+            checked={getValue("width") === "fill-screen"}
+            onClick={() => setValue({ width: "fill-screen" })}
           >
             <LaptopMinimal size={16} />
             <span>Fill Screen</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setShowMinWidth(true)}>
+          <DropdownMenuItem
+            onClick={() => {
+              setShowMinWidth(true);
+              setValue({ minWidth: "auto" });
+            }}
+          >
             <FoldHorizontal size={16} />
             <span>Add min width</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowMaxWidth(true)}>
+          <DropdownMenuItem
+            onClick={() => {
+              setShowMaxWidth(true);
+              setValue({ maxWidth: "none" });
+            }}
+          >
             <UnfoldHorizontal size={16} />
             <span>Add max width</span>
           </DropdownMenuItem>
@@ -374,7 +386,7 @@ function WidthForm({ className }: { className?: string }) {
     );
   }
 
-  function AuxWidthOptions({ name }: { name: Path<StyleSchema> }) {
+  function AuxWidthOptions({ name }: { name: keyof StyleSchema }) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -389,22 +401,22 @@ function WidthForm({ className }: { className?: string }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuCheckboxItem
-            checked={form.watch(name) === "fill-container"}
-            onClick={() => handleSetValue(name, "fill-container")}
+            checked={getValue(name) === "fill-container"}
+            onClick={() => setValue({ [name]: "fill-container" })}
           >
             <MoveHorizontalIcon size={16} />
             <span>Fill Container</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch(name) === "hug-content"}
-            onClick={() => handleSetValue(name, "hug-content")}
+            checked={getValue(name) === "hug-content"}
+            onClick={() => setValue({ [name]: "hug-content" })}
           >
             <ChevronsRightLeft size={16} />
             <span>Hug Content</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch(name) === "fill-screen"}
-            onClick={() => handleSetValue(name, "fill-screen")}
+            checked={getValue(name) === "fill-screen"}
+            onClick={() => setValue({ [name]: "fill-screen" })}
           >
             <LaptopMinimal size={16} />
             <span>Fill Viewport</span>
@@ -423,28 +435,33 @@ function WidthForm({ className }: { className?: string }) {
     <div className={cn("flex flex-col gap-2", className)}>
       <PropertyInput
         icon={ChevronsLeftRightIcon}
-        control={form.control}
         name="width"
         label="Width"
         rightElement={<WidthOptions />}
       />
-      {(showMinWidth || form.watch("minWidth") !== undefined) && (
+      {(showMinWidth ||
+        getValue("minWidth") !== "auto" ||
+        (getPreviousValue("minWidth") !== undefined &&
+          getPreviousValue("minWidth") !== "auto")) && (
         <PropertyInput
           icon={FoldHorizontal}
-          control={form.control}
           name="minWidth"
           label="Min width"
           placeholder="Min W"
+          disabled={getPreviousValue("minWidth") === "auto"}
           rightElement={<AuxWidthOptions name="minWidth" />}
         />
       )}
-      {(showMaxWidth || form.watch("maxWidth") !== undefined) && (
+      {(showMaxWidth ||
+        getValue("maxWidth") !== "none" ||
+        (getPreviousValue("maxWidth") !== undefined &&
+          getPreviousValue("maxWidth") !== "none")) && (
         <PropertyInput
           icon={UnfoldHorizontal}
-          control={form.control}
           name="maxWidth"
           label="Max width"
           placeholder="Max W"
+          disabled={getPreviousValue("maxWidth") === "none"}
           rightElement={<AuxWidthOptions name="maxWidth" />}
         />
       )}
@@ -453,23 +470,29 @@ function WidthForm({ className }: { className?: string }) {
 }
 
 function HeightForm({ className }: { className?: string }) {
-  const { form, handleSetValue } = useStyle();
+  const { focusElementId } = useEditor();
+  const { getValue, getPreviousValue, setValue } = useStyle();
   const [showMinHeight, setShowMinHeight] = useState(false);
   const [showMaxHeight, setShowMaxHeight] = useState(false);
 
   useEffect(() => {
     setShowMinHeight(false);
     setShowMaxHeight(false);
-  }, [form.watch("height"), form.watch("minHeight"), form.watch("maxHeight")]);
+  }, [
+    getValue("height"),
+    getValue("minHeight"),
+    getValue("maxHeight"),
+    focusElementId,
+  ]);
 
   function handleRemoveAuxHeight(name: Path<StyleSchema>) {
     if (name === "maxHeight") {
-      handleSetValue("maxHeight", undefined);
+      setValue({ maxHeight: "none" });
       return setShowMaxHeight(false);
     }
 
     if (name === "minHeight") {
-      handleSetValue("minHeight", undefined);
+      setValue({ minHeight: "auto" });
       return setShowMinHeight(false);
     }
   }
@@ -489,39 +512,49 @@ function HeightForm({ className }: { className?: string }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuCheckboxItem
-            checked={form.watch("height") === "auto"}
-            onClick={() => handleSetValue("height", "auto")}
+            checked={getValue("height") === "auto"}
+            onClick={() => setValue({ height: "auto" })}
           >
             <BaselineIcon size={16} />
             <span>Auto</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch("height") === "fill-container"}
-            onClick={() => handleSetValue("height", "fill-container")}
+            checked={getValue("height") === "fill-container"}
+            onClick={() => setValue({ height: "fill-container" })}
           >
             <MoveVerticalIcon size={16} />
             <span>Fill Container</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch("height") === "hug-content"}
-            onClick={() => handleSetValue("height", "hug-content")}
+            checked={getValue("height") === "hug-content"}
+            onClick={() => setValue({ height: "hug-content" })}
           >
             <ChevronsDownUpIcon size={16} />
             <span>Hug Content</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch("height") === "fill-viewport"}
-            onClick={() => handleSetValue("height", "fill-viewport")}
+            checked={getValue("height") === "fill-screen"}
+            onClick={() => setValue({ height: "fill-screen" })}
           >
             <LaptopMinimal size={16} />
             <span>Fill Viewport</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setShowMinHeight(true)}>
+          <DropdownMenuItem
+            onClick={() => {
+              setShowMinHeight(true);
+              setValue({ minHeight: "auto" });
+            }}
+          >
             <FoldVertical size={16} />
             <span>Add min height</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowMaxHeight(true)}>
+          <DropdownMenuItem
+            onClick={() => {
+              setShowMaxHeight(true);
+              setValue({ maxHeight: "none" });
+            }}
+          >
             <UnfoldVertical size={16} />
             <span>Add max height</span>
           </DropdownMenuItem>
@@ -530,7 +563,7 @@ function HeightForm({ className }: { className?: string }) {
     );
   }
 
-  function AuxHeightOptions({ name }: { name: Path<StyleSchema> }) {
+  function AuxHeightOptions({ name }: { name: keyof StyleSchema }) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -545,22 +578,22 @@ function HeightForm({ className }: { className?: string }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuCheckboxItem
-            checked={form.watch(name) === "fill-container"}
-            onClick={() => handleSetValue(name, "fill-container")}
+            checked={getValue(name) === "fill-container"}
+            onClick={() => setValue({ [name]: "fill-container" })}
           >
             <MoveVerticalIcon size={16} />
             <span>Fill Container</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch(name) === "hug-content"}
-            onClick={() => handleSetValue(name, "hug-content")}
+            checked={getValue(name) === "hug-content"}
+            onClick={() => setValue({ [name]: "hug-content" })}
           >
             <ChevronsDownUpIcon size={16} />
             <span>Hug Content</span>
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
-            checked={form.watch(name) === "fill-viewport"}
-            onClick={() => handleSetValue(name, "fill-viewport")}
+            checked={getValue(name) === "fill-screen"}
+            onClick={() => setValue({ [name]: "fill-screen" })}
           >
             <LaptopMinimal size={16} />
             <span>Fill Viewport</span>
@@ -580,27 +613,32 @@ function HeightForm({ className }: { className?: string }) {
       <PropertyInput
         icon={ChevronsUpDownIcon}
         rightElement={<HeightOptions />}
-        control={form.control}
         name="height"
         label="Height"
       />
-      {(showMinHeight || form.watch("minHeight") !== undefined) && (
+      {(showMinHeight ||
+        getValue("minHeight") !== "auto" ||
+        (getPreviousValue("minHeight") !== undefined &&
+          getPreviousValue("minHeight") !== "auto")) && (
         <PropertyInput
           icon={FoldVertical}
-          control={form.control}
           name="minHeight"
           label="Min height"
           placeholder="Min H"
+          disabled={getPreviousValue("minHeight") === "auto"}
           rightElement={<AuxHeightOptions name="minHeight" />}
         />
       )}
-      {(showMaxHeight || form.watch("maxHeight") !== undefined) && (
+      {(showMaxHeight ||
+        getValue("maxHeight") !== "none" ||
+        (getPreviousValue("maxHeight") !== undefined &&
+          getPreviousValue("maxHeight") !== "none")) && (
         <PropertyInput
           icon={UnfoldVertical}
-          control={form.control}
           name="maxHeight"
           label="Max height"
           placeholder="Max H"
+          disabled={getPreviousValue("maxHeight") === "none"}
           rightElement={<AuxHeightOptions name="maxHeight" />}
         />
       )}
@@ -609,31 +647,29 @@ function HeightForm({ className }: { className?: string }) {
 }
 
 function DisplayForm({ className }: { className?: string }) {
-  const { form, onSubmit, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
 
-  function handleSetDisplay(
-    value: NonNullable<StyleSchema["display"]>["type"]
-  ) {
+  function handleSetDisplay(value: StyleSchema["display"]) {
     switch (value) {
       case "flex-col":
-        handleSetValue("display", {
-          type: "flex-col",
+        setValue({
+          display: "flex-col",
           justifyContent: "start",
           alignItems: "start",
           gapX: 0,
         });
         break;
       case "flex-row":
-        handleSetValue("display", {
-          type: "flex-row",
+        setValue({
+          display: "flex-row",
           justifyContent: "start",
           alignItems: "start",
           gapX: 0,
         });
         break;
       case "grid":
-        handleSetValue("display", {
-          type: "grid",
+        setValue({
+          display: "grid",
           justifyContent: "start",
           alignItems: "start",
           gapX: 0,
@@ -642,23 +678,20 @@ function DisplayForm({ className }: { className?: string }) {
         });
         break;
       case "inline":
-        handleSetValue("display", { type: "inline" });
+        setValue({ display: "inline" });
         break;
       case "hidden":
-        handleSetValue("display", { type: "hidden" });
+        setValue({ display: "hidden" });
         break;
     }
   }
 
   return (
-    <div
-      className={cn("grid grid-cols-[repeat(4,2fr)_28px] gap-2", className)}
-      onSubmit={form.handleSubmit(onSubmit)}
-    >
+    <div className={cn("grid grid-cols-[repeat(4,2fr)_28px] gap-2", className)}>
       <Tabs
-        value={form.watch("display.type")}
+        value={getValue("display")}
         onValueChange={(value) =>
-          handleSetDisplay(value as NonNullable<StyleSchema["display"]>["type"])
+          handleSetDisplay(value as StyleSchema["display"])
         }
         className="col-span-4"
       >
@@ -678,88 +711,69 @@ function DisplayForm({ className }: { className?: string }) {
         </TabsList>
       </Tabs>
       <PropertyButton
-        onClick={() => handleSetValue("display.type", "hidden")}
-        className={cn(form.watch("display.type") === "hidden" && "bg-muted")}
+        onClick={() => setValue({ display: "hidden" })}
+        className={cn(getValue("display") === "hidden" && "bg-muted")}
         label="Hidden"
       >
         <EyeOffIcon size={14} />
       </PropertyButton>
-      {form.watch("display.type") !== "inline" &&
-        form.watch("display.type") !== "hidden" && (
-          <>
-            <div className="col-span-2">
-              {form.watch("display.type") !== "grid" && (
-                <FlexLayoutControl
-                  form={form}
-                  onSubmit={onSubmit}
-                  className="col-span-2"
-                />
-              )}
-              {form.watch("display.type") === "grid" && (
-                <GridLayoutControl
-                  name="display.gridCols"
-                  control={form.control}
-                  className="col-span-2"
-                />
-              )}
-            </div>
-            <div className="col-span-2 flex flex-col gap-2">
-              <PropertyInput
-                icon={
-                  form.watch("display.type") === "flex-col"
-                    ? VerticalGapIcon
-                    : HorizontalGapIcon
-                }
-                control={form.control}
-                // defaultValue={0}
-                name="display.gapX"
-                label={
-                  form.watch("display.type") === "flex-col"
-                    ? "Vertical gap"
-                    : "Horizontal gap"
-                }
-              />
-              {form.watch("display.type") === "grid" && (
-                <PropertyInput
-                  icon={VerticalGapIcon}
-                  control={form.control}
-                  // defaultValue={0}
-                  name="display.gapY"
-                  label="Vertical gap"
-                />
-              )}
-            </div>
-            {form.watch("display.type") === "flex-row" && (
-              <PropertyButton
-                onClick={() =>
-                  handleSetValue(
-                    "display.flexWrap",
-                    form.watch("display.flexWrap") === "wrap"
-                      ? "nowrap"
-                      : "wrap"
-                  )
-                }
-                label={
-                  form.watch("display.flexWrap") === "wrap" ? "No wrap" : "Wrap"
-                }
-                className={cn(
-                  form.watch("display.flexWrap") === "wrap" && "bg-muted"
-                )}
-              >
-                <WrapIcon width={14} height={14} />
-              </PropertyButton>
+      {getValue("display") !== "inline" && getValue("display") !== "hidden" && (
+        <>
+          <div className="col-span-2">
+            {getValue("display") !== "grid" && (
+              <FlexLayoutControl className="col-span-2" />
             )}
-            {form.watch("display.type") === "grid" && <GridLayoutOptions />}
-          </>
-        )}
+            {getValue("display") === "grid" && (
+              <GridLayoutControl name="gridCols" className="col-span-2" />
+            )}
+          </div>
+          <div className="col-span-2 flex flex-col gap-2">
+            <PropertyInput
+              icon={
+                getValue("display") === "flex-col"
+                  ? VerticalGapIcon
+                  : HorizontalGapIcon
+              }
+              // defaultValue={0}
+              name="gapX"
+              label={
+                getValue("display") === "flex-col"
+                  ? "Vertical gap"
+                  : "Horizontal gap"
+              }
+            />
+            {getValue("display") === "grid" && (
+              <PropertyInput
+                icon={VerticalGapIcon}
+                // defaultValue={0}
+                name="gapY"
+                label="Vertical gap"
+              />
+            )}
+          </div>
+          {getValue("display") === "flex-row" && (
+            <PropertyButton
+              onClick={() =>
+                setValue({
+                  flexWrap: getValue("flexWrap") === "wrap" ? "nowrap" : "wrap",
+                })
+              }
+              label={getValue("flexWrap") === "wrap" ? "No wrap" : "Wrap"}
+              className={cn(getValue("flexWrap") === "wrap" && "bg-muted")}
+            >
+              <WrapIcon width={14} height={14} />
+            </PropertyButton>
+          )}
+          {getValue("display") === "grid" && <GridLayoutOptions />}
+        </>
+      )}
       <div className="col-span-4 flex items-center gap-2">
         <Checkbox
-          checked={form.watch("overflow") === "hidden"}
+          checked={getValue("overflowY") === "hidden"}
           onCheckedChange={() =>
-            handleSetValue(
-              "overflow",
-              form.watch("overflow") === "hidden" ? "auto" : "hidden"
-            )
+            setValue({
+              overflowY: getValue("overflowY") === "hidden" ? "auto" : "hidden",
+            })
           }
           className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
         />
@@ -788,20 +802,13 @@ const useClick = () => {
   return handleClick;
 };
 
-function FlexLayoutControl({
-  form,
-  onSubmit,
-  className,
-}: {
-  form: UseFormReturn<StyleSchema>;
-  onSubmit: (data: StyleSchema) => void;
-  className?: string;
-}) {
-  const display = form.watch("display.type");
+function FlexLayoutControl({ className }: { className?: string }) {
+  const { getValue, setValue } = useStyle();
+  const display = getValue("display");
   const isFlexCol = display === "flex-col";
 
-  const justifyContent = form.watch("display.justifyContent") ?? "start";
-  const alignItems = form.watch("display.alignItems") ?? "start";
+  const justifyContent = getValue("justifyContent") ?? "start";
+  const alignItems = getValue("alignItems") ?? "start";
 
   function columnPos(index: number): "start" | "center" | "end" {
     const mod = (index + 1) % 3;
@@ -829,14 +836,17 @@ function FlexLayoutControl({
 
   function handleSetValue(index: number, isDoubleClick?: boolean) {
     if (isDoubleClick) {
-      form.setValue("display.justifyContent", "space-between");
-      form.setValue("display.alignItems", iconAlign(index));
-      return form.handleSubmit(onSubmit)();
+      setValue({
+        justifyContent: "space-between",
+        alignItems: iconAlign(index),
+      });
+      return;
     }
 
-    form.setValue("display.justifyContent", iconJustify(index));
-    form.setValue("display.alignItems", iconAlign(index));
-    form.handleSubmit(onSubmit)();
+    setValue({
+      justifyContent: iconJustify(index),
+      alignItems: iconAlign(index),
+    });
   }
 
   const IconTypeObj = {
@@ -946,16 +956,14 @@ function FlexLayoutControl({
   );
 }
 
-function GridLayoutControl<T extends FieldValues>({
+function GridLayoutControl({
   name,
-  control,
   className,
 }: {
-  name: Path<T>;
-  control: Control<T>;
+  name: "gridCols";
   className?: string;
 }) {
-  const { field } = useController({ control, name });
+  const { getValue, setValue } = useStyle();
 
   return (
     <div
@@ -964,21 +972,21 @@ function GridLayoutControl<T extends FieldValues>({
         className
       )}
     >
-      {Array.from({ length: field.value }).map((_, index) => (
+      {Array.from({ length: getValue(name) }).map((_, index) => (
         <div className="bg-background flex-1" key={index} />
       ))}
       <div className="absolute inset-0 flex bg-muted/20">
         <button
-          onClick={() => field.onChange(Math.max(field.value - 1, 1))}
+          onClick={() => setValue({ [name]: Math.max(getValue(name) - 1, 1) })}
           className="flex-1 flex items-center justify-center"
         >
           <MinusIcon size={16} />
         </button>
         <div className="flex-1 flex items-center justify-center">
-          <span className="text-sm">{field.value}</span>
+          <span className="text-sm">{getValue(name)}</span>
         </div>
         <button
-          onClick={() => field.onChange(field.value + 1)}
+          onClick={() => setValue({ [name]: getValue(name) + 1 })}
           className="flex-1 flex items-center justify-center"
         >
           <PlusIcon size={16} />
@@ -989,13 +997,6 @@ function GridLayoutControl<T extends FieldValues>({
 }
 
 function GridLayoutOptions() {
-  const { form, onSubmit } = useStyle();
-
-  function getVal<T>(value: string) {
-    if (value === "") return undefined;
-    return value as T;
-  }
-
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -1006,11 +1007,7 @@ function GridLayoutOptions() {
       <PopoverContent className="w-56" side="left" sideOffset={203}>
         <div className="grid grid-cols-3 items-center gap-2">
           <label className="text-sm">Place</label>
-          <FlexLayoutControl
-            form={form}
-            onSubmit={onSubmit}
-            className="col-span-2"
-          />
+          <FlexLayoutControl className="col-span-2" />
         </div>
       </PopoverContent>
     </Popover>

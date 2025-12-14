@@ -7,124 +7,16 @@ import {
   SidebarHeader,
   SidebarMenu,
 } from "@/components/ui/sidebar";
-import { useEditor } from "@/hooks/use-editor";
-import { Element } from "@/hooks/use-editor/elements";
-import { useTree } from "@/hooks/use-tree";
-import { useState } from "react";
-import { PartialPlaceInstruction, StepType, TreeItem } from "./tree-item";
-
-type Item = {
-  name: string;
-  children?: Element["id"][];
-};
-
-function FlatMap(element: Element): Record<string, Item> {
-  const data: Record<string, Item> = {
-    [element.id]: {
-      name: element.name,
-      children: element.children?.map((child) => child.id) ?? [],
-    },
-  };
-
-  element.children?.forEach((child) => {
-    const childData = FlatMap(child);
-    Object.entries(childData).forEach(([key, value]) => {
-      data[key] = value;
-    });
-  });
-
-  return data;
-}
+import { db } from "@/db";
+import { Tree, useTree } from "@/hooks/use-tree";
+import { useLiveQuery } from "dexie-react-hooks";
+import { TreeItem } from "./tree-item";
+import { useEditor } from "@/context/editor";
 
 export function LayersSidebar() {
-  const pages = useEditor((state) => state.pages);
-
-  const root = pages[0].body.id;
-  const { tree } = useTree({ rootId: root });
-
+  const { bodyId } = useEditor();
+  const { tree } = useTree({ rootId: bodyId ?? "" });
   const items = tree.getItems();
-
-  function getStep(currentIndent: number, index: number) {
-    const prevItemIndent = items[index - 1]?.indent as number | undefined;
-    const nextItemIndent = items[index + 1]?.indent as number | undefined;
-
-    const step: StepType = {
-      top: undefined,
-      bottom: undefined,
-    };
-
-    if (prevItemIndent && currentIndent < prevItemIndent)
-      step.top = [prevItemIndent, currentIndent];
-    if (!nextItemIndent || currentIndent > nextItemIndent)
-      step.bottom = [currentIndent, nextItemIndent ?? 0];
-
-    return step;
-  }
-
-  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(
-    null
-  );
-
-  function handleHighlightIndent(indent: number | null, index: number) {
-    if (indent === null) return setHighlightedItemId(null);
-
-    for (let i = index - 1; i > -1; i--) {
-      if (items[i].isExpanded() && items[i].indent === indent - 1) {
-        setHighlightedItemId(items[i].getId());
-        return;
-      }
-    }
-
-    setHighlightedItemId(null);
-  }
-
-  function handlePlace(placeInstruction: PartialPlaceInstruction) {
-    if (
-      placeInstruction.instruction === "place-in-folder-at-bottom" &&
-      !highlightedItemId
-    ) {
-      const dropElementIndex = items.findIndex(
-        (item) => item.getId() === placeInstruction.dropElementId
-      );
-      if (dropElementIndex === -1) return;
-
-      const itemWithHighlightedIndent = items[dropElementIndex + 1];
-      if (!itemWithHighlightedIndent)
-        return tree.reorder({
-          instruction: "place-in-folder-at-bottom",
-          elementId: placeInstruction.elementId,
-        });
-
-      return tree.reorder({
-        instruction: "place-in-folder-at-sibling",
-        elementId: placeInstruction.elementId,
-        siblingId: itemWithHighlightedIndent.getId(),
-        position: "before",
-      });
-    }
-
-    if (placeInstruction.instruction === "place-in-folder-at-bottom")
-      return tree.reorder({
-        instruction: "place-in-folder-at-bottom",
-        elementId: placeInstruction.elementId,
-        parentId: highlightedItemId!,
-      });
-
-    if (placeInstruction.instruction === "place-in-folder-at-sibling")
-      return tree.reorder({
-        instruction: "place-in-folder-at-sibling",
-        elementId: placeInstruction.elementId,
-        siblingId: placeInstruction.siblingId,
-        position: placeInstruction.position,
-      });
-
-    if (placeInstruction.instruction === "place-in-folder-at-top")
-      return tree.reorder({
-        instruction: "place-in-folder-at-top",
-        elementId: placeInstruction.elementId,
-        parentId: placeInstruction.parentId,
-      });
-  }
 
   return (
     <Sidebar
@@ -137,24 +29,17 @@ export function LayersSidebar() {
           <div className="text-foreground text-base font-medium">Layers</div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup className="w-fit min-w-full">
-          <SidebarMenu>
-            {items.map((item, index) => (
-              <TreeItem
-                key={item.getId()}
-                item={item}
-                step={getStep(item.indent, index)}
-                isHighlighted={highlightedItemId === item.getId()}
-                onHighlightIndent={(indent) =>
-                  handleHighlightIndent(indent, index)
-                }
-                onPlace={handlePlace}
-              />
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
+      <Tree items={items} rootId={bodyId ?? ""}>
+        <SidebarContent>
+          <SidebarGroup className="w-fit min-w-full">
+            <SidebarMenu>
+              {items.map((item) => (
+                <TreeItem key={item.getId()} item={item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+      </Tree>
     </Sidebar>
   );
 }

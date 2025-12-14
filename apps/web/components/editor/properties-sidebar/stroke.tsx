@@ -12,7 +12,9 @@ import {
 import { PropertyInput } from "./property-input";
 
 export function Stroke() {
-  const { form, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
+
+  const hasStroke = getValue("strokeFill") !== "none";
 
   return (
     <div className="p-2 pb-3 border-t">
@@ -21,24 +23,22 @@ export function Stroke() {
       </div>
 
       <div className="grid grid-cols-[repeat(3,2fr)_repeat(2,28px)] gap-2">
-        {form.watch("stroke") ? (
+        {hasStroke ? (
           <>
             <PropertyColorInput
               containerClassNames="col-span-4"
-              control={form.control}
-              name="stroke.fill"
+              name="strokeFill"
               label="Fill"
             />
             <PropertyButton
               className="col-span-1"
-              onClick={() => handleSetValue("stroke", undefined)}
+              onClick={() => setValue("strokeFill", "none")}
             >
               <Minus className="size-3.5" />
             </PropertyButton>
             <PropertySelect
               containerClassNames="col-span-2"
-              control={form.control}
-              name="stroke.style"
+              name="strokeStyle"
               label="Style"
             >
               <PropertySelectTrigger className="w-full">
@@ -55,24 +55,21 @@ export function Stroke() {
               containerClassNames="col-span-2"
               icon={SquareIcon}
               rightElement={<span className="text-xs px-1">px</span>}
-              control={form.control}
-              name="stroke.width"
+              name="strokeWidth"
               label="Width"
             />
           </>
         ) : (
           <PropertyButton
-            onClick={() =>
-              handleSetValue("stroke", {
-                fill: {
-                  type: "color",
-                  value: "#000000",
-                  opacity: 100,
-                },
-                width: 1,
-                style: "solid",
-              })
-            }
+            onClick={() => {
+              setValue("strokeFill", {
+                type: "color",
+                value: "#000000",
+                opacity: 100,
+              });
+              setValue("strokeWidth", 1);
+              setValue("strokeStyle", "solid");
+            }}
             variant="outline"
             className="col-span-4 text-xs w-full border-0"
           >

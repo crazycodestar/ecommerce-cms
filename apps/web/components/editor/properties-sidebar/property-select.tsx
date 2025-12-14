@@ -1,4 +1,3 @@
-import { FormControl, FormField, FormItem } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -11,67 +10,51 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { StyleSchema } from "@/db/types/style";
 import { cn } from "@/lib/utils";
-import {
-  useController,
-  type Control,
-  type FieldValues,
-  type Path,
-} from "react-hook-form";
-import { useStyle } from "./style-context";
 import { useState } from "react";
+import { useStyleField } from "./style-context";
 
-interface PropertySelectInputProps<T extends FieldValues> {
-  control: Control<T>;
-  name: Path<T>;
+interface PropertySelectInputProps {
+  name: keyof StyleSchema;
   label?: string;
   containerClassNames?: string;
   children: React.ReactNode;
 }
 
-export const PropertySelect = <T extends FieldValues>({
-  control,
+export const PropertySelect = ({
   name,
   label,
   containerClassNames,
   children,
-}: PropertySelectInputProps<T>) => {
+}: PropertySelectInputProps) => {
   const [open, onOpenChange] = useState(false);
-
-  const { form, onSubmit } = useStyle();
-  const { field } = useController({ control, name });
+  const { field, setValue } = useStyleField({ property: name });
 
   function handleChange(value: string) {
-    field.onChange(value);
-    form.handleSubmit(onSubmit)();
+    setValue(value as StyleSchema[typeof name]);
   }
 
   return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <FormItem className={cn("grid", containerClassNames)}>
-              <Select
-                onValueChange={handleChange}
-                value={field.value}
-                open={open}
-                onOpenChange={onOpenChange}
-              >
-                {children}
-              </Select>
-              {label && !open && (
-                <TooltipContent className="pointer-events-none">
-                  <p>{label}</p>
-                </TooltipContent>
-              )}
-            </FormItem>
-          </TooltipTrigger>
-        </Tooltip>
-      )}
-    />
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={cn("grid", containerClassNames)}>
+          <Select
+            onValueChange={handleChange}
+            value={field.value as string}
+            open={open}
+            onOpenChange={onOpenChange}
+          >
+            {children}
+          </Select>
+          {label && !open && (
+            <TooltipContent className="pointer-events-none">
+              <p>{label}</p>
+            </TooltipContent>
+          )}
+        </div>
+      </TooltipTrigger>
+    </Tooltip>
   );
 };
 
@@ -79,9 +62,7 @@ export const PropertySelectTrigger = ({
   className,
   ...props
 }: React.ComponentProps<typeof SelectTrigger>) => (
-  <FormControl>
-    <SelectTrigger className={cn("max-h-7", className)} size="sm" {...props} />
-  </FormControl>
+  <SelectTrigger className={cn("max-h-7", className)} size="sm" {...props} />
 );
 export const PropertySelectValue = SelectValue;
 export const PropertySelectContent = SelectContent;

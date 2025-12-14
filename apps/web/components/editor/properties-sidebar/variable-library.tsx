@@ -11,15 +11,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useEditor } from "@/hooks/use-editor";
-import {
-  Variable,
-  variableSchemas,
-  VariableType,
-} from "@/hooks/use-editor/variables";
+import { Variable, colorVariableSchema } from "@/db/types";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MinusIcon, PlusIcon, Settings2Icon, TrashIcon, X } from "lucide-react";
+import { isEqual } from "es-toolkit";
+import { MinusIcon, PlusIcon, X } from "lucide-react";
 import { ComponentProps, useEffect, useState } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
@@ -27,11 +23,26 @@ import { PropertyButton } from "./property-button";
 import {
   ColorIndicator,
   ColorPicker,
-  ColorValueInput,
-} from "./property-color-input";
+} from "./property-color-input/color-picker";
+import { ColorValueInput } from "./property-color-input/color-value-picker";
 import { PropertyInputPrimitive as PropertyInput } from "./property-input";
-import { isEqual } from "es-toolkit";
+import { useLiveQuery } from "dexie-react-hooks";
+import { vars } from "@/db/lib/vars";
 
+type VariableType = Variable["type"];
+
+const baseVariableSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, { message: "Name is required" }),
+  // slug: z.string().min(1, { message: "Slug is required" }),
+});
+
+const variableSchemas = {
+  color: z.object({
+    ...baseVariableSchema.shape,
+    ...colorVariableSchema.shape,
+  }),
+};
 interface VariablePopoverProps<T extends VariableType> {
   varType: T;
   defaultValue: Partial<z.infer<(typeof variableSchemas)[T]>> & {
@@ -53,24 +64,23 @@ export function VariablePopover<T extends VariableType>({
   children,
   state: initialState,
 }: VariablePopoverProps<T>) {
-  const variables = useEditor((state) => state.variables);
-  const variablesOfType = variables.filter((v) => v.type === varType);
-  const createVariable = useEditor((state) => state.addVariable);
+  const variables = useLiveQuery(() => vars.list(), []);
+  const variablesOfType = variables?.filter((v) => v.type === varType);
 
   const [state, setState] = useState<"library" | "add">("library");
   const [open, onOpenChange] = useState(false);
 
   const finalState = initialState ?? state;
 
-  function handleSubmit(data: z.infer<(typeof variableSchemas)[T]>) {
+  async function handleSubmit(data: z.infer<(typeof variableSchemas)[T]>) {
     onOpenChange(false);
-    createVariable(data);
-    onComplete?.(data.id);
+    const slug = await vars.create(data);
+    onComplete?.(slug);
   }
 
-  function handleSelect(id: string) {
+  function handleSelect(slug: string) {
     onOpenChange(false);
-    onComplete?.(id);
+    onComplete?.(slug);
   }
 
   const variableForm = useVariableForm({
@@ -111,11 +121,11 @@ export function VariablePopover<T extends VariableType>({
         </div>
         {state === "library" && (
           <div className="flex flex-col gap-1 h-[250px] overflow-y-auto">
-            {variablesOfType.map((v) => (
+            {variablesOfType?.map((v) => (
               <VariableItem
                 key={v.id}
                 variable={v}
-                onClick={() => handleSelect(v.id)}
+                onClick={() => handleSelect(v.slug)}
               />
             ))}
           </div>
@@ -145,7 +155,7 @@ function useVariableForm<T extends VariableType>({
   value,
   onSubmit,
 }: UseVariableFormProps<T>) {
-  const form = useForm<Variable>({
+  const form = useForm<Omit<Variable, "slug">>({
     resolver: zodResolver(schema),
     mode: "all",
   });
@@ -179,7 +189,7 @@ function useVariableForm<T extends VariableType>({
 
 interface VariableFormProps<T extends VariableType> {
   varType: T;
-  form: UseFormReturn<Variable>;
+  form: UseFormReturn<Omit<Variable, "slug">>;
   onSubmit: (data: z.infer<(typeof variableSchemas)[T]>) => void;
   returnKey?: string;
 }
@@ -272,25 +282,21 @@ function VariableForm<T extends VariableType>({
 }
 
 export function VariableLibrary() {
-  const variables = useEditor((state) => state.variables);
+  const variables = useLiveQuery(() => vars.list(), []);
 
   return (
     <div className="grid">
-      {variables.map((v) => (
-        <VariableItemEdit key={v.id} variable={v} />
-      ))}
+      {variables?.map((v) => <VariableItemEdit key={v.id} variable={v} />)}
     </div>
   );
 }
 
 function VariableItemEdit({ variable }: { variable: Variable }) {
-  const updateVariable = useEditor((state) => state.updateVariable);
-
   const [open, onOpenChange] = useState(false);
 
   function handleSubmit(data: z.infer<(typeof variableSchemas)[VariableType]>) {
     onOpenChange(false);
-    updateVariable(variable.id, data);
+    vars.update(variable.id, data);
   }
 
   const variableForm = useVariableForm({

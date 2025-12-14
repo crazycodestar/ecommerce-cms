@@ -1,34 +1,16 @@
 "use client";
 
-import {
-  BannerSchema,
-  CarouselSchema,
-  CategoriesSchema,
-  CollectionCarouselSchema,
-  Content,
-  ProductCarouselSchema,
-} from "@/hooks/use-editor";
-import type { Size } from "@/hooks/use-view";
 import { cn } from "@/lib/utils";
 import { GripVertical } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { BannerComponent } from "./banner-component";
-import { CarouselComponent } from "./carousel";
-import { CategoriesComponent } from "./categories-component";
-import { CollectionCarouselComponent } from "./collection-carousel-component";
-import { EmptyState } from "./empty-state";
-import { ProductCarouselComponent } from "./product-carousel";
 
 export const ContentConsumer = React.forwardRef<
   HTMLDivElement,
   {
-    content: Content[];
-    slug: string;
-    view: Size;
     width: number | null;
     setWidth: (width: number) => void;
   }
->(({ content, slug, view, width, setWidth }, ref) => {
+>(({ width, setWidth }, ref) => {
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef<number>(0);
@@ -78,7 +60,6 @@ export const ContentConsumer = React.forwardRef<
         style={{ width: `${width}px`, maxWidth: "100%" }}
       >
         <iframe
-          key={content.length}
           id="editor-iframe"
           src={window.location.href}
           className={cn(
@@ -102,72 +83,3 @@ export const ContentConsumer = React.forwardRef<
     </div>
   );
 });
-
-export const CarouselWrapper = ({
-  content,
-}: {
-  content: CarouselSchema["content"];
-}) => {
-  if (!content?.items?.length) return <EmptyState />;
-
-  return (
-    // @ts-expect-error - TODO: fix this
-    <CarouselComponent {...content} />
-  );
-};
-
-export const ProductCarouselWrapper = ({
-  content,
-  slug,
-}: {
-  content: ProductCarouselSchema["content"];
-  slug: string;
-}) => {
-  const isMissing = Object.values(content).some((value) => !value);
-  if (isMissing) return <EmptyState />;
-
-  return (
-    // @ts-expect-error - TODO: fix this
-    <ProductCarouselComponent {...content} storeSlug={slug} />
-  );
-};
-
-export const BannerWrapper = ({
-  content,
-}: {
-  content: BannerSchema["content"];
-}) => {
-  const isMissing = Object.values(content).some((value) => !value);
-  if (isMissing) return <EmptyState />;
-
-  return (
-    // @ts-expect-error - TODO: fix this
-    <BannerComponent {...content} />
-  );
-};
-
-export const CategoriesWrapper = ({
-  content,
-}: {
-  content: CategoriesSchema["content"];
-}) => {
-  if (!content?.items?.length) return <EmptyState />;
-
-  return (
-    // @ts-expect-error - TODO: fix this
-    <CategoriesComponent {...content} />
-  );
-};
-
-export const CollectionCarouselWrapper = ({
-  content,
-}: {
-  content: CollectionCarouselSchema["content"];
-}) => {
-  if (!content?.items?.length) return <EmptyState />;
-
-  return (
-    // @ts-expect-error - TODO: fix this
-    <CollectionCarouselComponent {...content} />
-  );
-};
