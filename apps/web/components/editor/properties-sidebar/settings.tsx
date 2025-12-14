@@ -14,13 +14,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { useEditor } from "@/context/editor";
+import { layers } from "@/db/lib/layers";
 import {
   useBlurOnEnter,
   useBlurOnEnterTextarea,
 } from "@/hooks/use-blur-on-enter";
-import { useEditor } from "@/hooks/use-editor";
-import { layers } from "@/hooks/use-editor/elements";
-import { ColorSchema, ImageSchema } from "@/hooks/use-editor/properties";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useRef } from "react";
@@ -35,8 +34,10 @@ import { z } from "zod";
 import {
   ColorIndicator,
   ColorPicker,
-  ColorValueInput,
-} from "./property-color-input";
+} from "./property-color-input/color-picker";
+import { ColorValueInput } from "./property-color-input/color-value-picker";
+import { ColorSchema, ImageSchema } from "./property-color-input/shared";
+import { useLiveQuery } from "dexie-react-hooks";
 
 const textSchema = z.object({
   key: z.literal("text"),
@@ -81,18 +82,19 @@ type SettingsSChemaPropertiesValue =
   SettingsSchema["properties"][number]["value"];
 
 export function Settings() {
-  const updateElement = useEditor((state) => state.updateElement);
-  const focusElement = useEditor((state) => state.focusElement);
-  const elements = useEditor((state) => state.pages[0].body);
-  const element = focusElement ? layers.find(elements, focusElement) : null;
+  // const updateElement = useEditor((state) => state.updateElement);
+  const { focusElementId } = useEditor();
+  const element = useLiveQuery(async () => {
+    if (!focusElementId) return;
+    return await layers.getSlot(focusElementId);
+  }, [focusElementId]);
 
   const values = element
-    ? Object.entries(element)
+    ? Object.entries(element.data ?? {})
         .map(([key, value]) => {
           if (
             key === "id" ||
             key === "name" ||
-            key === "hasBeenEdited" ||
             key === "children" ||
             key === "style" ||
             key === "className" ||
@@ -115,7 +117,7 @@ export function Settings() {
   });
 
   const onSubmit = (data: SettingsSchema) => {
-    if (!focusElement) return;
+    if (!focusElementId) return;
 
     const { success, data: result, error } = settingsSchema.safeParse(data);
 
@@ -128,7 +130,7 @@ export function Settings() {
         {} as Record<SettingsSChemaPropertiesKey, SettingsSChemaPropertiesValue>
       );
 
-      updateElement(focusElement, { ...obj });
+      layers.updateSlot(focusElementId, { ...obj });
       return;
     }
 

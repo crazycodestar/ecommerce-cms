@@ -1,71 +1,50 @@
-import { FormControl, FormField, FormItem } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
-import { ElementType, useEffect, useRef, useState } from "react";
-import type { Control, FieldValues, Path } from "react-hook-form";
-import { useController } from "react-hook-form";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useStyle } from "./style-context";
+import { StyleSchema } from "@/db/types/style";
 import { useBlurOnEnter } from "@/hooks/use-blur-on-enter";
 import { useResizeOnDrag } from "@/hooks/use-resize-on-drag";
+import { cn } from "@/lib/utils";
+import { Undo2 } from "lucide-react";
+import { ElementType } from "react";
+import { useStyleField } from "./style-context";
 
-function getValueFromObject<T extends object>(value: T): T[keyof T] | "Mixed" {
-  const values = Object.values(value);
-  return values.every((v) => values[0] === v) ? values[0] : "Mixed";
+type InputType = string | number | { [k: string]: any };
+export interface PropertyInputPrimitiveProps<T extends InputType>
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value"> {
+  value: T;
+  setValue?: (arg: T) => void;
+  containerClassNames?: string;
+  icon?: ElementType;
+  leftElement?: React.ReactNode;
+  rightElement?: React.ReactNode;
+  className?: string;
+  upperLimit?: number;
+  lowerLimit?: number;
+  increment?: number;
+  sensitivity?: number;
 }
 
-function setValuesInObject<T extends object>(value: T, newValue: T[keyof T]) {
-  return {
-    ...Object.fromEntries(Object.keys(value).map((key) => [key, newValue])),
-  };
-}
-
-type PropertyInputProps<T extends FieldValues> =
-  React.InputHTMLAttributes<HTMLInputElement> & {
-    control: Control<T>;
-    name: Path<T>;
-    icon?: ElementType;
-    leftElement?: React.ReactNode;
-    label: string;
-    containerClassNames?: string;
-    rightElement?: React.ReactNode;
-    upperLimit?: number;
-    lowerLimit?: number;
-    increment?: number;
-    sensitivity?: number;
-  };
-
-export const PropertyInput = <T extends FieldValues>({
-  control,
-  name,
+export const PropertyInputPrimitive = <T extends InputType>({
+  containerClassNames,
   icon: Icon,
   leftElement,
-  label,
-  containerClassNames,
-  className,
   rightElement,
+  className,
+  value,
   upperLimit,
   lowerLimit,
   increment,
   sensitivity,
+  setValue,
   ...inputProps
-}: PropertyInputProps<T>) => {
-  const { form, onSubmit } = useStyle();
-  const { field } = useController({ control, name });
-
+}: PropertyInputPrimitiveProps<T>) => {
   const { inputRef } = useBlurOnEnter();
   const { handleMouseDown } = useResizeOnDrag({
     onDrag: (deltaX) => {
-      const currentValue = (
-        typeof field.value === "object"
-          ? getValueFromObject(field.value) === "Mixed"
-            ? 0
-            : getValueFromObject(field.value)
-          : field.value
-      ) as number;
+      const currentValue = value as number;
       const sensitivityFactor = sensitivity !== undefined ? sensitivity : 1;
       const incrementFactor = increment !== undefined ? increment : 1;
       const appliedValue = Number(
@@ -81,70 +60,89 @@ export const PropertyInput = <T extends FieldValues>({
         ),
         upperLimit !== undefined ? upperLimit : Infinity
       );
-      field.onChange(
-        typeof field.value === "object"
-          ? setValuesInObject(field.value, finalValue)
-          : finalValue
-      );
-      form.handleSubmit(onSubmit)();
+      setValue?.(finalValue as T);
     },
   });
 
   return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <FormItem
-              className={cn(
-                "flex items-center gap-1.5 bg-background pl-1.5 rounded-md border h-fit",
-                containerClassNames
-              )}
-            >
-              {Icon && (
-                <div
-                  className="text-muted-foreground/80 h-7 flex items-center justify-center peer-disabled:opacity-50 hover:cursor-col-resize"
-                  onMouseDown={handleMouseDown}
-                >
-                  <Icon size={14} width={14} height={14} aria-hidden="true" />
-                </div>
-              )}
-              {leftElement}
-              <FormControl>
-                <input
-                  className={cn(
-                    "peer text-sm w-full h-7 outline-none text-foreground/70",
-                    className
-                  )}
-                  {...field}
-                  ref={inputRef}
-                  onBlur={() => form.handleSubmit(onSubmit)()}
-                  onFocus={(e) => e.target.select()}
-                  value={
-                    typeof field.value === "object"
-                      ? getValueFromObject(field.value)
-                      : field.value
-                  }
-                  onChange={(e) =>
-                    field.onChange(
-                      typeof field.value === "object"
-                        ? setValuesInObject(field.value, e.target.value)
-                        : e.target.value
-                    )
-                  }
-                  {...inputProps}
-                />
-              </FormControl>
-              {rightElement}
-              <TooltipContent className="pointer-events-none">
-                <p>{label}</p>
-              </TooltipContent>
-            </FormItem>
-          </TooltipTrigger>
-        </Tooltip>
+    <div
+      className={cn(
+        "relative flex items-center gap-1.5 bg-background pl-1.5 rounded-md border h-fit",
+        containerClassNames
       )}
-    />
+    >
+      {Icon && (
+        <div
+          className={cn(
+            "text-muted-foreground/80 h-7 flex items-center justify-center peer-disabled:opacity-50 cursor-ew-resize",
+            inputProps.disabled && "opacity-50 pointer-events-none"
+          )}
+          onMouseDown={handleMouseDown}
+        >
+          <Icon size={14} width={14} height={14} aria-hidden="true" />
+        </div>
+      )}
+      {leftElement}
+
+      <input
+        className={cn(
+          "peer text-sm w-full h-7 outline-none text-foreground/70",
+          inputProps.disabled && "opacity-50 pointer-events-none",
+          className
+        )}
+        ref={inputRef}
+        onFocus={(e) => e.target.select()}
+        value={value as string}
+        {...inputProps}
+      />
+
+      <div
+        className={cn(inputProps.disabled && "opacity-50 pointer-events-none")}
+      >
+        {rightElement}
+      </div>
+    </div>
+  );
+};
+interface PropertyInputProps
+  extends Omit<PropertyInputPrimitiveProps<string>, "setValue" | "value"> {
+  name: keyof StyleSchema;
+  label: string;
+}
+
+export const PropertyInput = ({
+  name,
+  label,
+  ...inputProps
+}: PropertyInputProps) => {
+  const { field, previousValue, reset, setValue } = useStyleField({
+    property: name,
+  });
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className={cn("relative", inputProps.containerClassNames)}>
+          {previousValue !== undefined && field.value !== previousValue && (
+            <button
+              type="button"
+              onClick={reset}
+              className="absolute z-10 top-0 right-0 size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center -translate-y-1/2 translate-x-1/2"
+            >
+              <Undo2 size={10} />
+            </button>
+          )}
+          <PropertyInputPrimitive
+            {...field}
+            containerClassNames="w-full"
+            setValue={setValue}
+            {...inputProps}
+          />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent className="pointer-events-none">
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 };

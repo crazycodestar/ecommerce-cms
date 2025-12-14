@@ -1235,3 +1235,43 @@ export const BorderRadiusBottomRightIcon = (
     />
   </svg>
 );
+
+export const VariableIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={24}
+    height={24}
+    viewBox="0 0 24 24"
+    fill="none"
+    {...props}
+  >
+    <path
+      d="M8.97487 4.02513C7.60804 2.65829 5.39196 2.65829 4.02513 4.02513C2.65829 5.39196 2.65829 7.60804 4.02513 8.97487C5.39196 10.3417 7.60804 10.3417 8.97487 8.97487C10.3417 7.60804 10.3417 5.39196 8.97487 4.02513Z"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M19.9749 4.02513C18.608 2.65829 16.392 2.65829 15.0251 4.02513C13.6583 5.39196 13.6583 7.60804 15.0251 8.97487C16.392 10.3417 18.608 10.3417 19.9749 8.97487C21.3417 7.60804 21.3417 5.39196 19.9749 4.02513Z"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M19.9749 15.0251C18.608 13.6583 16.392 13.6583 15.0251 15.0251C13.6583 16.392 13.6583 18.608 15.0251 19.9749C16.392 21.3417 18.608 21.3417 19.9749 19.9749C21.3417 18.608 21.3417 16.392 19.9749 15.0251Z"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8.97487 15.0251C7.60804 13.6583 5.39196 13.6583 4.02513 15.0251C2.65829 16.392 2.65829 18.608 4.02513 19.9749C5.39196 21.3417 7.60804 21.3417 8.97487 19.9749C10.3417 18.608 10.3417 16.392 8.97487 15.0251Z"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

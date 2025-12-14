@@ -5,9 +5,7 @@ import { EditorSidebar } from "@/components/editor/editor-sidebar";
 import { Navbar } from "@/components/editor/nav-bar";
 import { PropertiesSidebar } from "@/components/editor/properties-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Content, useEditor, useSync } from "@/hooks/use-editor";
 import { useView } from "@/hooks/use-view";
-import { tryCatch } from "@/lib/try-catch";
 import { api } from "@packages/backend/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { Loader2 } from "lucide-react";
@@ -15,9 +13,33 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
+import { EditorProvider, useEditor } from "@/context/editor";
 import { View } from "./view";
 
 export default function ContentPage() {
+  return (
+    <EditorProvider>
+      <Editor />
+    </EditorProvider>
+  );
+}
+
+function Editor() {
+  // const deleteElement = useEditor((state) => state.deleteElement);
+  const { setFocusElementId } = useEditor();
+
+  // useHotkeys(
+  //   "delete, backspace",
+  //   () => focusElement && deleteElement(focusElement),
+  //   {
+  //     enableOnFormTags: false,
+  //   }
+  // );
+
+  useHotkeys("esc", () => setFocusElementId(undefined), {
+    enableOnFormTags: false,
+  });
+
   const [shouldRender, setShouldRender] = useState(false);
   const [isInIframe, setIsInIframe] = useState(false);
 
@@ -28,41 +50,21 @@ export default function ContentPage() {
     setIsInIframe(window.self !== window.top);
   }, []);
 
-  const deleteElement = useEditor((state) => state.deleteElement);
-  const focusElement = useEditor((state) => state.focusElement);
-
-  useHotkeys(
-    "delete, backspace",
-    () => focusElement && deleteElement(focusElement),
-    {
-      enableOnFormTags: false,
-    }
-  );
-
   if (!shouldRender) return null;
   return isInIframe ? <View /> : <PageContent />;
 }
 
 const PageContent = () => {
-  useSync();
-
   const boundaryRef = useRef<HTMLDivElement>(null);
   const { view, setView, width, setWidth } = useView({ boundaryRef });
   const { slug } = useParams<{ slug: string }>();
   const contentInit = useQuery(api.contents.getContent);
   const isPending = contentInit === undefined;
 
-  const setContent = useEditor((state) => state.setContent);
-  const content = useEditor((state) => state.content);
-
   useEffect(() => {
     if (isPending) return;
-
     if (!contentInit) return;
-
-    const parsedContent = JSON.parse(contentInit) as Content[];
-    setContent(parsedContent);
-  }, [isPending, contentInit, setContent]);
+  }, [isPending, contentInit]);
 
   // submit content
   const updateContent = useMutation(api.contents.updateContent);
@@ -74,16 +76,16 @@ const PageContent = () => {
 
   async function onSubmit() {
     startTransition(async () => {
-      const { error } = await tryCatch(
-        updateContent({
-          content: JSON.stringify(content),
-        })
-      );
-      if (error) {
-        console.error(error);
-        toast.error("Failed to update content");
-        return;
-      }
+      // const { error } = await tryCatch(
+      //   updateContent({
+      //     content: JSON.stringify(content),
+      //   })
+      // );
+      // if (error) {
+      //   console.error(error);
+      //   toast.error("Failed to update content");
+      //   return;
+      // }
 
       toast.success("Content updated successfully");
 
@@ -120,16 +122,13 @@ const PageContent = () => {
           <ContentPageLoading />
         ) : (
           <ContentConsumer
-            content={content}
-            slug={slug}
-            view={view}
             width={width}
             setWidth={setWidth}
             ref={boundaryRef}
           />
         )}
       </SidebarInset>
-      <PropertiesSidebar side="right" />
+      <PropertiesSidebar view={view} side="right" />
     </SidebarProvider>
   );
 };

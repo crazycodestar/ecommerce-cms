@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/popover";
 
 export function Effects() {
-  const { form, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
 
   return (
     <div className="p-2 pb-3 border-t">
@@ -30,9 +30,9 @@ export function Effects() {
             <PropertyButton
               disabled={
                 ![
-                  form.watch("dropShadow"),
-                  form.watch("blur"),
-                  form.watch("backdropBlur"),
+                  getValue("dropShadow"),
+                  getValue("blur"),
+                  getValue("backdropBlur"),
                 ].includes(undefined)
               }
               className="disabled:opacity-50 disabled:cursor-not-allowed"
@@ -42,10 +42,10 @@ export function Effects() {
             </PropertyButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {form.watch("dropShadow") === undefined && (
+            {getValue("dropShadow") === undefined && (
               <DropdownMenuItem
                 onClick={() =>
-                  handleSetValue("dropShadow", {
+                  setValue("dropShadow", {
                     x: 0,
                     y: 2,
                     spread: 2,
@@ -61,16 +61,14 @@ export function Effects() {
                 Drop shadow
               </DropdownMenuItem>
             )}
-            {form.watch("blur") === undefined && (
-              <DropdownMenuItem onClick={() => handleSetValue("blur", 0)}>
+            {getValue("blur") === undefined && (
+              <DropdownMenuItem onClick={() => setValue("blur", 0)}>
                 <RadialIcon width={14} height={14} />
                 Blur
               </DropdownMenuItem>
             )}
-            {form.watch("backdropBlur") === undefined && (
-              <DropdownMenuItem
-                onClick={() => handleSetValue("backdropBlur", 0)}
-              >
+            {getValue("backdropBlur") === undefined && (
+              <DropdownMenuItem onClick={() => setValue("backdropBlur", 0)}>
                 <SquareIcon size={14} />
                 Backdrop blur
               </DropdownMenuItem>
@@ -80,11 +78,11 @@ export function Effects() {
       </div>
 
       <div className="grid grid-cols-[repeat(3,2fr)_repeat(2,28px)] gap-2">
-        {form.watch("dropShadow") && (
+        {getValue("dropShadow") && (
           <>
             <DropShadowInput className="col-span-4" />
             <PropertyButton
-              onClick={() => handleSetValue("dropShadow", undefined)}
+              onClick={() => setValue("dropShadow", undefined)}
               label="Remove"
             >
               <MinusIcon size={14} className="size-3.5" />
@@ -92,11 +90,11 @@ export function Effects() {
           </>
         )}
 
-        {form.watch("blur") !== undefined && (
+        {getValue("blur") !== undefined && (
           <>
             <BlurInput className="col-span-4" />
             <PropertyButton
-              onClick={() => handleSetValue("blur", undefined)}
+              onClick={() => setValue("blur", undefined)}
               label="Remove"
             >
               <MinusIcon size={14} className="size-3.5" />
@@ -104,11 +102,11 @@ export function Effects() {
           </>
         )}
 
-        {form.watch("backdropBlur") !== undefined && (
+        {getValue("backdropBlur") !== undefined && (
           <>
             <BackdropBlurInput className="col-span-4" />
             <PropertyButton
-              onClick={() => handleSetValue("backdropBlur", undefined)}
+              onClick={() => setValue("backdropBlur", undefined)}
               label="Remove"
             >
               <MinusIcon size={14} className="size-3.5" />
@@ -126,7 +124,7 @@ export function Effects() {
 }
 
 function DropShadowInput({ className }: { className?: string }) {
-  const { form } = useStyle();
+  const { getValue, setValue } = useStyle();
 
   return (
     <Popover>
@@ -150,7 +148,6 @@ function DropShadowInput({ className }: { className?: string }) {
         <PropertyInput
           icon={XIcon}
           containerClassNames="col-span-2"
-          control={form.control}
           name="dropShadow.x"
           label="X"
         />

@@ -4,31 +4,50 @@ import {
   BorderRadiusTopLeftIcon,
   BorderRadiusTopRightIcon,
 } from "@/components/icons";
-import { useEditor } from "@/hooks/use-editor";
-import { layers } from "@/hooks/use-editor/elements";
-import { isTextElement } from "@/hooks/use-editor/properties";
-import { Minus, ScanIcon, SunMediumIcon } from "lucide-react";
+import { vars } from "@/db/lib/vars";
+import { Minus, ScanIcon, SunMediumIcon, Unlink } from "lucide-react";
 import { useState } from "react";
+import { MultiPropertyInput } from "./multi-property-input";
 import { PropertyButton } from "./property-button";
 import { PropertyColorInput } from "./property-color-input";
 import { PropertyInput } from "./property-input";
 import { useStyle } from "./style-context";
+import { VariablePopover } from "./variable-library";
 
-export function Appearance() {
-  const focusElementVal = useEditor(
-    (state) =>
-      state.focusElement &&
-      layers.find(state.pages[0].body, state.focusElement)?.type
-  );
-  const isTextElementBoolean =
-    focusElementVal && !!isTextElement(focusElementVal);
-
+export function Appearance({
+  isTextElementBoolean,
+}: {
+  isTextElementBoolean: boolean;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { form, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
+
+  const fillValue = getValue("fill");
+
+  function handleComplete(value: string) {
+    setValue({
+      fill: {
+        type: "variable",
+        value,
+      },
+    });
+  }
+
+  async function handleUnlink() {
+    if (fillValue === "none") return;
+    if (fillValue.type !== "variable") return;
+
+    const value = await vars.getBySlug(fillValue.value);
+    if (!value) return;
+
+    setValue({
+      fill: value.value,
+    });
+  }
 
   return (
     <div className="p-2 pb-3 border-t">
-      <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-1.5 h-7 items-center">
+      <div className="grid grid-cols-[repeat(3,2fr)_28px_28px] gap-2 mb-1.5 h-7 items-center">
         <h3 className="text-sm font-medium col-span-4">Appearance</h3>
       </div>
 
@@ -36,15 +55,18 @@ export function Appearance() {
         <PropertyInput
           icon={SunMediumIcon}
           containerClassNames="col-span-2"
-          control={form.control}
           name="opacity"
           label="Opacity"
         />
-        <PropertyInput
+        <MultiPropertyInput
+          names={[
+            "borderRadiusTopLeft",
+            "borderRadiusTopRight",
+            "borderRadiusBottomLeft",
+            "borderRadiusBottomRight",
+          ]}
           icon={ScanIcon}
           containerClassNames="col-span-2"
-          control={form.control}
-          name="borderRadius"
           label="Border radius"
           lowerLimit={0}
         />
@@ -59,70 +81,96 @@ export function Appearance() {
             <PropertyInput
               icon={BorderRadiusTopLeftIcon}
               containerClassNames="col-span-2"
-              control={form.control}
-              name="borderRadius.topLeft"
+              name="borderRadiusTopLeft"
               label="Border top left"
             />
             <PropertyInput
               icon={BorderRadiusTopRightIcon}
               containerClassNames="col-span-2"
-              control={form.control}
-              name="borderRadius.topRight"
+              name="borderRadiusTopRight"
               label="Border top right"
-            />
-            <PropertyInput
-              icon={BorderRadiusBottomRightIcon}
-              containerClassNames="col-span-2"
-              control={form.control}
-              name="borderRadius.bottomLeft"
-              label="Border bottom left"
             />
             <PropertyInput
               icon={BorderRadiusBottomLeftIcon}
               containerClassNames="col-span-2"
-              control={form.control}
-              name="borderRadius.bottomRight"
+              name="borderRadiusBottomLeft"
+              label="Border bottom left"
+            />
+            <PropertyInput
+              icon={BorderRadiusBottomRightIcon}
+              containerClassNames="col-span-2"
+              name="borderRadiusBottomRight"
               label="Border bottom right"
             />
           </>
         )}
 
-        {focusElementVal !== "image" &&
-          (form.watch("fill.value") ? (
-            <>
-              <PropertyColorInput
-                containerClassNames="col-span-4"
-                control={form.control}
-                name="fill.value"
-                label="Fill"
+        {fillValue !== "none" && fillValue.type !== "image" ? (
+          <>
+            <PropertyColorInput
+              containerClassNames="col-span-3"
+              name="fill"
+              label="Fill"
+            />
+            {fillValue.type !== "variable" && (
+              <VariablePopover
+                triggerClassName="col-span-1"
+                varType="color"
+                offset={167}
+                defaultValue={{
+                  type: "color",
+                  value: fillValue,
+                }}
+                onComplete={handleComplete}
               />
-              {!isTextElementBoolean && (
-                <PropertyButton
-                  className="col-span-1"
-                  onClick={() => handleSetValue("fill", undefined)}
-                >
-                  <Minus className="size-3.5" />
-                </PropertyButton>
-              )}
-            </>
-          ) : (
+            )}
+            {fillValue.type === "variable" && (
+              <PropertyButton onClick={handleUnlink}>
+                <Unlink className="size-3.5" />
+              </PropertyButton>
+            )}
+            {!isTextElementBoolean && (
+              <PropertyButton
+                className="col-span-1"
+                onClick={() => setValue({ fill: "none" })}
+              >
+                <Minus className="size-3.5" />
+              </PropertyButton>
+            )}
+          </>
+        ) : (
+          <>
             <PropertyButton
               onClick={() =>
-                handleSetValue("fill.value", {
-                  type: "color",
-                  value: "#ffffff",
-                  opacity: 100,
+                setValue({
+                  fill: {
+                    type: "color",
+                    value: "#ffffff",
+                    opacity: 100,
+                  },
                 })
               }
               variant="outline"
               className="col-span-4 text-xs w-full border-0"
             >
-              {/* <PlusIcon className="size-3.5 mr-2" /> */}
               Add Fill
             </PropertyButton>
-          ))}
+            <VariablePopover
+              triggerClassName="col-span-1"
+              varType="color"
+              defaultValue={{
+                value: {
+                  type: "color",
+                  value: "#ffffff",
+                  opacity: 100,
+                },
+              }}
+              onComplete={handleComplete}
+            />
+          </>
+        )}
         {/* <pre className="col-span-4">
-          {JSON.stringify(form.watch("opacity"), null, 2)}
+          {JSON.stringify(form.watch("fill"), null, 2)}
         </pre> */}
       </div>
     </div>

@@ -10,6 +10,7 @@ import {
 export const PropertyButton = ({
   className,
   label,
+  size = "icon",
   ...props
 }: ComponentProps<typeof Button> & { label?: string }) => {
   return (
@@ -17,7 +18,7 @@ export const PropertyButton = ({
       <TooltipTrigger asChild>
         <Button
           type="button"
-          size="icon"
+          size={size}
           variant="ghost"
           className={cn("col-span-1 size-7", className)}
           {...props}

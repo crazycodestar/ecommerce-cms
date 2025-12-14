@@ -8,11 +8,11 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { useEffect, useRef } from "react";
-import invariant from "tiny-invariant";
+import { useEditor } from "@/context/editor";
+import { layers } from "@/db/lib/layers";
+import { addSlot } from "@/db/resource/slots";
+import { Element } from "@/db/types";
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { useEditor } from "@/hooks/use-editor";
-import { Element, layers } from "@/hooks/use-editor/elements";
 import {
   BoxIcon,
   CodeXmlIcon,
@@ -20,6 +20,8 @@ import {
   LinkIcon,
   TextIcon,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
+import invariant from "tiny-invariant";
 
 type AddElement = {
   title: string;
@@ -30,65 +32,55 @@ type AddElement = {
 const ELEMENTS = [
   {
     title: "Section",
-    type: Element.section.type,
+    type: "section",
     icon: SectionIcon,
   },
   {
     title: "Text",
-    type: Element.text.type,
+    type: "text",
     icon: TextIcon,
   },
   {
     title: "Image",
-    type: Element.image.type,
+    type: "image",
     icon: ImageIcon,
   },
   {
     title: "Container",
-    type: Element.container.type,
+    type: "container",
     icon: BoxIcon,
   },
   {
     title: "Link",
-    type: Element.link.type,
+    type: "link",
     icon: LinkIcon,
   },
   {
     title: "Link Block",
-    type: Element.linkBlock.type,
+    type: "linkBlock",
     icon: LinkBlockIcon,
   },
   {
     title: "Code Embed",
-    type: Element.codeEmbed.type,
+    type: "codeEmbed",
     icon: CodeXmlIcon,
   },
 ] satisfies AddElement[];
-
-function getChildren(type: Element["type"]) {
-  if (type === Element.section.type) {
-    return ELEMENTS.filter((element) => element.type !== "section");
-  }
-  return [];
-}
 
 export function AddElementSidebar({
   setIsOpen,
 }: {
   setIsOpen: (open: boolean) => void;
 }) {
-  const pages = useEditor((state) => state.pages);
-  const homePage = pages[0];
-  const insertElementToPage = useEditor((state) => state.insertElementToPage);
+  const handleAddElement = async (element: AddElement) => {
+    const { bodyId } = useEditor();
 
-  const handleAddElement = (element: AddElement) => {
-    const newItem = layers.newItem(element.type);
-    insertElementToPage(
-      "home",
-      homePage.body.children[0].id,
-      undefined,
-      newItem
-    );
+    const newItem = layers.getDefaultElement(element.type);
+    addSlot({
+      id: crypto.randomUUID(),
+      element: newItem,
+      parentId: bodyId,
+    });
     setIsOpen(false);
   };
 

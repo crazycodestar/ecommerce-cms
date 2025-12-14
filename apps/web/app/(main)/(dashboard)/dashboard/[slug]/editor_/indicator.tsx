@@ -1,99 +1,120 @@
 "use client";
 
-import { useEditor } from "@/hooks/use-editor";
-import { Element, layers, type Page } from "@/hooks/use-editor/elements";
+import { useEditor } from "@/context/editor";
+import { layers } from "@/db/lib/layers";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 // drag and drop
-import {
-  DropIndicatorType,
-  HighlightBox,
-  recursivelyFindNearestElement,
-} from "./lib";
+import { HighlightBox, recursivelyFindNearestElement } from "./lib";
 
-const useInspector = (elements: Element & { children: Element[] }) => {
-  const focusElement = useEditor((state) => state.focusElement);
-  const setFocusElement = useEditor((state) => state.setFocusElement);
-
+const useInspector = () => {
+  const { focusElementId, setFocusElementId } = useEditor();
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<HighlightBox | null>(null);
   const [focusElementPreview, setFocusElementPreview] =
     useState<HighlightBox | null>(null);
 
+  async function handleMouseMove(e: MouseEvent) {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+
+    if (
+      !el ||
+      (el as HTMLElement).id === "inspector-highlight" ||
+      (el as HTMLElement).id === "inspector-label"
+    ) {
+      return;
+    }
+
+    const validEl = recursivelyFindNearestElement(el as HTMLElement);
+    if (!validEl) return;
+
+    const rect = validEl.getBoundingClientRect();
+    const id = validEl.dataset.id;
+    const parentId = validEl.dataset.parentId;
+    const componentId = validEl.dataset.instanceId;
+
+    if (id === activeId) return;
+
+    setActiveId(id);
+    const element = await layers.getSlot(id);
+
+    setHighlight({
+      left: rect.left + window.scrollX,
+      top: rect.top + window.scrollY,
+      bottom: rect.bottom + window.scrollY,
+      width: rect.width,
+      height: rect.height,
+      type: element?.type,
+      id,
+      name: element?.name ?? "",
+      parentId,
+      componentId,
+    });
+  }
+
+  const handleMouseLeave = () => setHighlight(null);
+
+  function handleClick(e: MouseEvent) {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+
+    if (
+      !el ||
+      (el as HTMLElement).id === "focusElement-highlight" ||
+      (el as HTMLElement).id === "focusElement-label"
+    ) {
+      return;
+    }
+
+    const validEl = recursivelyFindNearestElement(el as HTMLElement);
+    const instanceId = validEl?.dataset.parentId || validEl?.dataset.instanceId;
+    setFocusElementId(validEl?.dataset.id, instanceId);
+  }
+
   useEffect(() => {
-    function handleMouseMove(e: MouseEvent) {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-
-      if (
-        !el ||
-        (el as HTMLElement).id === "inspector-highlight" ||
-        (el as HTMLElement).id === "inspector-label"
-      ) {
-        return;
-      }
-
-      const validEl = recursivelyFindNearestElement(el as HTMLElement);
-      if (!validEl) return;
-
-      const rect = validEl.getBoundingClientRect();
-      const id = validEl.dataset.id;
-
-      setHighlight({
-        left: rect.left + window.scrollX,
-        top: rect.top + window.scrollY,
-        bottom: rect.bottom + window.scrollY,
-        width: rect.width,
-        height: rect.height,
-        type: layers.find(elements, id)?.type,
-        id,
-        name: layers.find(elements, id)?.name ?? "",
-      });
-    }
-
-    const handleMouseLeave = () => setHighlight(null);
-
-    function handleClick(e: MouseEvent) {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-
-      if (
-        !el ||
-        (el as HTMLElement).id === "focusElement-highlight" ||
-        (el as HTMLElement).id === "focusElement-label"
-      ) {
-        return;
-      }
-
-      const validEl = recursivelyFindNearestElement(el as HTMLElement);
-      setFocusElement(validEl?.dataset.id ?? null);
-    }
-
     document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("click", handleClick);
+    document.addEventListener("mousedown", handleClick);
     document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("click", handleClick);
+      document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [elements]);
+  }, [activeId]);
+
+  const handleFocusElementPreview = async (
+    boundingClientRect: Omit<HighlightBox, "type" | "name">
+  ) => {
+    const element = await layers.getSlot(boundingClientRect.id);
+    if (!element) return setFocusElementPreview(null);
+
+    setFocusElementPreview({
+      ...boundingClientRect,
+      type: element.type,
+      name: element.name,
+    });
+  };
 
   useEffect(() => {
-    if (!focusElement) return setFocusElementPreview(null);
-    const el = document.querySelector(`[data-id="${focusElement}"]`);
-    if (!el) return setFocusElementPreview(null);
+    if (!focusElementId) return setFocusElementPreview(null);
+    const el = document.querySelector(`[data-id="${focusElementId}"]`);
+    const validEl = el
+      ? recursivelyFindNearestElement(el as HTMLElement)
+      : null;
+    if (!validEl || !el) return setFocusElementPreview(null);
 
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
         const rect = entry.target.getBoundingClientRect();
-        setFocusElementPreview({
+        handleFocusElementPreview({
           left: rect.left + window.scrollX,
           top: rect.top + window.scrollY,
           bottom: rect.bottom + window.scrollY,
           width: rect.width,
           height: rect.height,
-          type: layers.find(elements, focusElement)?.type,
-          id: focusElement,
-          name: layers.find(elements, focusElement)?.name ?? "",
+          id: focusElementId,
+          parentId: validEl.dataset.parentId,
+          componentId: validEl.dataset.instanceId,
         });
       }
     });
@@ -103,7 +124,7 @@ const useInspector = (elements: Element & { children: Element[] }) => {
     return () => {
       if (el) observer.unobserve(el);
     };
-  }, [focusElement]);
+  }, [focusElementId]);
 
   const handlePlaceInspectorLabel = (highlight: HighlightBox) => {
     return highlight.top ? highlight.top - 20 : window.scrollY;
@@ -113,19 +134,14 @@ const useInspector = (elements: Element & { children: Element[] }) => {
 };
 
 export function Indicator({
-  page,
   isDragging,
   activeElement,
-  dropIndicator,
 }: {
-  page: Page;
   isDragging: boolean;
   activeElement: HighlightBox | null;
-  dropIndicator: DropIndicatorType | null;
 }) {
-  // const { isDragging, activeElement, dropIndicator } = useMonitor(page);
   const { highlight, handlePlaceInspectorLabel, focusElementPreview } =
-    useInspector(page.body);
+    useInspector();
 
   function DragIndicator() {
     return (
@@ -135,8 +151,10 @@ export function Indicator({
           <div
             id="inspector-label"
             className={cn(
-              "capitalize absolute bg-blue-500 text-white text-xs py-0.5 px-[5px] rounded-[3px] whitespace-nowrap z-50",
-              activeElement.top ? "rounded-b-none" : "rounded-t-none"
+              "capitalize absolute text-white text-xs py-0.5 px-[5px] rounded-[3px] whitespace-nowrap z-50",
+              activeElement.top ? "rounded-b-none" : "rounded-t-none",
+              activeElement.componentId ? "bg-component" : "bg-highlight",
+              activeElement.parentId && "hidden"
             )}
             style={{
               left: activeElement.left,
@@ -150,21 +168,18 @@ export function Indicator({
         {/* Active Element Box */}
         {activeElement && (
           <div
-            className="absolute border-2 border-blue-500 pointer-events-none z-50"
+            className={cn(
+              "absolute border-2 pointer-events-none z-50",
+              activeElement.componentId || activeElement.parentId
+                ? "border-component"
+                : "border-highlight"
+            )}
             style={{
               left: activeElement.left,
               top: activeElement.top,
               width: activeElement.width,
               height: activeElement.height,
             }}
-          />
-        )}
-
-        {/* Drop Indicator */}
-        {dropIndicator && (
-          <div
-            className="absolute border-2 border-red-500 pointer-events-none z-50"
-            style={dropIndicator}
           />
         )}
       </>
@@ -179,7 +194,12 @@ export function Indicator({
         {/* Focus Element Box */}
         <div
           id="focusElement-highlight"
-          className="absolute border-2 border-blue-500 pointer-events-none z-50"
+          className={cn(
+            "absolute border-2 pointer-events-none z-50",
+            focusElementPreview.parentId || focusElementPreview.componentId
+              ? "border-component"
+              : "border-highlight"
+          )}
           style={focusElementPreview}
         />
 
@@ -187,7 +207,9 @@ export function Indicator({
         <div
           id="focusElement-label"
           className={cn(
-            "capitalize absolute bg-blue-500 text-white text-xs py-0.5 px-[5px] rounded-[3px] whitespace-nowrap z-50",
+            "capitalize absolute text-white text-xs py-0.5 px-[5px] rounded-[3px] whitespace-nowrap z-50",
+            focusElementPreview.componentId ? "bg-component" : "bg-highlight",
+            focusElementPreview.parentId && "hidden",
             focusElementPreview.top ? "rounded-b-none" : "rounded-t-none"
           )}
           style={{
@@ -208,7 +230,12 @@ export function Indicator({
         {highlight && (
           <div
             id="inspector-highlight"
-            className="absolute border-2 border-blue-500 pointer-events-none z-50"
+            className={cn(
+              "absolute border-2 pointer-events-none z-50",
+              highlight.parentId || highlight.componentId
+                ? "border-component"
+                : "border-highlight"
+            )}
             style={{
               left: highlight.left,
               top: highlight.top,
@@ -223,7 +250,11 @@ export function Indicator({
           <div
             id="inspector-label"
             className={cn(
-              "capitalize absolute bg-transparent text-blue-500 ring-inset ring-2 ring-blue-500 text-xs font-medium py-0.5 px-[5px] rounded-[3px] whitespace-nowrap z-50 pointer-events-none",
+              "capitalize absolute bg-transparent text-xs font-medium py-0.5 px-[5px] rounded-[3px] whitespace-nowrap z-50 pointer-events-none",
+              highlight.componentId
+                ? "ring-inset ring-2 ring-component text-component"
+                : "ring-inset ring-2 ring-highlight text-highlight",
+              highlight.parentId && "hidden",
               highlight.top ? "rounded-b-none" : "rounded-t-none"
             )}
             style={{

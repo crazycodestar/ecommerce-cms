@@ -29,7 +29,8 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // @ts-expect-error preview branch not recognized
   const isPreviewBranch = process.env.NODE_ENV === "preview";
 
-  const enforceIncludeDomain = process.env.NODE_ENV === "production" ? includeDomain : true;
+  const enforceIncludeDomain =
+    process.env.NODE_ENV === "production" ? includeDomain : true;
   if (!isPreviewBranch && isCustomSubDomain && enforceIncludeDomain) {
     return NextResponse.rewrite(
       new URL(`/${customSubDomain}${pathWithSearchParams}`, req.url)
@@ -42,23 +43,25 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     return NextResponse.next();
   }
 
-  // If the user isn't signed in and the route is private, redirect to sign-in
-  if (!userId && !isPublicRoute(req))
-    return redirectToSignIn({ returnBackUrl: req.url });
+  // --- Temporary disabled authentication checks ---
+  // // If the user isn't signed in and the route is private, redirect to sign-in
+  // if (!userId && !isPublicRoute(req))
+  //   return redirectToSignIn({ returnBackUrl: req.url });
 
-  // Catch users who do not have `onboardingComplete: true` in their publicMetadata
-  // Redirect them to the /onboading route to complete onboarding
-  if (
-    userId &&
-    !isPublicRoute(req) &&
-    !sessionClaims?.metadata?.onboardingComplete
-  ) {
-    const onboardingUrl = new URL("/onboarding", req.url);
-    return NextResponse.redirect(onboardingUrl);
-  }
+  // // Catch users who do not have `onboardingComplete: true` in their publicMetadata
+  // // Redirect them to the /onboading route to complete onboarding
+  // if (
+  //   userId &&
+  //   !isPublicRoute(req) &&
+  //   !sessionClaims?.metadata?.onboardingComplete
+  // ) {
+  //   const onboardingUrl = new URL("/onboarding", req.url);
+  //   return NextResponse.redirect(onboardingUrl);
+  // }
 
-  // If the user is logged in and the route is protected, let them view.
-  if (userId && !isPublicRoute(req)) return NextResponse.next();
+  // // If the user is logged in and the route is protected, let them view.
+  // if (userId && !isPublicRoute(req)) return NextResponse.next();
+  // --- Temporary disabled authentication checks ---
 
   // UnAuthenticated user checks
   if (url.pathname === "/" || url.pathname === "/home")

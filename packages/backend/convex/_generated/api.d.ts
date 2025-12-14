@@ -23,6 +23,7 @@ import type * as email_templates_order_status_update from "../email_templates/or
 import type * as email_templates_store_owner_notification from "../email_templates/store_owner_notification.js";
 import type * as error from "../error.js";
 import type * as http from "../http.js";
+import type * as images from "../images.js";
 import type * as lib_image from "../lib/image.js";
 import type * as lib_slugify from "../lib/slugify.js";
 import type * as netlify from "../netlify.js";
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   "email_templates/store_owner_notification": typeof email_templates_store_owner_notification;
   error: typeof error;
   http: typeof http;
+  images: typeof images;
   "lib/image": typeof lib_image;
   "lib/slugify": typeof lib_slugify;
   netlify: typeof netlify;

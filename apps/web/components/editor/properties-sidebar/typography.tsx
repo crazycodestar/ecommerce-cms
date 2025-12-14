@@ -12,9 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEditor } from "@/hooks/use-editor";
-import { layers } from "@/hooks/use-editor/elements";
-import { isTextElement } from "@/hooks/use-editor/properties";
+import { StyleSchema } from "@/db/types/style";
 import { cn } from "@/lib/utils";
 import {
   ALargeSmallIcon,
@@ -58,20 +56,12 @@ const fontFamilyOptions = [
 ];
 
 export function Typography() {
-  const focusElement = useEditor((state) => state.focusElement);
-  const focusElementVal = useEditor(
-    (state) =>
-      focusElement && layers.find(state.pages[0].body, focusElement)?.type
-  );
-  const isTextElementBoolean =
-    focusElementVal && !!isTextElement(focusElementVal);
-
-  const { form, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
 
   function FontSizeOptions() {
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
           <Button
             type="button"
             size="icon"
@@ -88,8 +78,8 @@ export function Typography() {
           ].map((size, index) => (
             <DropdownMenuCheckboxItem
               key={index}
-              checked={form.watch("fontSize") === size}
-              onClick={() => handleSetValue("fontSize", size)}
+              checked={getValue("fontSize") === size}
+              onClick={() => setValue({ fontSize: size })}
             >
               {size}
             </DropdownMenuCheckboxItem>
@@ -100,7 +90,7 @@ export function Typography() {
   }
 
   return (
-    <div className={cn("p-2 pb-3 border-t", !isTextElementBoolean && "hidden")}>
+    <div className={cn("p-2 pb-3 border-t")}>
       <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2 mb-1.5 h-7 items-center">
         <h3 className="text-sm font-medium col-span-4">Typography</h3>
       </div>
@@ -108,7 +98,6 @@ export function Typography() {
       <div className="grid grid-cols-[repeat(4,2fr)_28px] gap-2">
         <PropertySelect
           containerClassNames="col-span-4"
-          control={form.control}
           name="fontFamily"
           label="Font family"
         >
@@ -125,7 +114,6 @@ export function Typography() {
         </PropertySelect>
         <PropertySelect
           containerClassNames="col-span-2"
-          control={form.control}
           name="fontWeight"
           label="Font weight"
         >
@@ -151,7 +139,6 @@ export function Typography() {
         <PropertyInput
           // icon={SunMediumIcon}
           containerClassNames="col-span-2"
-          control={form.control}
           name="fontSize"
           label="Font size"
           rightElement={<FontSizeOptions />}
@@ -159,7 +146,6 @@ export function Typography() {
         <PropertyInput
           icon={LineHeightIcon}
           containerClassNames="col-span-2"
-          control={form.control}
           name="leading"
           sensitivity={0.1}
           increment={0.1}
@@ -168,7 +154,6 @@ export function Typography() {
         <PropertyInput
           icon={LetterSpacingIcon}
           containerClassNames="col-span-2"
-          control={form.control}
           name="tracking"
           increment={0.1}
           sensitivity={0.1}
@@ -176,7 +161,7 @@ export function Typography() {
         />
         <TypographyOptions />
         {/* <pre className="col-span-4">
-          {JSON.stringify(form.watch("fontFamily"), null, 2)}
+          {JSON.stringify(getValue("fontFamily"), null, 2)}
         </pre> */}
       </div>
     </div>
@@ -184,10 +169,9 @@ export function Typography() {
 }
 
 function TypographyOptions() {
-  const { form, handleSetValue } = useStyle();
+  const { getValue, setValue } = useStyle();
 
   function getVal<T>(value: string) {
-    if (value === "") return undefined;
     return value as T;
   }
 
@@ -202,16 +186,13 @@ function TypographyOptions() {
         <div className="grid grid-cols-3 items-center gap-2">
           <label className="text-sm">Text align</label>
           <Tabs
-            value={form.watch("textAlign")}
+            value={getValue("textAlign") ?? undefined}
             onValueChange={(value) =>
-              handleSetValue("textAlign", getVal(value))
+              setValue({ textAlign: getVal(value) as StyleSchema["textAlign"] })
             }
             className="col-span-2"
           >
             <TabsList className="w-full h-7">
-              <TabsTrigger value="" className="rounded-sm">
-                <MinusIcon size={14} />
-              </TabsTrigger>
               <TabsTrigger value="left" className="rounded-sm">
                 <AlignLeftIcon size={14} />
               </TabsTrigger>
@@ -229,10 +210,8 @@ function TypographyOptions() {
 
           <label className="text-sm">Font Style</label>
           <Tabs
-            value={form.watch("fontStyle")}
-            onValueChange={(value) =>
-              handleSetValue("fontStyle", getVal(value))
-            }
+            value={getValue("fontStyle") ?? undefined}
+            onValueChange={(value) => setValue({ fontStyle: getVal(value) })}
             className="col-span-2"
           >
             <TabsList className="w-full h-7">

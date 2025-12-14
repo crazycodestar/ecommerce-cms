@@ -20,7 +20,6 @@ import { useState } from "react";
 import { AddElementSidebar } from "./add-element-sidebar";
 import ChatInput from "./chat-input";
 import ChatMessage from "./chat-message";
-import { ContentController } from "./content-controller";
 import { LayersSidebar } from "./layers-sidebar";
 
 // Define message types
@@ -140,7 +139,7 @@ function PagesSidebar() {
       <SidebarContent>
         <SidebarGroup className="px-0">
           <SidebarGroupContent>
-            <ContentController />
+            {/* <ContentController /> */}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
