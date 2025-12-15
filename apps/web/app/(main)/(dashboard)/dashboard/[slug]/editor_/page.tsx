@@ -58,16 +58,16 @@ const PageContent = () => {
   const boundaryRef = useRef<HTMLDivElement>(null);
   const { view, setView, width, setWidth } = useView({ boundaryRef });
   const { slug } = useParams<{ slug: string }>();
-  const contentInit = useQuery(api.contents.getContent);
-  const isPending = contentInit === undefined;
+  // const contentInit = useQuery(api.contents.getContent);
+  // const isPending = contentInit === undefined;
 
-  useEffect(() => {
-    if (isPending) return;
-    if (!contentInit) return;
-  }, [isPending, contentInit]);
+  // useEffect(() => {
+  //   if (isPending) return;
+  //   if (!contentInit) return;
+  // }, [isPending, contentInit]);
 
   // submit content
-  const updateContent = useMutation(api.contents.updateContent);
+  // const updateContent = useMutation(api.contents.updateContent);
   const [isPendingForm, startTransition] = useTransition();
 
   const router = useRouter();
@@ -118,15 +118,11 @@ const PageContent = () => {
           view={view}
           setView={setView}
         />
-        {isPending ? (
+        {/* {isPending ? (
           <ContentPageLoading />
-        ) : (
-          <ContentConsumer
-            width={width}
-            setWidth={setWidth}
-            ref={boundaryRef}
-          />
-        )}
+        ) : ( */}
+        <ContentConsumer width={width} setWidth={setWidth} ref={boundaryRef} />
+        {/* )} */}
       </SidebarInset>
       <PropertiesSidebar view={view} side="right" />
     </SidebarProvider>
